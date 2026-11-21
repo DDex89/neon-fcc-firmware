@@ -328,7 +328,7 @@ SetupATM:
         ldab    <TimerOverflowsBetweenCamPulses
         cmpb    #$50
         bls     L50E2
-        brset   <L0074,#$20,L50E2
+        brset   <SyncFlags74,#$20,L50E2
         ldaa    <DRBPointer2
         cmpa    #$40
         bhi     L50E2
@@ -337,7 +337,7 @@ SetupATM:
         bra     L50E6
 
 L50E2:
-        bclr    <L0074,#$20
+        bclr    <SyncFlags74,#$20
         clra
 L50E6:
         staa    <ATMOffset

@@ -12,23 +12,25 @@
 ;---------------------------------------------------------------------------------------------------
 ; Interrupt_DwellTimerA  ($AC21)  -- interrupt vector: TOC3
 ;
-; Output compare 3 interrupt: ignition coil channel A dwell start / spark timing. [from name]
+; Output compare 3 (PA5) interrupt: ignition coil channel A. [reviewed - partially]
 ;
-; The Neon 2.0 uses two ignition coils in wasted-spark mode; OC3 and OC5 time the two coil
-; drivers.
+; The Neon 2.0 uses two ignition coils in wasted-spark mode. OC3 and OC5 drive the two coil
+; drivers directly: the pin action in TCTL1 switches between "start dwell" and "fire", and the
+; compare value sets the time. The events are armed from ScheduleIgnitionCoils in the crank event
+; handlers.
 ;---------------------------------------------------------------------------------------------------
 Interrupt_DwellTimerA:
         ldx     #REGS
         ldaa    #$20
         staa    $23,x                                ; TFLG1: Timer interrupt flags 1 (write 1 to clear)
-        brclr   <L0075,#$20,LAC6B
+        brclr   <SyncFlags75,#$20,LAC6B
         ldd     <TimerOverflowsBetweenCamPulses
         asld
         tsta
         bne     LAC6B
         brset   <BitFlasg71,#$02,LAC6B
         brclr   $20,x,#$10,LAC6B                     ; TCTL1: Timer control 1 (OC2-OC5 pin actions)
-        brclr   <L0074,#$01,LAC6B
+        brclr   <SyncFlags74,#$01,LAC6B
         ldaa    >AdvanceTemporary
         cmpa    #$62
         bcc     LAC5A
@@ -40,7 +42,7 @@ Interrupt_DwellTimerA:
         bcc     LAC51
         incb
 LAC51:
-        ldaa    <L0075
+        ldaa    <SyncFlags75
         adda    #$01
         anda    #$03
         cba
@@ -63,20 +65,21 @@ LAC6B:
 ;---------------------------------------------------------------------------------------------------
 ; Interrupt_DwellTimerB  ($AC6F)  -- interrupt vector: TOC5
 ;
-; Output compare 5 interrupt: ignition coil channel B dwell start / spark timing. [from name]
+; Output compare 5 (PA3) interrupt: ignition coil channel B (see Interrupt_DwellTimerA). [reviewed
+; - partially]
 ;---------------------------------------------------------------------------------------------------
 Interrupt_DwellTimerB:
         ldx     #REGS
         ldaa    #$08
         staa    $23,x                                ; TFLG1: Timer interrupt flags 1 (write 1 to clear)
-        brclr   <L0075,#$20,LACB9
+        brclr   <SyncFlags75,#$20,LACB9
         ldd     <TimerOverflowsBetweenCamPulses
         asld
         tsta
         bne     LACB9
         brset   <BitFlasg71,#$02,LACB9
         brclr   $20,x,#$01,LACB9                     ; TCTL1: Timer control 1 (OC2-OC5 pin actions)
-        brset   <L0074,#$01,LACB9
+        brset   <SyncFlags74,#$01,LACB9
         ldaa    >AdvanceTemporary
         cmpa    #$62
         bcc     LACA8
@@ -88,7 +91,7 @@ Interrupt_DwellTimerB:
         bcc     LAC9F
         incb
 LAC9F:
-        ldaa    <L0075
+        ldaa    <SyncFlags75
         adda    #$01
         anda    #$03
         cba
@@ -114,7 +117,7 @@ LACB9:
 ; Called from: SubLoopE
 ;---------------------------------------------------------------------------------------------------
 LACBD:
-        brclr   <L0075,#$10,LACD8
+        brclr   <SyncFlags75,#$10,LACD8
         brset   <BitFlasg71,#$02,LACD8
         ldx     #$018F
         brclr   <Counter_MainLoop,#$20,LACCD

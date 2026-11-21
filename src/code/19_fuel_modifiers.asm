@@ -230,14 +230,14 @@ PTELookupLatency:
         cmpb    >LBD71                               ; RETSPD: Retard from Speed.
         bcs     L746D
         brclr   <BitFlags65,#$80,L7470
-        bclr    <L00CE,#$80
+        bclr    <InjMaskCE,#$80
         bra     L748D
 
 L746D:
         jmp     >L7539
 
 L7470:
-        brset   <L00CE,#$80,L7484
+        brset   <InjMaskCE,#$80,L7484
         ldaa    >LBD75                               ; RETSPD: Retard from Speed.
         clrb
         lsrd
@@ -245,15 +245,15 @@ L7470:
         addd    <TargetIdleSpeedHB
         cpd     <EngineRpm_HB
         bcs     L748D
-        bset    <L00CE,#$80
+        bset    <InjMaskCE,#$80
 L7484:
-        bset    <L00CE,#$40
+        bset    <InjMaskCE,#$40
         ldaa    >LBD77                               ; RETSPD: Retard from Speed.
 L748A:
         jmp     >L752B
 
 L748D:
-        bclr    <L00CE,#$40
+        bclr    <InjMaskCE,#$40
         clrb
         ldaa    <EngineRpm_HB
         cmpa    >L044D
@@ -467,7 +467,7 @@ L75EA:
         std     >L01E3
         ldab    #$03
         sei
-        andb    <L0074
+        andb    <SyncFlags74
         ldx     #L7548
         abx
         ldaa    $00,x

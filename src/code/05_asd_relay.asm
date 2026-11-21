@@ -32,7 +32,7 @@ L1A2B:
         ldab    <TimerOverflowsBetweenCamPulses
         cmpb    #$50
         bls     L1A65
-        brset   <L0074,#$20,L1A65
+        brset   <SyncFlags74,#$20,L1A65
         ldaa    <DRBPointer2
         tab
         anda    #$0F
@@ -60,7 +60,7 @@ L1A58:
         bra     L1A95
 
 L1A65:
-        bclr    <L0074,#$20
+        bclr    <SyncFlags74,#$20
 L1A68:
         jsr     >L525F
 L1A6B:

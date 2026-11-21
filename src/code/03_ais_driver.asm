@@ -220,7 +220,7 @@ L16CC:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        stab    <L00FD
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >$0166
@@ -236,8 +236,8 @@ L16F2:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >$0163
@@ -252,12 +252,12 @@ L1715:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >L0164
-        ldab    <L00FD
+        ldab    <InjCylinderMask
         comb
 L172D:
         brclr   $00,y,#$08,L1738

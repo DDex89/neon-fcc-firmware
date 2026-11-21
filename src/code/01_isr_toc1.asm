@@ -135,13 +135,13 @@ L12F8:
         lsrd
         lsrd
         lsrd
-        std     <L00FD
+        std     <InjCylinderMask
         bne     L1304
         inc     >L00FE
 L1304:
         ldd     <VehicleSpeed_HB
         beq     L130A
-        subd    <L00FD
+        subd    <InjCylinderMask
 L130A:
         std     <VehicleSpeed_HB
         asld

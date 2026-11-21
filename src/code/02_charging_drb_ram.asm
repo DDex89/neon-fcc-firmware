@@ -207,20 +207,20 @@ L145B:
         cmpb    #$F2
         bne     L146E
         bclr    <BitFlags72,#$80
-        bclr    <L0074,#$40
+        bclr    <SyncFlags74,#$40
         bra     L14CE
 
 L146E:
         cmpb    #$F6
         bne     L147A
         bset    <BitFlags72,#$80
-        bclr    <L0074,#$40
+        bclr    <SyncFlags74,#$40
         bra     L14CE
 
 L147A:
         cmpb    #$F4
         bne     L1486
-        bset    <L0074,#$40
+        bset    <SyncFlags74,#$40
         bclr    <BitFlags72,#$80
         bra     L14CE
 
@@ -229,9 +229,9 @@ L1486:
         bne     L1493
         bclr    <DRBSerialMode,#$B0
         bclr    <BitFlags72,#$80
-        bclr    <L0074,#$40
+        bclr    <SyncFlags74,#$40
 L1493:
-        brset   <L0074,#$40,L14A1
+        brset   <SyncFlags74,#$40,L14A1
         brset   <BitFlags72,#$80,L14A6
         ldx     #$0000
         abx
@@ -304,7 +304,7 @@ L14E9:
         cmpb    #$F2
         bne     L150E
         clr     >$049C
-        bclr    <L0074,#$40
+        bclr    <SyncFlags74,#$40
         bclr    <BitFlags72,#$80
         bra     L1560
 
@@ -312,13 +312,13 @@ L150E:
         cmpb    #$F6
         bne     L151A
         bset    <BitFlags72,#$80
-        bclr    <L0074,#$40
+        bclr    <SyncFlags74,#$40
         bra     L1560
 
 L151A:
         cmpb    #$F4
         bne     L1526
-        bset    <L0074,#$40
+        bset    <SyncFlags74,#$40
         bclr    <BitFlags72,#$80
         bra     L1560
 
@@ -330,7 +330,7 @@ L1526:
         bra     L1560
 
 L1532:
-        brset   <L0074,#$40,L1551
+        brset   <SyncFlags74,#$40,L1551
         ldaa    >$049C
         xgdx
         ldab    $00,x

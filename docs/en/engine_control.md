@@ -5,6 +5,29 @@ names refer to the source; table names to the [calibration reference](calibratio
 Parts marked *(from names)* follow the names in the original disassembly and still need to be
 checked against the code.
 
+## Engine position and event scheduling
+
+*Roles inferred from the code; to be confirmed with a scope on a running engine.*
+
+- **Crank sensor -> TIC1 (PA2)** (`Isr_TIC1_CrankEvent`). Every edge is time-stamped. Together with
+  input capture 3 on the other edge (PA0) the firmware measures the slot width and the period, which
+  identifies the reference slots. Once synchronised, each edge increments `CrankEventCounter`
+  ($0449) and calls one of four handlers (`CrankPickupIntrAddressTable`), chosen by the event phase:
+  `CrankInterrupt_FallingEdge`, `..._HandleCamSensorRisingEdgeA/B` and `CrankInterrupt_CalculateFuel`.
+- **Cam sensor -> PAI (PA7)** (`Isr_PAI_CamPhase`). Both edges are caught by flipping the PAI edge
+  select. The level of the crank signal at that moment tells which half of the 720 degree cycle it is,
+  and sets the phase in `CrankEventCounter` and the sync flags (`SyncFlags74`, `SyncFlags75`).
+- **Ignition:** two coils in wasted-spark mode, driven straight from **OC3 (PA5)** and **OC5 (PA3)**.
+  `ScheduleIgnitionCoils` writes the compare times and the TCTL1 pin actions (dwell start, then fire);
+  `Interrupt_DwellTimerA/B` chain the next action.
+- **Injectors:** sequential, but **not** timed by the HC11. `IncludeInjectorLatency` writes the final
+  pulse width (microseconds, latency included) into the external I/O device: `$0424` cylinder 1,
+  `$0428` cylinder 2, `$042C` cylinder 3, `$0430` cylinder 4. `InjCylinderMask` selects the
+  cylinders (bit 0 = cyl 4, bit 1 = cyl 2, bit 2 = cyl 1, bit 3 = cyl 3, firing order 1-3-4-2), and
+  writing `$04` to `$0410` hands the pulse over to the device.
+- **MAP** is sampled in step with the crank events (`StoreMAPVoltsAndCalcMAPValue`, `GET_AVERAGE_MAP_READING`).
+- **Knock** is sampled at the end of a window timed by OC4 (`Isr_TOC4_KnockSample`).
+
 ## Input coordinates
 
 Most maps are 3D tables whose axes are 0-255 coordinates produced by transfer curves:

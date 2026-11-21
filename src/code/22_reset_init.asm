@@ -236,7 +236,7 @@ L8FA4:
         bcc     L8FAB
         bclr    $00,x,#$40
 L8FAB:
-        bclr    <L0075,#$20
+        bclr    <SyncFlags75,#$20
         ldaa    <L00F3
         anda    #$E0
         oraa    #$08
@@ -520,7 +520,7 @@ L9222:
         ldaa    <L0039
         adda    #$02
         staa    <L0039
-        bset    <L0074,#$80
+        bset    <SyncFlags74,#$80
 L922E:
         ldaa    >L0119
         anda    #$10

@@ -16,7 +16,7 @@ SPIE_Flag_Interrupt_vector:
         dc.w    Trap_SCI_SPI_RTI
 
 PAII_Flag_Interrupt_vector:
-        dc.w    Isr_PAI_CrankSensor
+        dc.w    Isr_PAI_CamPhase
 
 PAOVI_Flag_Interrupt_vector:
         dc.w    Isr_PAOV
@@ -46,7 +46,7 @@ IC2_Timer_Interrupt_vector:
         dc.w    Interrupt_SpeedometerSignal
 
 IC1_Timer_Interrupt_vector:
-        dc.w    Interrupt_CamSensorSignal
+        dc.w    Isr_TIC1_CrankEvent
 
 Realtime_Interrupt_vector:
         dc.w    Trap_SCI_SPI_RTI

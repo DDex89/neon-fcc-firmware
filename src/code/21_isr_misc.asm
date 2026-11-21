@@ -93,8 +93,8 @@ Trap_TOC2:
 ; interrupted program counter) to BYTE01/BYTE02, so the fault can be read out later. It then
 ; resets the stack and repeats the hardware initialisation of ResetInterrupt; because RAM is not
 ; cleared on this path, the warm-start check keeps adaptive memory and fault codes. (The original
-; disassembly called this routine "Interrupt_CrankSensor_Signal"; the crank sensor actually uses
-; the pulse accumulator input, see Isr_PAI_CrankSensor.)
+; disassembly called this routine "Interrupt_CrankSensor_Signal"; the crank sensor is handled by
+; Isr_TIC1_CrankEvent.)
 ;---------------------------------------------------------------------------------------------------
 Trap_IRQ:
         ldab    #$80

@@ -19,17 +19,19 @@ CrankPickupIntrAddressTable:
         dc.w    CrankInterrupt_CalculateFuel
 
 ;---------------------------------------------------------------------------------------------------
-; Isr_PAI_CrankSensor  ($78EC)  -- interrupt vector: PAI
+; Isr_PAI_CamPhase  ($78EC)  -- interrupt vector: PAI
 ;
-; Pulse accumulator input (PA7) edge interrupt: engine position sensor edge. [reviewed -
-; partially]
+; Pulse accumulator input (PA7) edge interrupt: cam sensor edge, used for cylinder identification.
+; [reviewed - partially]
 ;
-; Reads PACTL to find which edge was armed, compares it with the current pin state on PORTA, flips
-; the edge selection and dispatches through CrankPickupIntrAddressTable. The crank/cam
-; synchronisation and the per-cylinder fuel and spark scheduling (CrankInterrupt_* routines) hang
-; off this interrupt.
+; Each interrupt flips the armed edge (PACTL PEDGE) so both edges of the cam signal are seen. On
+; the edge it reads the level of the crank signal on PA2 (the TIC1 pin): that level tells which
+; half of the engine cycle the cam edge belongs to, and the routine sets the phase index
+; CrankEventCounter ($0449, = $07 or $0F) and the synchronisation flags SyncFlags74/SyncFlags75.
+; Roles inferred from the code: the original disassembly called this the crank sensor and TIC1 the
+; cam sensor, but the event dispatching is done by TIC1 and the phase decision here.
 ;---------------------------------------------------------------------------------------------------
-Isr_PAI_CrankSensor:
+Isr_PAI_CamPhase:
         ldx     #REGS
         ldaa    $26,x                                ; PACTL: Pulse accumulator control / RTI rate
         asla
@@ -42,28 +44,28 @@ Isr_PAI_CrankSensor:
         bita    #$80
         beq     L791A
         brset   $00,x,#$04,L790A                     ; PORTA: Port A data (timer pins: IC1-IC3, OC2-OC5, PAI)
-        bset    <L0074,#$03
+        bset    <SyncFlags74,#$03
         ldaa    #$0F
         bra     L7912
 
 L790A:
-        bclr    <L0074,#$02
-        bset    <L0074,#$01
+        bclr    <SyncFlags74,#$02
+        bset    <SyncFlags74,#$01
         ldaa    #$07
 L7912:
-        staa    >$0449
-        bset    <L0075,#$C0
+        staa    >CrankEventCounter
+        bset    <SyncFlags75,#$C0
         bra     L792A
 
 L791A:
-        bclr    <L0074,#$01
-        bclr    <L0075,#$80
-        ldaa    >$0449
+        bclr    <SyncFlags74,#$01
+        bclr    <SyncFlags75,#$80
+        ldaa    >CrankEventCounter
         anda    #$F8
         oraa    #$03
-        staa    >$0449
+        staa    >CrankEventCounter
 L792A:
-        brset   <L0075,#$20,L793E
+        brset   <SyncFlags75,#$20,L793E
         ldaa    #$FF
         staa    >L014E
         clrb
@@ -73,8 +75,8 @@ L792A:
         bne     L793E
         stab    <DRBPointer1
 L793E:
-        bclr    <L0075,#$04
-        bset    <L0075,#$23
+        bclr    <SyncFlags75,#$04
+        bset    <SyncFlags75,#$23
 L7944:
         ldaa    #$10
         staa    $25,x
@@ -147,15 +149,22 @@ L798D:
 
 
 ;---------------------------------------------------------------------------------------------------
-; Interrupt_CamSensorSignal  ($798E)  -- interrupt vector: TIC1
+; Isr_TIC1_CrankEvent  ($798E)  -- interrupt vector: TIC1
 ;
-; Input capture 1 interrupt (Lloyd: cam sensor). [reviewed - partially]
+; Input capture 1 (PA2) interrupt: crank sensor edge - the main engine position event. [reviewed -
+; partially]
 ;
-; Stores the TIC1 time stamp, measures it against the latest TIC3 capture and the number of timer
-; overflows between pulses, and uses that to recognise the reference pulse and set the engine
-; synchronisation flags (L0074/L0075, BitFlags67). The sync logic decides which cylinder is next.
+; Time-stamps the edge (TIC1) and measures it against the last input capture 3 time and the number
+; of timer overflows since the previous pulse; IC1 and IC3 appear to capture the two edges of the
+; same crank signal, which gives the slot width used to recognise the reference slots. When the
+; engine is synchronised (SyncFlags75 bit 5 or 6, depending on the phase bit in SyncFlags74 bit 7)
+; it increments CrankEventCounter and calls one of four handlers from CrankPickupIntrAddressTable,
+; selected by the low two bits of SyncFlags75: CrankInterrupt_FallingEdge,
+; CrankInterrupt_HandleCamSensorRisingEdgeA, CrankInterrupt_HandleCamSensorRisingEdgeB and
+; CrankInterrupt_CalculateFuel. Fuel and spark for the next cylinder are scheduled from these
+; handlers.
 ;---------------------------------------------------------------------------------------------------
-Interrupt_CamSensorSignal:
+Isr_TIC1_CrankEvent:
         ldx     #REGS
         ldd     $10,x                                ; TIC1: Input capture 1 (16 bit)
         std     <LastDistributorFallingEdgeTime
@@ -179,10 +188,10 @@ L79B7:
         jmp     >L7AC7
 
 L79BC:
-        bset    <L0074,#$20
+        bset    <SyncFlags74,#$20
         bset    <BitFlags67,#$40
         brclr   <b5a_IPL3,#$08,L7A28
-        brset   <L0075,#$20,L7A1A
+        brset   <SyncFlags75,#$20,L7A1A
         brclr   $22,x,#$01,L7A11
         ldaa    >$0478
         cmpa    #$03
@@ -196,10 +205,10 @@ L79DE:
         bne     L79FD
         cpd     >L0479
         bcc     L79FD
-        bclr    <L0075,#$06
-        bset    <L0075,#$21
-        bclr    <L0074,#$03
-        clr     >$0449
+        bclr    <SyncFlags75,#$06
+        bset    <SyncFlags75,#$21
+        bclr    <SyncFlags74,#$03
+        clr     >CrankEventCounter
         bclr    $24,x,#$80
         bclr    $22,x,#$01
         bra     L7A14
@@ -226,29 +235,29 @@ L7A14:
         bra     L7A61
 
 L7A1A:
-        brset   <L0075,#$03,L7A23
-        inc     >L0075
+        brset   <SyncFlags75,#$03,L7A23
+        inc     >SyncFlags75
         bra     L7A26
 
 L7A23:
-        bclr    <L0075,#$03
+        bclr    <SyncFlags75,#$03
 L7A26:
         bra     L7A61
 
 L7A28:
-        ldaa    <L0075
+        ldaa    <SyncFlags75
         tab
         eorb    $00,x
         andb    #$80
         bne     L7A4E
         inca
-        staa    <L0075
+        staa    <SyncFlags75
         bita    #$04
         bne     L7A5E
         tab
         rolb
         rolb
-        eorb    <L0074
+        eorb    <SyncFlags74
         andb    #$01
         beq     L7A4E
         tab
@@ -256,7 +265,7 @@ L7A28:
         cmpb    #$03
         bne     L7A61
         eora    #$80
-        staa    <L0075
+        staa    <SyncFlags75
         bra     L7A61
 
 L7A4E:
@@ -264,10 +273,10 @@ L7A4E:
         brset   $24,x,#$10,L7A58
         bset    <L00F3,#$80
 L7A58:
-        bclr    <L0075,#$60
+        bclr    <SyncFlags75,#$60
         bclr    <L00F3,#$10
 L7A5E:
-        bclr    <L0075,#$07
+        bclr    <SyncFlags75,#$07
 L7A61:
         brclr   <BitFlasg71,#$02,L7AA2
         brclr   $00,x,#$80,L7A6E
@@ -283,7 +292,7 @@ L7A71:
         bclr    $26,x,#$20
         bset    $24,x,#$10
         bclr    <L00F3,#$10
-        brset   <L0075,#$20,L7A95
+        brset   <SyncFlags75,#$20,L7A95
         ldaa    #$FF
         staa    >L014E
         clrb
@@ -303,8 +312,8 @@ L7A95:
 L7AA2:
         bclr    $24,x,#$10
 L7AA5:
-        ldab    <L0075
-        brset   <L0074,#$80,L7AB1
+        ldab    <SyncFlags75
+        brset   <SyncFlags74,#$80,L7AB1
         bitb    #$20
         beq     L7AC7
         bra     L7AB5
@@ -313,7 +322,7 @@ L7AB1:
         bitb    #$40
         beq     L7AC7
 L7AB5:
-        inc     >$0449
+        inc     >CrankEventCounter
         andb    #$03
         aslb
         ldy     #CrankPickupIntrAddressTable
@@ -328,7 +337,7 @@ L7AC7:
 ; CrankInterrupt_FallingEdge  ($7AC8)
 ;---------------------------------------------------------------------------------------------------
 CrankInterrupt_FallingEdge:
-        bset    <L0075,#$08
+        bset    <SyncFlags75,#$08
         ldaa    <EngineRpm_HB
         cmpa    #$AC
         bls     L7AD4
@@ -341,20 +350,20 @@ L7AD4:
         bclr    <BitFlags69,#$08
         clr     >Counter_FuelEngRunning_0450
 L7AE4:
-        brset   <L0074,#$03,L7AED
-        inc     >L0074
+        brset   <SyncFlags74,#$03,L7AED
+        inc     >SyncFlags74
         bra     L7B49
 
 L7AED:
-        bclr    <L0074,#$03
-        clr     >$0449
+        bclr    <SyncFlags74,#$03
+        clr     >CrankEventCounter
         brclr   $24,x,#$20,L7B21
         ldaa    $27,x
-        staa    <L00FD
+        staa    <InjCylinderMask
         brclr   $25,x,#$20,L7B06
         inc     >$047B
         ldaa    $27,x
-        staa    <L00FD
+        staa    <InjCylinderMask
 L7B06:
         ldd     $0E,x
         subd    <LastDistributorFallingEdgeTime
@@ -364,7 +373,7 @@ L7B06:
         lsrd
         std     <Temp5
         ldaa    >$047B
-        ldab    <L00FD
+        ldab    <InjCylinderMask
         subd    <Temp5
         std     >$047B
         ldaa    #$20
@@ -421,9 +430,12 @@ L7B75:
         jsr     >HandleSparkScatter
 
 ;---------------------------------------------------------------------------------------------------
-; CODE7b7a  ($7B7A)
+; ScheduleIgnitionCoils  ($7B7A)
+;
+; Arms the coil timers: writes TOC3/TOC5, sets the TCTL1 pin actions, enables OC3I/OC5I in TMSK1
+; and uses CFORC to force a pin state. [reviewed - partially]
 ;---------------------------------------------------------------------------------------------------
-CODE7b7a:
+ScheduleIgnitionCoils:
         ldaa    <Temp5
         jsr     >L6887
         cmpa    #$D8
@@ -495,7 +507,7 @@ L7BE5:
         addd    <LastDistributorFallingEdgeTime
         subd    #$000A
         std     <Temp5
-        brset   <L0074,#$01,L7C76
+        brset   <SyncFlags74,#$01,L7C76
         ldab    >DistFETimeModified_A
         clra
         asld
@@ -717,7 +729,7 @@ L7DD0:
 ; CrankInterrupt_HandleCamSensorRisingEdgeA  ($7DD3)
 ;---------------------------------------------------------------------------------------------------
 CrankInterrupt_HandleCamSensorRisingEdgeA:
-        bclr    <L0075,#$08
+        bclr    <SyncFlags75,#$08
         ldd     <LastDistributorFallingEdgeTime
         std     <L0063
         brclr   $22,x,#$01,L7DF0
@@ -727,7 +739,7 @@ CrankInterrupt_HandleCamSensorRisingEdgeA:
         subd    $14,x
         cpd     >L0479
         bls     L7DF0
-        bclr    <L0075,#$20
+        bclr    <SyncFlags75,#$20
 L7DF0:
         bclr    $24,x,#$80
         bclr    $22,x,#$01
@@ -760,7 +772,7 @@ L7E18:
         addd    <LastDistributorFallingEdgeTime
         subd    #$000A
         std     <Temp5
-        brset   <L0074,#$01,L7E5D
+        brset   <SyncFlags74,#$01,L7E5D
         ldab    >DistFETimeModified_A
         clra
         asld
@@ -897,7 +909,7 @@ L7F35:
         ldaa    #$01
         staa    <LastDistributorFallingEdgeTime
         ldaa    >L0447
-        ldab    >$0449
+        ldab    >CrankEventCounter
         ldx     #$822D
         abx
         ldab    #$10
@@ -914,22 +926,22 @@ L7F53:
 
 L7F56:
         ldab    <LastDistributorFallingEdgeTime
-        bitb    <L00CD
+        bitb    <InjMaskCD
         bne     L7F53
         tba
-        oraa    <L00CD
-        staa    <L00CD
+        oraa    <InjMaskCD
+        staa    <InjMaskCD
         ldaa    >L0447
         bita    #$F0
         bne     L7F6F
         comb
-        andb    <L00CE
-        stab    <L00CE
+        andb    <InjMaskCE
+        stab    <InjMaskCE
         bra     L7F73
 
 L7F6F:
-        orab    <L00CE
-        stab    <L00CE
+        orab    <InjMaskCE
+        stab    <InjMaskCE
 L7F73:
         brclr   <CCDFlags5,#$20,L7F7A
         jmp     >L7FFE
@@ -1016,8 +1028,8 @@ L7FE9:
         staa    <Counter_FuelEngRunning
         ldab    <LastDistributorFallingEdgeTime
         comb
-        andb    <L00CE
-        stab    <L00CE
+        andb    <InjMaskCE
+        stab    <InjMaskCE
         jmp     >L8058
 
 L7FFA:
@@ -1035,8 +1047,8 @@ L8004:
 L8005:
         staa    <Counter_FuelEngRunning
 L8007:
-        brclr   <L0075,#$20,L8001
-        brset   <L0074,#$80,L8020
+        brclr   <SyncFlags75,#$20,L8001
+        brset   <SyncFlags74,#$80,L8020
         brset   <L0039,#$04,L8020
         ldaa    <L0039
         anda    #$07
@@ -1072,9 +1084,9 @@ L803F:
         ldaa    >SwitchPortAccessReg1
         bita    #$10
         beq     L8058
-        bset    <L0074,#$04
+        bset    <SyncFlags74,#$04
         ldaa    #$04
-        staa    >L0410
+        staa    >IODev_InjectorCommand
 L8058:
         rts
 
@@ -1341,7 +1353,7 @@ BYTE8230:
 ; CrankInterrupt_HandleCamSensorRisingEdgeB  ($8275)
 ;---------------------------------------------------------------------------------------------------
 CrankInterrupt_HandleCamSensorRisingEdgeB:
-        bset    <L0075,#$08
+        bset    <SyncFlags75,#$08
         ldd     <LastDistributorFallingEdgeTime
         subd    <L0063
         cpd     #$13F8
@@ -1369,7 +1381,7 @@ L8296:
         addd    <LastDistributorFallingEdgeTime
         subd    #$000A
         std     <Temp5
-        brset   <L0074,#$01,L832A
+        brset   <SyncFlags74,#$01,L832A
         ldab    >DistFETimeModified_A
         clra
         asld
@@ -1495,12 +1507,12 @@ L839E:
         bset    $0B,x,#$20
 L83A1:
         ldx     #$826D
-        ldab    <L0074
+        ldab    <SyncFlags74
         andb    #$03
         abx
-        ldaa    <L00CD
+        ldaa    <InjMaskCD
         anda    $00,x
-        staa    <L00CD
+        staa    <InjMaskCD
         ldab    <TimerOverflowsBetweenCamPulses
         bne     L83DE
         ldab    <DistributorFallingEdgePulsewidth_HB
@@ -1535,8 +1547,8 @@ L83E1:
 ; CrankInterrupt_CalculateFuel  ($83E4)
 ;---------------------------------------------------------------------------------------------------
 CrankInterrupt_CalculateFuel:
-        bclr    <L0075,#$08
-        brset   <L0074,#$03,L83ED
+        bclr    <SyncFlags75,#$08
+        brset   <SyncFlags74,#$03,L83ED
         bra     L840E
 
 L83ED:
@@ -1558,7 +1570,7 @@ L840E:
         ldaa    #$10
         staa    $30,x
         brclr   <BitFlasg71,#$02,L8428
-        brset   <L0074,#$01,L8422
+        brset   <SyncFlags74,#$01,L8422
         bclr    $20,x,#$01
         bset    $0B,x,#$08
         bra     L8428
@@ -1706,7 +1718,7 @@ L8538:
 
 L853A:
         std     <DistributorFallingEdgePulsewidth_HB
-        brset   <L0074,#$01,L8549
+        brset   <SyncFlags74,#$01,L8549
         ldd     >L0131
         ldy     >L0133
         bra     L8550
@@ -1732,7 +1744,7 @@ L8564:
         pulx
         std     <EngineRpm_HB
 L8567:
-        ldab    <L0074
+        ldab    <SyncFlags74
         andb    #$03
         bne     L85A2
         ldaa    >L0456
@@ -2116,7 +2128,7 @@ L8813:
 L8827:
         staa    >L01A1
 L882A:
-        brclr   <L0074,#$01,L8836
+        brclr   <SyncFlags74,#$01,L8836
         ldaa    >L0475
         beq     L8838
         dec     >L0475
@@ -2173,7 +2185,7 @@ L888E:
         ldaa    >LCBDB
         staa    >L0456
 L8898:
-        ldab    <L0074
+        ldab    <SyncFlags74
         andb    #$03
         ldx     #$8271
         abx
@@ -2190,7 +2202,7 @@ L88B2:
         inc     >AdaptiveCellUpdateTimer_IncrementedEveryCamRisingEdge
         inc     >Timer_O2ToggleDuration
         ldy     #$0400
-        bclr    <L0075,#$10
+        bclr    <SyncFlags75,#$10
         ldaa    #$82
         brset   <BitFlasg71,#$02,L88CD
         ldaa    #$C2
@@ -2214,9 +2226,9 @@ L88E5:
         ldaa    >PORTA
         bita    #$28
         bne     L8929
-        bset    <L0075,#$10
+        bset    <SyncFlags75,#$10
         brset   $10,y,#$02,L8929
-        ldab    <L0074
+        ldab    <SyncFlags74
         andb    #$01
         brset   <BitFlasg71,#$02,L891A
         ldx     #$018F
@@ -2249,7 +2261,7 @@ CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT:
         bset    <L005B,#$01
 L8929:
         ldaa    #$02
-        staa    >L0410
+        staa    >IODev_InjectorCommand
         brset   <IPL1,#$04,L897E
         ldaa    <MapValue
         cmpa    >KNKMAP_MinimumMAPforKnockRetard     ; KNKMAP (MinimumMAPforKnockRetard)
@@ -2584,6 +2596,18 @@ TransitionFromStartToRunComplete:
 
 ;---------------------------------------------------------------------------------------------------
 ; IncludeInjectorLatency  ($8B4D)
+;
+; Final injector pulse width: fuel-pressure factor, injector latency, per-cylinder masks, hand-off
+; to the injector driver. [reviewed - partially]
+;
+; The injectors are not timed by the HC11 output compares. The final pulse width (in microseconds,
+; latency added as InjectorLatencyPW x 4) is written as a 16-bit value into the registers of the
+; external I/O device - $0424 (cylinder 1), $0428 (cylinder 2), $042C (cylinder 3), $0430
+; (cylinder 4) - for the cylinders selected in InjCylinderMask (bit 0 = cyl 4, bit 1 = cyl 2, bit
+; 2 = cyl 1, bit 3 = cyl 3, i.e. the 1-3-4-2 firing order). If the pulse is longer than $7D and
+; the device status bit $10 in $0400 is set, $04 is written to IODev_InjectorCommand ($0410). The
+; device then produces the injector pulses itself. The AIS-related enrichment/enleanment pulse is
+; handled here too.
 ;---------------------------------------------------------------------------------------------------
 IncludeInjectorLatency:
         xgdy
@@ -2609,7 +2633,7 @@ L8B79:
         ldab    #$08
         stab    <LastDistributorFallingEdgeTime
         ldx     #$822D
-        ldab    >$0449
+        ldab    >CrankEventCounter
         abx
         ldab    #$10
 L8B88:
@@ -2626,30 +2650,30 @@ L8B8E:
         asrb
         asrb
         asrb
-        orab    <L00CD
+        orab    <InjMaskCD
         tba
         comb
         beq     L8C19
-        anda    <L00CE
-        staa    <L00CE
-        stab    <L00FD
-        orab    <L00CD
-        stab    <L00CD
+        anda    <InjMaskCE
+        staa    <InjMaskCE
+        stab    <InjCylinderMask
+        orab    <InjMaskCD
+        stab    <InjMaskCD
         ldd     <InjectorPulsewidth_HB
         bra     L8BD6
 
 L8BAE:
         brset   <BitFlasg71,#$80,L8C19
         ldx     #BYTE8229
-        ldab    <L0074
+        ldab    <SyncFlags74
         andb    #$03
         abx
         ldab    $00,x
-        bitb    <L00CE
+        bitb    <InjMaskCE
         bne     L8C19
-        bitb    <L00CD
+        bitb    <InjMaskCD
         bne     L8C19
-        stab    <L00FD
+        stab    <InjCylinderMask
         ldaa    <EngineRpm_HB
         ldx     #TABLEbd9b                           ; RETSPD: Retard from Speed.
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -2680,7 +2704,7 @@ L8BF6:
         deca
         staa    <Counter_FuelEngRunning
         clrb
-        ldaa    <L00FD
+        ldaa    <InjCylinderMask
 L8C05:
         incb
         lsra
@@ -2688,7 +2712,7 @@ L8C05:
         beq     L8C19
         jsr     >L8D0A
         andb    $00,x
-        stab    <L00FD
+        stab    <InjCylinderMask
         ldaa    <Counter_FuelEngRunning
         bra     L8BF6
 
@@ -2703,7 +2727,7 @@ L8C1C:
         suba    #$10
         staa    <Counter_FuelEngRunning
         clrb
-        ldaa    <L00FD
+        ldaa    <InjCylinderMask
 L8C28:
         incb
         lsra
@@ -2720,14 +2744,14 @@ L8C28:
         ldd     <LastDistributorFallingEdgeTime
         jsr     >L8D0A
         andb    $01,x
-        stab    <L00FD
+        stab    <InjCylinderMask
         deca
         beq     L8C87
         cmpa    #$03
         beq     L8C87
         brclr   <Counter_FuelEngRunning,#$0F,L8C81
         dec     >Counter_FuelEngRunning
-        ldab    <L00FD
+        ldab    <InjCylinderMask
         bra     L8C79
 
 L8C59:
@@ -2749,7 +2773,7 @@ L8C59:
         jsr     >L8D0A
 L8C79:
         andb    $02,x
-        stab    <L00FD
+        stab    <InjCylinderMask
         bra     L8C87
 
 L8C7F:
@@ -2761,7 +2785,7 @@ L8C83:
 L8C85:
         staa    <Counter_FuelEngRunning
 L8C87:
-        brclr   <L0075,#$20,L8C19
+        brclr   <SyncFlags75,#$20,L8C19
         brset   <L0039,#$04,L8CBE
         ldaa    >L0447
         beq     L8C9F
@@ -2776,17 +2800,17 @@ L8CA3:
         jmp     >L8D03
 
 L8CA6:
-        bset    <L00FD,#$0F
+        bset    <InjCylinderMask,#$0F
         inc     >L0039
-        bclr    <L00CD,#$0F
+        bclr    <InjMaskCD,#$0F
         ldaa    >L0447
         bita    #$0F
         bne     L8CBB
-        bclr    <L00CE,#$0F
+        bclr    <InjMaskCE,#$0F
         bra     L8CBE
 
 L8CBB:
-        bset    <L00CE,#$0F
+        bset    <InjMaskCE,#$0F
 L8CBE:
         ldd     <Temp5
         ldab    <InjectorLatencyPW
@@ -2798,27 +2822,27 @@ L8CBE:
         ldd     #$FFFF
 L8CCC:
         std     <InjectorPulsewidth_HB
-        brclr   <L00FD,#$01,L8CD5
+        brclr   <InjCylinderMask,#$01,L8CD5
         std     >InjectorPulsewidth_HB_Cyl4
 L8CD5:
-        brclr   <L00FD,#$02,L8CDC
+        brclr   <InjCylinderMask,#$02,L8CDC
         std     >InjectorPulsewidth_HB_Cyl2
 L8CDC:
-        brclr   <L00FD,#$04,L8CE3
+        brclr   <InjCylinderMask,#$04,L8CE3
         std     >InjectorPulsewidth_HB_Cyl1
 L8CE3:
-        brclr   <L00FD,#$08,L8CEA
+        brclr   <InjCylinderMask,#$08,L8CEA
         std     >InjectorPulsewidth_HB_Cyl3
 L8CEA:
-        brclr   <L00FD,#$0F,L8D03
+        brclr   <InjCylinderMask,#$0F,L8D03
         cpd     #$007D
         bls     L8D03
         ldaa    >SwitchPortAccessReg1
         bita    #$10
         beq     L8D03
-        bset    <L0074,#$04
+        bset    <SyncFlags74,#$04
         ldaa    #$04
-        staa    >L0410
+        staa    >IODev_InjectorCommand
 L8D03:
         rts
 
@@ -2845,7 +2869,7 @@ L8D0A:
         incb
 L8D1B:
         abx
-        ldab    <L00FD
+        ldab    <InjCylinderMask
         rts
 
 

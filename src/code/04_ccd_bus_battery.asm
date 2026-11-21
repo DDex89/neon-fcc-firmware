@@ -28,7 +28,7 @@ L179D:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        stab    <L00FD
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >$0166
@@ -44,8 +44,8 @@ L17C3:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >CCDVar1
@@ -60,8 +60,8 @@ L17E6:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >CCDVar2
@@ -76,12 +76,12 @@ L1809:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >CCDVar3
-        ldab    <L00FD
+        ldab    <InjCylinderMask
         comb
 L1821:
         brclr   $00,y,#$08,L182C
@@ -154,7 +154,7 @@ L1894:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        stab    <L00FD
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >$0166
@@ -170,8 +170,8 @@ L18BA:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >L015D
@@ -186,12 +186,12 @@ L18DD:
         stab    $2A,x
         bset    $02,y,#$08
         bclr    $02,y,#$08
-        addb    <L00FD
-        stab    <L00FD
+        addb    <InjCylinderMask
+        stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
         stab    >$015E
-        ldab    <L00FD
+        ldab    <InjCylinderMask
         comb
 L18F5:
         brclr   $00,y,#$08,L1900

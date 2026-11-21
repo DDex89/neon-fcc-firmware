@@ -864,7 +864,7 @@ L5CA3:
 ;---------------------------------------------------------------------------------------------------
 ; CheckForBadMAP  ($5CA4)
 ;
-; Called from: CODE7b7a, TurnAlternatorOff
+; Called from: ScheduleIgnitionCoils, TurnAlternatorOff
 ;---------------------------------------------------------------------------------------------------
 CheckForBadMAP:
         psha
@@ -1204,14 +1204,14 @@ L5E9C:
         ldaa    >SwitchPortAccessReg2
         anda    #$F0
         bne     L5EE3
-        brclr   <L0074,#$04,L5EE3
+        brclr   <SyncFlags74,#$04,L5EE3
         brset   <b59_IPL2,#$10,L5EDA
         ldab    #$04
 L5EB5:
         decb
         bne     L5EB5
         ldab    #$04
-        bitb    >L0410
+        bitb    >IODev_InjectorCommand
         bne     L5EDC
         cli
         ldx     #POINTER5e8d
@@ -1229,8 +1229,8 @@ L5EDA:
         ldab    #$04
 L5EDC:
         cli
-        stab    >L0410
-        bclr    <L0074,#$04
+        stab    >IODev_InjectorCommand
+        bclr    <SyncFlags74,#$04
 L5EE3:
         sei
         ldaa    >SwitchPortAccessReg1
@@ -1355,7 +1355,7 @@ L5FBD:
 ;---------------------------------------------------------------------------------------------------
 ; ResetErrorCodeIfTimerExpired  ($5FC3)
 ;
-; Called from: CODE7b7a, CheckThrottleRoutine_MM, FurtherMAPAndBaroDiagnostics2_SM, UseDefaultChargeTempLimpIn_MM, UseDefaultCoolantTempLimpIn_MM
+; Called from: CheckThrottleRoutine_MM, FurtherMAPAndBaroDiagnostics2_SM, ScheduleIgnitionCoils, UseDefaultChargeTempLimpIn_MM, UseDefaultCoolantTempLimpIn_MM
 ;---------------------------------------------------------------------------------------------------
 ResetErrorCodeIfTimerExpired:
         anda    #$0F

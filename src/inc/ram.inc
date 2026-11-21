@@ -112,8 +112,8 @@ IPL2                                         equ $0070
 BitFlasg71                                   equ $0071
 BitFlags72                                   equ $0072
 BitFlags73                                   equ $0073
-L0074                                        equ $0074
-L0075                                        equ $0075
+SyncFlags74                                  equ $0074
+SyncFlags75                                  equ $0075
 BitFlags76                                   equ $0076
 L0077                                        equ $0077
 TargetIdleSpeedHB                            equ $0078
@@ -193,8 +193,8 @@ KnockRetardSum_AllCyls                       equ $00C9
 L00CA                                        equ $00CA
 KnockSensorThreshold                         equ $00CB
 Timer_O2MiddleDiagnostics                    equ $00CC
-L00CD                                        equ $00CD
-L00CE                                        equ $00CE
+InjMaskCD                                    equ $00CD
+InjMaskCE                                    equ $00CE
 DRBOffsetStored_HB                           equ $00CF
 DRBOffsetStored_LB                           equ $00D0
 ATMOffset                                    equ $00D1
@@ -240,7 +240,7 @@ Temp4                                        equ $00F8
 Temp5                                        equ $00F9
 Temp6                                        equ $00FA
 LastDistributorFallingEdgeTime               equ $00FB
-L00FD                                        equ $00FD
+InjCylinderMask                              equ $00FD
 L00FE                                        equ $00FE
 L00FF                                        equ $00FF
 L0100                                        equ $0100
@@ -457,7 +457,7 @@ SwitchPortAccessReg1                         equ $0400
 SwitchPortAccessReg2                         equ $0401
 L0403                                        equ $0403
 L0409                                        equ $0409
-L0410                                        equ $0410
+IODev_InjectorCommand                        equ $0410
 L0418                                        equ $0418
 InjectorPulsewidth_HB_Cyl1                   equ $0424
 InjectorPulsewidth_HB_Cyl2                   equ $0428
@@ -475,6 +475,7 @@ L0445                                        equ $0445
 L0446                                        equ $0446
 L0447                                        equ $0447
 L0448                                        equ $0448
+CrankEventCounter                            equ $0449
 L044A                                        equ $044A
 MAPTemp44c                                   equ $044C
 L044D                                        equ $044D

@@ -19,7 +19,7 @@ size of the `.bin` dumps.
 |---|---|
 | `$0000-$00FF` | Direct-page RAM: the most used variables (8-bit addressing) |
 | `$0100-$03FF` | RAM: more variables, fault code data, buffers |
-| `$0400-$0437` | External I/O device registers. Written from the table after ResetInterrupt; register $0409 bit 4 is toggled every main-loop pass (heartbeat). The original disassembly calls it "PIA". *(inferred)* |
+| `$0400-$0437` | External I/O device registers (the original disassembly calls it "PIA"). Initialised from the table after ResetInterrupt. It also drives the **injectors**: per-cylinder pulse widths at `$0424/$0428/$042C/$0430`, command register `$0410`, status in `$0400/$0401`. Register `$0409` bit 4 is toggled every main-loop pass (heartbeat). *(inferred)* |
 | `$0438-$04FF` | RAM and the stack (the stack pointer starts at $04FF) *(inferred)* |
 | `$1000-$103F` | 68HC11 internal registers (`src/inc/hc11_regs.inc`) |
 | `$1200-$B4CC` | Program code, part 1 |
@@ -50,21 +50,21 @@ The timer runs at E-clock / 4. With the usual 8 MHz crystal (2 MHz E-clock) one 
 | Vector | Handler | Use |
 |---|---|---|
 | RESET | `ResetInterrupt` | Start-up |
-| PAI (PA7 edge) | `Isr_PAI_CrankSensor` | Engine position sensor edges; the edge polarity is flipped on each interrupt *(inferred: crank sensor)* |
+| PAI (PA7 edge) | `Isr_PAI_CamPhase` | Cam sensor edges (both polarities): cylinder identification from the crank signal level *(inferred)* |
 | PAOV | `Isr_PAOV` | Pulse accumulator overflow count |
-| TIC1 | `Interrupt_CamSensorSignal` | Second position sensor; synchronisation *(Lloyd: cam sensor)* |
+| TIC1 (PA2) | `Isr_TIC1_CrankEvent` | Crank sensor edges: the main engine event; dispatches the per-edge handlers that schedule fuel and spark *(inferred; Lloyd called it the cam sensor)* |
 | TIC2 | `Interrupt_SpeedometerSignal` | Vehicle speed sensor |
-| TIC3 | `Isr_TIC3` | Starts a long period measurement together with TOF |
+| TIC3 (PA0) | `Isr_TIC3` | Other edge of the crank signal (slot width); starts the long period measurement together with TOF *(inferred)* |
 | TOF | `Isr_TOF` | Timer overflow count for long periods |
 | TOC1 | `Isr_TOC1_Periodic` | Periodic interrupt every $03B9 ticks (about 1.9 ms) |
-| TOC3 | `Interrupt_DwellTimerA` | Ignition coil channel A *(from name)* |
+| TOC3 (PA5) | `Interrupt_DwellTimerA` | Ignition coil A driver: dwell start and spark |
 | TOC4 | `Isr_TOC4_KnockSample` | End of the knock window: samples the knock sensor through the A/D |
-| TOC5 | `Interrupt_DwellTimerB` | Ignition coil channel B *(from name)* |
+| TOC5 (PA3) | `Interrupt_DwellTimerB` | Ignition coil B driver: dwell start and spark |
 | TOC2, IRQ, XIRQ, SWI, illegal opcode, COP, clock monitor, SCI, SPI, RTI | `Trap_*` | Not used: these handlers record the cause and restart the controller |
 
 The register names in the original disassembly (inherited from the turbo SMEC) call OC3 and OC4
-injector drivers and OC2 "wastegate". The interrupt code suggests the assignment in the table above.
-How the four injectors are driven is still open; they may go through the external I/O device.
+injector drivers and OC2 "wastegate". On the FCC the coils use OC3/OC5 directly, while the four
+injectors are timed by the external I/O device (see [engine_control.md](engine_control.md#engine-position-and-event-scheduling)).
 
 ## Start-up and recovery
 

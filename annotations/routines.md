@@ -61,8 +61,7 @@ ORs the cause bit into BYTE00 and copies a word from the interrupt stack frame (
 interrupted program counter) to BYTE01/BYTE02, so the fault can be read out later. It then resets the stack and repeats the
 hardware initialisation of ResetInterrupt; because RAM is not cleared on this path, the warm-start
 check keeps adaptive memory and fault codes. (The original disassembly called this routine
-"Interrupt_CrankSensor_Signal"; the crank sensor actually uses the pulse accumulator input, see
-Isr_PAI_CrankSensor.)
+"Interrupt_CrankSensor_Signal"; the crank sensor is handled by Isr_TIC1_CrankEvent.)
 
 ## 1219 Isr_TOC1_Periodic
 Output compare 1 interrupt: periodic tick every $03B9 timer counts (about 1.9 ms). [reviewed]
@@ -70,12 +69,15 @@ Output compare 1 interrupt: periodic tick every $03B9 timer counts (about 1.9 ms
 Re-arms TOC1, clears its flag and runs jobs that need a faster rate than the 10.75 ms main loop,
 starting with the alternator field duty-cycle timer (Timer_AlternatorDutyCycle).
 
-## 78EC Isr_PAI_CrankSensor
-Pulse accumulator input (PA7) edge interrupt: engine position sensor edge. [reviewed - partially]
+## 78EC Isr_PAI_CamPhase
+Pulse accumulator input (PA7) edge interrupt: cam sensor edge, used for cylinder identification. [reviewed - partially]
 
-Reads PACTL to find which edge was armed, compares it with the current pin state on PORTA, flips the
-edge selection and dispatches through CrankPickupIntrAddressTable. The crank/cam synchronisation and
-the per-cylinder fuel and spark scheduling (CrankInterrupt_* routines) hang off this interrupt.
+Each interrupt flips the armed edge (PACTL PEDGE) so both edges of the cam signal are seen. On the
+edge it reads the level of the crank signal on PA2 (the TIC1 pin): that level tells which half of the
+engine cycle the cam edge belongs to, and the routine sets the phase index CrankEventCounter ($0449,
+= $07 or $0F) and the synchronisation flags SyncFlags74/SyncFlags75. Roles inferred from the code: the
+original disassembly called this the crank sensor and TIC1 the cam sensor, but the event dispatching
+is done by TIC1 and the phase decision here.
 
 ## 7956 Isr_PAOV
 Pulse accumulator overflow interrupt: counts overflows in $047B. [reviewed]
@@ -90,12 +92,17 @@ one 131 ms timer cycle (needed during cranking).
 ## 797D Isr_TOF
 Timer overflow interrupt: increments the overflow counter $0478 used with input capture 3. [reviewed]
 
-## 798E Interrupt_CamSensorSignal
-Input capture 1 interrupt (Lloyd: cam sensor). [reviewed - partially]
+## 798E Isr_TIC1_CrankEvent
+Input capture 1 (PA2) interrupt: crank sensor edge - the main engine position event. [reviewed - partially]
 
-Stores the TIC1 time stamp, measures it against the latest TIC3 capture and the number of timer
-overflows between pulses, and uses that to recognise the reference pulse and set the engine
-synchronisation flags (L0074/L0075, BitFlags67). The sync logic decides which cylinder is next.
+Time-stamps the edge (TIC1) and measures it against the last input capture 3 time and the number of
+timer overflows since the previous pulse; IC1 and IC3 appear to capture the two edges of the same
+crank signal, which gives the slot width used to recognise the reference slots. When the engine is
+synchronised (SyncFlags75 bit 5 or 6, depending on the phase bit in SyncFlags74 bit 7) it increments
+CrankEventCounter and calls one of four handlers from CrankPickupIntrAddressTable, selected by the
+low two bits of SyncFlags75: CrankInterrupt_FallingEdge, CrankInterrupt_HandleCamSensorRisingEdgeA,
+CrankInterrupt_HandleCamSensorRisingEdgeB and CrankInterrupt_CalculateFuel. Fuel and spark for the
+next cylinder are scheduled from these handlers.
 
 ## AE1D Isr_TOC4_KnockSample
 Output compare 4 interrupt: samples the knock sensor at the end of the knock window. [reviewed - partially]
@@ -104,12 +111,14 @@ Starts an A/D conversion on channel 3, waits a few cycles and stores ADR1 in Kno
 when knock sensing is disabled by BitFlasg71 bit 7). The value feeds CalculateKnockRetard_MM.
 
 ## AC21 Interrupt_DwellTimerA
-Output compare 3 interrupt: ignition coil channel A dwell start / spark timing. [from name]
+Output compare 3 (PA5) interrupt: ignition coil channel A. [reviewed - partially]
 
-The Neon 2.0 uses two ignition coils in wasted-spark mode; OC3 and OC5 time the two coil drivers.
+The Neon 2.0 uses two ignition coils in wasted-spark mode. OC3 and OC5 drive the two coil drivers
+directly: the pin action in TCTL1 switches between "start dwell" and "fire", and the compare value
+sets the time. The events are armed from ScheduleIgnitionCoils in the crank event handlers.
 
 ## AC6F Interrupt_DwellTimerB
-Output compare 5 interrupt: ignition coil channel B dwell start / spark timing. [from name]
+Output compare 5 (PA3) interrupt: ignition coil channel B (see Interrupt_DwellTimerA). [reviewed - partially]
 
 ## AFFA Interrupt_SpeedometerSignal
 Input capture 2 interrupt: vehicle speed sensor pulse; measures the period between pulses. [from name]
@@ -155,6 +164,20 @@ Sub-loop G of the round-robin scheduler. [from name]
 
 ## 9439 SubLoopH
 Sub-loop H of the round-robin scheduler. [from name]
+
+## 7B7A ScheduleIgnitionCoils
+Arms the coil timers: writes TOC3/TOC5, sets the TCTL1 pin actions, enables OC3I/OC5I in TMSK1 and uses CFORC to force a pin state. [reviewed - partially]
+
+## 8B4D IncludeInjectorLatency
+Final injector pulse width: fuel-pressure factor, injector latency, per-cylinder masks, hand-off to the injector driver. [reviewed - partially]
+
+The injectors are not timed by the HC11 output compares. The final pulse width (in microseconds,
+latency added as InjectorLatencyPW x 4) is written as a 16-bit value into the registers of the
+external I/O device - $0424 (cylinder 1), $0428 (cylinder 2), $042C (cylinder 3), $0430
+(cylinder 4) - for the cylinders selected in InjCylinderMask (bit 0 = cyl 4, bit 1 = cyl 2,
+bit 2 = cyl 1, bit 3 = cyl 3, i.e. the 1-3-4-2 firing order). If the pulse is longer than $7D and the
+device status bit $10 in $0400 is set, $04 is written to IODev_InjectorCommand ($0410). The device
+then produces the injector pulses itself. The AIS-related enrichment/enleanment pulse is handled here too.
 
 ## 8A95 CalculateInjectorPulsewidthForEngineRunning
 Running fuel: base injector pulse width from MAP and RPM, then all multiplicative corrections. [reviewed]
