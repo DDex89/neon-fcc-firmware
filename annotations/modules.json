@@ -1,0 +1,192 @@
+[
+ {
+  "start": "1200",
+  "file": "code/01_isr_toc1.asm",
+  "title": "Timer output compare 1 interrupt and boot data"
+ },
+ {
+  "start": "131E",
+  "file": "code/02_charging_drb_ram.asm",
+  "title": "Alternator field control and DRB RAM read-out"
+ },
+ {
+  "start": "1563",
+  "file": "code/03_ais_driver.asm",
+  "title": "Idle air (AIS) stepper motor driver"
+ },
+ {
+  "start": "1788",
+  "file": "code/04_ccd_bus_battery.asm",
+  "title": "CCD bus low-level I/O and battery voltage monitor"
+ },
+ {
+  "start": "1A1F",
+  "file": "code/05_asd_relay.asm",
+  "title": "Auto shutdown (ASD) relay control"
+ },
+ {
+  "start": "1ABA",
+  "file": "code/06_iso_diagnostics.asm",
+  "title": "ISO / diagnostic communication handlers"
+ },
+ {
+  "start": "2364",
+  "file": "code/07_air_conditioning.asm",
+  "title": "A/C clutch control and coolant/speed status helpers"
+ },
+ {
+  "start": "29EB",
+  "file": "code/08_radiator_fan.asm",
+  "title": "Radiator fan control and check-engine lamp helpers"
+ },
+ {
+  "start": "2F58",
+  "file": "code/09_misc_2f58.asm",
+  "title": "Unused code and downstream O2 counter"
+ },
+ {
+  "start": "32E1",
+  "file": "code/10_idle_speed.asm",
+  "title": "Target idle speed and AIS position calculation"
+ },
+ {
+  "start": "449F",
+  "file": "code/11_ccd_data.asm",
+  "title": "CCD bus data stream (cluster/body messages)"
+ },
+ {
+  "start": "48E7",
+  "file": "code/12_o2_closed_loop.asm",
+  "title": "O2 feedback, closed loop ramps and adaptive memory"
+ },
+ {
+  "start": "4E7C",
+  "file": "code/13_drb_sci_diag.asm",
+  "title": "DRB/SCI diagnostic protocol and actuator tests"
+ },
+ {
+  "start": "56E7",
+  "file": "code/14_rom_checksum.asm",
+  "title": "ROM checksum self test"
+ },
+ {
+  "start": "5741",
+  "file": "code/15_fault_monitors.asm",
+  "title": "Fault code processing and sensor/actuator monitors"
+ },
+ {
+  "start": "676B",
+  "file": "code/16_misc_services.asm",
+  "title": "Misc services: serial, EMR, EGR monitor, code download"
+ },
+ {
+  "start": "6D87",
+  "file": "code/17_transient_start_fuel.asm",
+  "title": "Transient fuel (accel/decel) and cranking fuel"
+ },
+ {
+  "start": "704C",
+  "file": "code/18_fuel_cutoff_limiters.asm",
+  "title": "Fuel cut-off: rev, speed, overboost and limp-mode limiters"
+ },
+ {
+  "start": "72F8",
+  "file": "code/19_fuel_modifiers.asm",
+  "title": "Part-throttle enrichment and sum of fuel modifiers"
+ },
+ {
+  "start": "78DC",
+  "file": "code/20_crank_cam_fuel.asm",
+  "title": "Crank/cam interrupts, injection timing and pulse width"
+ },
+ {
+  "start": "8D7F",
+  "file": "code/21_isr_misc.asm",
+  "title": "Minor interrupt handlers"
+ },
+ {
+  "start": "8DEB",
+  "file": "code/22_reset_init.asm",
+  "title": "Reset, hardware initialisation and MAP conversion"
+ },
+ {
+  "start": "9280",
+  "file": "code/23_main_loop.asm",
+  "title": "Main program loop and sub-loop scheduler"
+ },
+ {
+  "start": "9BAB",
+  "file": "code/24_emissions.asm",
+  "title": "Downstream O2 monitor, canister purge, cylinder trims"
+ },
+ {
+  "start": "A677",
+  "file": "code/25_torque_converter.asm",
+  "title": "Torque converter lock-up (PTU)"
+ },
+ {
+  "start": "A74B",
+  "file": "code/26_spark_advance.asm",
+  "title": "Spark advance calculation and retard functions"
+ },
+ {
+  "start": "AC21",
+  "file": "code/27_dwell_knock.asm",
+  "title": "Dwell/ignition interrupts and knock retard"
+ },
+ {
+  "start": "AFFA",
+  "file": "code/28_speedometer_cruise.asm",
+  "title": "Vehicle speed input and cruise servo"
+ },
+ {
+  "start": "B1C7",
+  "file": "code/29_egr.asm",
+  "title": "EGR solenoid control"
+ },
+ {
+  "start": "B4A8",
+  "file": "code/30_math_rpm.asm",
+  "title": "Interpolation helpers and RPM rescaling"
+ },
+ {
+  "start": "B600",
+  "file": "@cal",
+  "title": "Calibration (per variant)"
+ },
+ {
+  "start": "E229",
+  "file": "code/31_sensor_inputs.asm",
+  "title": "A/D conversion and sensor filtering"
+ },
+ {
+  "start": "E4F7",
+  "file": "code/32_throttle_baro.asm",
+  "title": "Throttle position, AIS helpers and barometric read"
+ },
+ {
+  "start": "E8DF",
+  "file": "code/33_map_diag_utils.asm",
+  "title": "MAP conversion, non-DRB diagnostics, bit utilities"
+ },
+ {
+  "start": "EFFE",
+  "file": "code/34_cruise_control.asm",
+  "title": "Cruise control"
+ },
+ {
+  "start": "F88C",
+  "file": "code/35_utilities.asm",
+  "title": "Loop counters, scaling math, COP watchdog"
+ },
+ {
+  "start": "FC69",
+  "file": "code/36_variable_rev_limit.asm",
+  "title": "Variable rev limiter and copyright string"
+ },
+ {
+  "start": "FFD6",
+  "file": "code/37_vectors.asm",
+  "title": "Interrupt vector table"
+ }
+]

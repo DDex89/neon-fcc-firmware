@@ -1,0 +1,22 @@
+NOTICE
+
+Firmware content
+  The program code and calibration data represented in src/ are derived from engine controller
+  firmware (c) 1994 Chrysler Corporation, including a Mopar Performance calibration. No ownership
+  of this material is claimed. It is provided for non-commercial, educational and interoperability
+  purposes for owners of these vehicles. ROM images are not distributed in this repository.
+
+Original disassembly
+  The disassembly this project is based on, including most routine, variable and table names, was
+  made by Robert Lloyd (shelgame, BoostButton LLC), "Custom disassembler, Copyright (c) 2012 by
+  Robert Lloyd, www.boostbutton.com", and was published for free in the Turbonator release folder.
+  Calibration table definitions come from the MP Tune definition files by Robert Lloyd and
+  Morris Terveen. All credit for that work belongs to them.
+
+Project contributions
+  The restructured source layout, the code/data analysis, the build and generation tools, added
+  analysis, comments and documentation are released under the MIT license (see LICENSE).
+
+Removal requests
+  If you hold rights to any of this material and object to its publication, please open an issue
+  and it will be removed.

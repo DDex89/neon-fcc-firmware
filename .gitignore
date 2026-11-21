@@ -1,0 +1,8 @@
+# ROM dumps are not distributed
+roms/*.bin
+roms/*.BIN
+# build output
+build/
+tools/bin/
+__pycache__/
+*.pyc

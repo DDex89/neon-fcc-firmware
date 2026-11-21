@@ -1,0 +1,22 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build vasm (6800 / Motorola syntax)
+        run: |
+          git clone https://github.com/StarWolf3000/vasm-mirror.git vasm
+          cd vasm
+          git checkout a13e7e728a3dd5a9ba468bf479119e0bc23e70fd
+          make CPU=6800 SYNTAX=mot -j2
+          echo "VASM=$PWD/vasm6800_mot" >> "$GITHUB_ENV"
+
+      - name: Assemble and verify byte-identical images
+        run: python3 tools/build.py
