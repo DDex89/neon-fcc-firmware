@@ -25,8 +25,21 @@ checked against the code.
   `$0428` cylinder 2, `$042C` cylinder 3, `$0430` cylinder 4. `InjCylinderMask` selects the
   cylinders (bit 0 = cyl 4, bit 1 = cyl 2, bit 2 = cyl 1, bit 3 = cyl 3, firing order 1-3-4-2), and
   writing `$04` to `$0410` hands the pulse over to the device.
-- **MAP** is sampled in step with the crank events (`StoreMAPVoltsAndCalcMAPValue`, `GET_AVERAGE_MAP_READING`).
-- **Knock** is sampled at the end of a window timed by OC4 (`Isr_TOC4_KnockSample`).
+- **The four crank event handlers** run in a fixed sequence (event phase = low two bits of `SyncFlags75`):
+
+  | Phase | Handler | Main jobs |
+  |---|---|---|
+  | 0 | `CrankInterrupt_FallingEdge` | period and slot-width bookkeeping, rev limiter, MAP plausibility checks, idle spark scatter, injector hand-off |
+  | 1 | `CrankInterrupt_HandleCamSensorRisingEdgeA` | injector scheduling for the next cylinders |
+  | 2 | `CrankInterrupt_HandleCamSensorRisingEdgeB` | injector scheduling, adaptive retard index, running-time counters |
+  | 3 | `CrankInterrupt_CalculateFuel` | RPM, MAP sampling, knock window, coil forcing, running fuel, per-cylinder knock retard |
+
+  (The "CamSensorRisingEdge" names are historical; all four run from the crank interrupt.)
+- **MAP** is sampled at a fixed crank angle: phase 3 starts an A/D scan of channels 0-3 (`ADCTL = $10`).
+- **Knock window:** phase 3 sets `TOC4 = edge time + 2 x tooth time x factor / 256`, a fixed fraction of
+  the tooth period after the edge, and `Isr_TOC4_KnockSample` reads the knock sensor when it expires.
+- **Still open:** the exact slot pattern of the crank wheel and which physical edge is phase 0. That
+  needs a scope capture of the crank and cam signals on a running engine.
 
 ## Input coordinates
 
