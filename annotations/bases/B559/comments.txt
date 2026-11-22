@@ -1,0 +1,8 @@
+9202  B559 only: start temperature for the purge delay (battery, or ambient when CONFIG2 bit 5 is set)
+920D  Colder than PurgeDelayTempCold: delay = $FFFF
+921A  Colder than PurgeDelayTempWarm: delay = PurgeDelayTime, otherwise no delay
+9CF9  B559 only: purge delay countdown while the delay runs and the car is below MPHREF
+9D11  One count per Counter_MainLoop wrap
+9D1A  Purge already enabled during the delay: skip the purge calculation (purge off)
+B257  B559 only: EGR temperature gate (battery, or ambient when CONFIG2 bit 5 is set)
+B262  EGR on: keep it on down to EgrTempOff; EGR off: enable only above EgrTempOn

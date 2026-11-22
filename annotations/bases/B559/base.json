@@ -1,0 +1,79 @@
+{
+ "name": "B559",
+ "banner": "Chrysler factory 1995 calibrations 4874154-4874165, 5013113",
+ "src": "src_b559",
+ "code_ranges": [
+  [
+   "1200",
+   "B55A"
+  ],
+  [
+   "E229",
+   "FFD6"
+  ]
+ ],
+ "ram_runs": [
+  [
+   "021C",
+   "0220",
+   2
+  ]
+ ],
+ "variants": {
+  "4874154": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed low altitude, manual",
+   "sha256": "8dfb0f1f657c988a196d759ba21fe57384488498e60975c8a3534f99768bcdab",
+   "size": 60928
+  },
+  "4874155": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed high altitude & California, manual",
+   "sha256": "cef4dcdbfe13a2c0d8060377b49336aa6e563f3a56321eb0f5f584ba2f96264f",
+   "size": 60928
+  },
+  "4874156": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed low altitude & Taiwan, automatic",
+   "sha256": "4b0d70d3287f767d330cc3f4e378c79c613b9d2aca2f0d714c78f22911890c6f",
+   "size": 60928
+  },
+  "4874157": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed & California, manual, racing",
+   "sha256": "661456a354c7869238b3fe75ae29b398fcc12363023eafa5cd13ec14dcc2c069",
+   "size": 60928
+  },
+  "4874158": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed high altitude, automatic",
+   "sha256": "a8a35de5e3d962f0adc814ff715e97de83d2e352b65c741b924a6334610c4270",
+   "size": 60928
+  },
+  "4874159": {
+   "description": "Chrysler factory 1995 Neon SOHC California, automatic",
+   "sha256": "863fa2d19f203fcdd1a3f33f8d659c35a5444053e7cdbf388b22fda28b5218f9",
+   "size": 60928
+  },
+  "4874160": {
+   "description": "Chrysler factory 1995 Neon Export & Mexico, manual, Sport",
+   "sha256": "29e8ac65d19c7f3782a0daf0ccecef572a2d1c0d6a16aeb11d6fa97e852de94c",
+   "size": 60928
+  },
+  "4874161": {
+   "description": "Chrysler factory 1995 Neon Export, manual",
+   "sha256": "81cd0016d3367baf028eae411415d488e59c11e8290e1886e60fb7723a7ed700",
+   "size": 60928
+  },
+  "4874162": {
+   "description": "Chrysler factory 1995 Neon DOHC Fed low altitude, manual",
+   "sha256": "a1c6342ae8b192dcd6baccd3e0483cce5c4ca1043da4d05e5f117b4ec89a32c7",
+   "size": 60928
+  },
+  "4874165": {
+   "description": "Chrysler factory 1995 Neon DOHC Fed low altitude, automatic",
+   "sha256": "57c95594e3ae40526ccfe7c736cafa1fc4a30f5ed84ce02a1cc52946b02b9adf",
+   "size": 60928
+  },
+  "5013113": {
+   "description": "Chrysler factory 1995 Neon FJ 2.0 Fed/Canada, manual, flex head",
+   "sha256": "1fa8a490568ae18c3e1954cd97a9472cb4651ba6dd0520470ca782eebc0740d8",
+   "size": 60928
+  }
+ }
+}

@@ -536,6 +536,13 @@ L32A0:
 
 ;---------------------------------------------------------------------------------------------------
 ; DecrementDSO2SensorDiagnosticCounter_MM  ($32B0)
+;
+; Downstream O2 sensor diagnostic counter (rich-signal timing). [reviewed]
+;
+; When BitFlags049E bit 4 is set and the upstream O2 voltage (O2SensorVolts) is at or above LCCEB,
+; counts DiagCounter_DSO2SensorDiagnostics down; at zero it reloads it from DSO2NT and steps
+; DiagCounter_DSO2SensorSigned by LCCE9 (saturating at $80). Not called in B4CC; B559 calls it
+; from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 DecrementDSO2SensorDiagnosticCounter_MM:
         ldaa    >BitFlags049E

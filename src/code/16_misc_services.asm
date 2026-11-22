@@ -248,6 +248,13 @@ Dead_68BD:
 
 ;---------------------------------------------------------------------------------------------------
 ; EmmissionMaintenanceRemider1_MM  ($68BE)
+;
+; Emission maintenance reminder (EMR): keeps a mileage record in the internal EEPROM. [reviewed]
+;
+; Works through the EEPROM words from EEPROM1 up to EEPROM3 (with $5AA5 as a validity mark), finds
+; the newest record, writes the next one through DRBOffsetStored_HB/LB and sets fault code 62 when
+; no valid record is found. It compares the record with $1C9C, $2757 and $3938, probably the
+; reminder points. Not called in B4CC; B559 calls it from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 EmmissionMaintenanceRemider1_MM:
         ldaa    >PPROG

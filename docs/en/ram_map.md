@@ -523,7 +523,7 @@ Naming conventions: a descriptive name means the meaning is known. `Owner_xxxx` 
 | `$0219` | `ObdMapValue` | 2 | 1 | CaptureFreezeFrame, ObdPid0B_Map | TurnAlternatorOff |
 | `$021A` | `CoolantTempVolts` | 2 | 2 | CaptureFreezeFrame, ObdPid05_Coolant | CheckAndFilterCoolantTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
 | `$021B` | `ChargeTempVolts` | 1 | 2 | ObdPid0F_IntakeAirTemp | CheckAndFilterChargeTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
-| `$021C` | `Var_021C` | 0 | 1 |  | DRB_UseRAM2ForSpecialProgramRoutine |
+| `$021C` | `DrbRamBuffer` | 0 | 1 |  | DRB_UseRAM2ForSpecialProgramRoutine |
 | `$021E` | `DrbRamProgramEntry` | 1 | 0 | DRB_UseRAM2ForSpecialProgramRoutine |  |
 
 ## External I/O device registers ($0400-$0437)

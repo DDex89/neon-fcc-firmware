@@ -256,12 +256,13 @@ Fuel is cut for whole engine revolutions:
   temperature and time since start are inside the `EGR21`..`EGR27` windows, and only if
   configuration bit $B811.6 is set.
 - **Canister purge**: duty-cycle routine at $B290 (output bit 5 of `OutputDriverBits`) and
-  `ControlPurgeSolenoid_MM` ($9C6A, `OutputBits2` bit 7).
-- **Downstream O2** sensor monitor (`VerifyOperationOfDownstreamO2Sensor_MM`).
+  `ControlPurgeSolenoid_MM` ($9C6A, `OutputBits2` bit 7). B4CC never calls `ControlPurgeSolenoid_MM`;
+  B559 does (see [code_bases.md](code_bases.md#b559-compared-with-b4cc)).
+- **Downstream O2** sensor monitor (`VerifyOperationOfDownstreamO2Sensor_MM`), called only in B559.
 - **OBD-II monitors (dormant).** The code contains ten OBD-II monitors (O2 heaters, O2 response,
   secondary air, EVAP purge flow, catalyst, EGR flow, fuel system rich / lean, misfire) with their
-  scheduler `ObdMonitorScheduler` ($E9C5), but nothing calls the scheduler in this code base, so none
-  of them runs. See [diagnostics.md](diagnostics.md#obd-ii-monitors).
+  scheduler `ObdMonitorScheduler` ($E9C5), but nothing calls the scheduler in B4CC, so none
+  of them runs there (B559 calls it). See [diagnostics.md](diagnostics.md#obd-ii-monitors).
 
 ## Other outputs *(from names)*
 

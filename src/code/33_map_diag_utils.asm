@@ -119,8 +119,8 @@ ObdMonitorTable:
 ;---------------------------------------------------------------------------------------------------
 ; ObdMonitorScheduler  ($E9C5)
 ;
-; Runs the ten OBD-II monitors from the table at $E939. Not called anywhere in this code base.
-; [reviewed]
+; Runs the ten OBD-II monitors from the table at $E939. Called from MainSubLoop in B559; not
+; called in B4CC. [reviewed]
 ;
 ; Table: 10 records of 14 bytes from $E939 to $E9C4: +0 monitor routine, +2 status byte in RAM
 ; ($010E-$0119), +4 pointer to a scheduling mask ($E931-$E937, tested against Counter_MainLoop),
@@ -128,8 +128,9 @@ ObdMonitorTable:
 ; CalculateSomething; the results go to ObdStatusFlags bits 0-1). A monitor runs when its status
 ; byte has bit 7 set and the mask allows this pass; when it sets bit 6 the scheduler sets bit 1
 ; and calls LEABA. After the loop it runs LED24, LEDAD, LEDD0, LEED3, LEE14 and LEFD1. No JSR, JMP
-; or pointer anywhere in the ROM reaches $E9C5, so in 5269718 and 5007033 the whole monitor set is
-; dormant even though ObdMonitorInit prepares the status bytes.
+; or pointer anywhere in the B4CC ROM reaches $E9C5, so in 5269718 and 5007033 the whole monitor
+; set is dormant even though ObdMonitorInit prepares the status bytes. The factory B559 code calls
+; it on every main-loop pass.
 ;---------------------------------------------------------------------------------------------------
 ObdMonitorScheduler:
         ldy     #ObdMonitorTable

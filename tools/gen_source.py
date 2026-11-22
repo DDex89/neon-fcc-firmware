@@ -94,10 +94,10 @@ def load_json(name, default=None):
         return json.load(f)
 
 
-def load_routines():
+def load_routines(p=None):
     """annotations/routines.md: '## XXXX Name' headers followed by description text."""
     out = {}
-    p = os.path.join(ANN, "routines.md")
+    p = p or os.path.join(ANN, "routines.md")
     if not os.path.exists(p):
         return out
     cur = None
@@ -117,10 +117,10 @@ def load_routines():
     return out
 
 
-def load_inline():
+def load_inline(p=None):
     """annotations/comments.txt: 'XXXX  comment' lines (instruction comments)."""
     out = {}
-    p = os.path.join(ANN, "comments.txt")
+    p = p or os.path.join(ANN, "comments.txt")
     if os.path.exists(p):
         for ln in open(p, encoding="utf-8"):
             m = re.match(r"^([0-9A-Fa-f]{4})\s+(.+?)\s*$", ln)
@@ -135,10 +135,69 @@ def summary(text_lines):
     return (m.group(1) if m else t)[:90]
 
 
+class Base:
+    """Address translation from the reference code base (B4CC) to another code base.
+
+    annotations/bases/<name>/map.json holds runs [lo, hi, delta] of reference ROM addresses;
+    base.json holds the code ranges, RAM runs, variants and output directory. Annotations
+    that only exist in the other code base live in the same folder with the same file names
+    (rom_labels.json, code_seeds.json, routines.md, ...), keyed by that code base's addresses."""
+
+    def __init__(self, name):
+        self.name = name
+        self.dir = os.path.join(ANN, "bases", name)
+        self.cfg = json.load(open(os.path.join(self.dir, "base.json"), encoding="utf-8"))
+        m = json.load(open(os.path.join(self.dir, "map.json"), encoding="utf-8"))["runs"]
+        runs = [(int(a, 16), int(b, 16), d) for a, b, d in m] + [(0xB600, 0xB800, 0), (0xFFD6, 0x10000, 0)]
+        self.runs = sorted(runs)
+        self.los = [r[0] for r in self.runs]
+        self.ram_runs = [(int(a, 16), int(b, 16), d) for a, b, d in self.cfg.get("ram_runs", [])]
+        self.code_ranges = [(int(a, 16), int(b, 16)) for a, b in self.cfg["code_ranges"]]
+
+    def rom(self, a):
+        i = bisect.bisect_right(self.los, a) - 1
+        if i >= 0 and self.runs[i][0] <= a < self.runs[i][1]:
+            return a + self.runs[i][2]
+        return None
+
+    def ram(self, a):
+        for lo, hi, d in self.ram_runs:
+            if lo <= a < hi:
+                return a + d
+        return a
+
+    def addr(self, a):
+        return self.ram(a) if a < 0x1200 else self.rom(a)
+
+    def text(self, s):
+        """Translate $XXXX addresses mentioned in prose."""
+        def f(m):
+            v = int(m.group(1), 16)
+            w = self.addr(v)
+            return "$%04X" % w if w is not None else m.group(0)
+        return re.sub(r"\$([0-9A-F]{4})\b", f, s)
+
+    def extra_json(self, name, default):
+        p = os.path.join(self.dir, name)
+        return json.load(open(p, encoding="utf-8")) if os.path.exists(p) else default
+
+
+def _xlat(d, base, keyfun):
+    out, lost = {}, 0
+    for k, v in d.items():
+        nk = keyfun(k)
+        if nk is None:
+            lost += 1
+            continue
+        out[nk] = v
+    return out, lost
+
+
 class Gen:
-    def __init__(self, code_rom):
+    def __init__(self, code_rom, base=None):
         self.rom = code_rom
-        self.an = Analysis(code_rom, CODE_RANGES)
+        self.base = base
+        self.an = Analysis(code_rom, base.code_ranges if base else CODE_RANGES)
         self.rom_labels = {int(k, 16): v for k, v in load_json("rom_labels.json", {}).items()}
         self.ram = {int(k, 16): v for k, v in load_json("ram_symbols.json", {}).items()}
         self.tables = {int(k, 16): v for k, v in load_json("tables.json", {}).items()}
@@ -146,9 +205,40 @@ class Gen:
         self.pwords = {int(a, 16) for a in load_json("pointer_words.json", [])}
         self.routines = load_routines()
         self.inline = load_inline()
+        self.lost = {}
+        if base:
+            self.translate(base)
         for off, (n, _) in HC11_REGS.items():          # standard register names
             self.ram[0x1000 + off] = n
         self.emitted = set()
+
+    def translate(self, base):
+        """Move every reference-addressed annotation to the other code base, then add its extras."""
+        self.rom_labels, self.lost["labels"] = _xlat(self.rom_labels, base, base.addr)
+        self.tables, self.lost["tables"] = _xlat(self.tables, base, base.rom)
+        self.seeds, self.lost["seeds"] = _xlat(self.seeds, base, base.rom)
+        pw, self.lost["pointer words"] = _xlat({a: 1 for a in self.pwords}, base, base.rom)
+        self.pwords = set(pw)
+        self.inline, self.lost["comments"] = _xlat({a: base.text(c) for a, c in self.inline.items()},
+                                                   base, base.rom)
+        self.ram = {base.ram(a): n for a, n in self.ram.items()}
+        rt, self.lost["routines"] = _xlat(self.routines, base, base.rom)
+        self.routines = {a: {"name": r["name"], "text": [base.text(l) for l in r["text"]]}
+                         for a, r in rt.items()}
+        for k, v in base.extra_json("rom_labels.json", {}).items():
+            self.rom_labels[int(k, 16)] = v
+        for k, v in base.extra_json("ram_symbols.json", {}).items():
+            self.ram[int(k, 16)] = v
+        for k, v in base.extra_json("code_seeds.json", {}).items():
+            self.seeds[int(k, 16)] = v
+        for a in base.extra_json("pointer_words.json", []):
+            self.pwords.add(int(a, 16))
+        for k, v in base.extra_json("tables.json", {}).items():
+            self.tables[int(k, 16)] = v
+        p = os.path.join(base.dir, "routines.md")
+        if os.path.exists(p):
+            self.routines.update(load_routines(p))
+        self.inline.update(load_inline(os.path.join(base.dir, "comments.txt")))
 
     # ------------------------------------------------------------------ analysis
     def analyse(self):
@@ -501,8 +591,12 @@ def write(path, lines):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--roms", default=os.path.join(ROOT, "roms"), help="directory with <partnumber>.bin dumps")
+    ap.add_argument("--base", help="generate another code base through annotations/bases/<name>")
     args = ap.parse_args()
-    variants = load_json("variants.json")
+    base = Base(args.base) if args.base else None
+    variants = base.cfg["variants"] if base else load_json("variants.json")
+    src = os.path.join(ROOT, base.cfg["src"]) if base else SRC
+    code_ranges = base.code_ranges if base else CODE_RANGES
     roms = {}
     for pn in variants:
         p = os.path.join(args.roms, pn + ".bin")
@@ -513,14 +607,18 @@ def main():
     code_pn = next(pn for pn in variants if pn in roms)
     code_rom = roms[code_pn]
     for pn, r in roms.items():
-        for lo, hi in CODE_RANGES + [(0xFFD6, 0x10000), (0x1200, 0xB600)]:
+        for lo, hi in code_ranges + [(0xFFD6, 0x10000), (0x1200, 0xB600)]:
             assert r.data[lo - BASE:hi - BASE] == code_rom.data[lo - BASE:hi - BASE], \
                 "%s: code differs from %s in %04X-%04X" % (pn, code_pn, lo, hi)
-    g = Gen(code_rom)
+    g = Gen(code_rom, base)
     g.analyse()
     mods = load_modules()
+    if base:
+        mods = [(base.rom(a) if fname != "@cal" else a, fname, title) for a, fname, title in mods]
+        assert all(m[0] is not None for m in mods), "a module start does not map to " + base.name
     banner = [
         "; Dodge/Plymouth Neon 1995 FCC engine controller (68HC11) - reconstructed source",
+        ("; Code base: %s (%s)." % (base.name, base.cfg["banner"])) if base else
         "; Code base: B4CC (Chrysler 5269718 / Mopar Performance 5007033).",
         "; Original firmware (c) 1994 Chrysler Corp. Disassembly annotations derived from",
         "; the work of Robert Lloyd (BoostButton). Generated by tools/gen_source.py -",
@@ -536,7 +634,7 @@ def main():
             continue
         body = g.emit_range(code_rom, start, end)
         hdr = banner + [";", "; %s  ($%04X-$%04X)" % (title, start, end - 1), ""]
-        write(os.path.join(SRC, fname), hdr + ["        org     $%04X" % start, ""] + body)
+        write(os.path.join(src, fname), hdr + ["        org     $%04X" % start, ""] + body)
         includes.append(fname)
     # calibration per variant
     cal_start = next(m[0] for m in mods if m[1] == "@cal")
@@ -552,24 +650,24 @@ def main():
         hdr = banner + [";", "; Calibration for %s: %s" % (pn, variants[pn]["description"]),
                         "; $B600-$B7FF is the window of the HC11 internal EEPROM: the CPU does not see these",
                         "; dump bytes at run time and the ROM checksum skips them.", ""]
-        write(os.path.join(SRC, "cal", pn + ".asm"), hdr + ["        org     $%04X" % cal_start, ""] + body)
+        write(os.path.join(src, "cal", pn + ".asm"), hdr + ["        org     $%04X" % cal_start, ""] + body)
     g.emitted = cal_emitted
     # include files
     inc = banner + ["", "; 68HC11 register block (INIT maps it to $1000)", "REGS    equ     $1000", ""]
     for off, (n, d) in sorted(HC11_REGS.items()):
         inc.append("%-8s equ     $%04X        ; %s" % (n, 0x1000 + off, d))
-    write(os.path.join(SRC, "inc", "hc11_regs.inc"), inc)
+    write(os.path.join(src, "inc", "hc11_regs.inc"), inc)
     ram = banner + ["", "; RAM variables. Names come from the original disassembly; many are still tentative.", ""]
     for v, n in sorted(g.ram.items()):
         if 0x1000 <= v < 0x1040:
             continue
         ram.append("%-44s equ $%04X" % (n, v))
-    write(os.path.join(SRC, "inc", "ram.inc"), ram)
+    write(os.path.join(src, "inc", "ram.inc"), ram)
     orph = banner + ["", "; Labels that point inside another instruction or data object.", ""]
     for a, n in sorted(g.names.items()):
         if a not in g.emitted:
             orph.append("%-44s equ $%04X" % (n, a))
-    write(os.path.join(SRC, "inc", "inner_labels.inc"), orph)
+    write(os.path.join(src, "inc", "inner_labels.inc"), orph)
     # top-level files
     for pn in roms:
         top = banner + ["", "; Top-level file for %s. Build: python tools/build.py %s" % (pn, pn), "",
@@ -577,10 +675,13 @@ def main():
                         '        include "inc/inner_labels.inc"', ""]
         for f in includes:
             top.append('        include "%s"' % ("cal/%s.asm" % pn if f == "@cal" else f))
-        write(os.path.join(SRC, "fcc_%s.asm" % pn), top)
+        write(os.path.join(src, "fcc_%s.asm" % pn), top)
     st = g.an
     print("modules %d, instructions %d (speculative %d), labels %d, routines described %d, variants %s"
           % (len(mods), len(st.insn), len(st.speculative), len(g.names), len(g.routines), ",".join(roms)))
+    if base:
+        print("not translated (no counterpart in %s):" % base.name,
+              ", ".join("%s %d" % (k, v) for k, v in g.lost.items()))
 
 
 if __name__ == "__main__":

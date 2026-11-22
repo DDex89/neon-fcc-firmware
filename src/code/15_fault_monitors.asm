@@ -1046,6 +1046,12 @@ L5D86:
 
 ;---------------------------------------------------------------------------------------------------
 ; CheckIfCheckEngineLightShouldBeOn_A_MM  ($5D87)
+;
+; Charge-warning lamp control when CONFIG2 bit 5 is clear (OutputBits2 bit 4). [reviewed]
+;
+; Despite the original name this drives the charge lamp, not the MIL. The lamp output follows
+; KeyOnOrEngineRunningTime, BitFlags71 bit 7 and the charging fault flags (IPL2 bit 7,
+; SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559 calls it from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 CheckIfCheckEngineLightShouldBeOn_A_MM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
@@ -1080,6 +1086,13 @@ L5DB6:
 
 ;---------------------------------------------------------------------------------------------------
 ; CheckIfCheckEngineLightShouldBeOn_B_MM  ($5DB7)
+;
+; Charge-warning lamp control when CONFIG2 bit 5 is set (OutputBits2 bit 4). [reviewed]
+;
+; Same job as the A routine for the other configuration: a start-up phase (also switching
+; LinkReg48Data bit 4) that ends when KeyOnOrEngineRunningTime or engine speed passes a fixed
+; limit (BitFlags6D bit 1 marks the end), then the lamp follows the charging fault flags (IPL2 bit
+; 7, SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559 calls it from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 CheckIfCheckEngineLightShouldBeOn_B_MM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
@@ -1276,6 +1289,13 @@ L5F01:
 
 ;---------------------------------------------------------------------------------------------------
 ; VerifyOperationOfAmbientTempSensor_MM  ($5F02)
+;
+; Plausibility check of the ambient / battery temperature sensor (fault code 23). [reviewed]
+;
+; Runs when BitFlags71 bit 7 is set and none of the related IPL fault bits is set. When
+; AmbientAirTemp is below $58 and close to CoolantTemp (within LE019) but differs from ChargeTemp
+; by more than LE019, it reports ErrBytes_CODE23_b. Not called in B4CC; B559 calls it from
+; MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfAmbientTempSensor_MM:
         brclr   <BitFlags71,#$80,L5F3A
@@ -1669,6 +1689,14 @@ CalculateMaxRPMxMaxMAPFraction_MM:
 
 ;---------------------------------------------------------------------------------------------------
 ; CheckErrorMaskingAndSetCodes_MM  ($6180)
+;
+; Filters cruise distance pulse width and TPS (FaultMask_01D2/01D6) and runs a speed-related
+; check. [from name]
+;
+; The first part (read so far) applies first-order filters with LCDB5/LCDB6, then, for the
+; configuration with CONFIG bit 5 set, skips the check while faults 11, 15, 24, 37 or 54 are
+; maturing. The rest involves vehicle speed, battery voltage and the TCC output. Not called in
+; B4CC; B559 calls it from SubLoopA.
 ;---------------------------------------------------------------------------------------------------
 CheckErrorMaskingAndSetCodes_MM:
         ldaa    >LCDB5                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
@@ -1996,6 +2024,14 @@ L6410:
 
 ;---------------------------------------------------------------------------------------------------
 ; FurtherMAPAndBaroDiagnostics2_SM  ($6411)
+;
+; MAP sensor rationality check against TPS (fault code 24, the ErrBytes_CODE24_b descriptor).
+; [reviewed]
+;
+; At low rpm and speed with MAP close to baro (engine not pulling vacuum) and the throttle between
+; LE004 and THRHIG, or at higher rpm and speed with high vacuum and the throttle above THRLOW, it
+; reports the fault, and clears it again after Var_04A0 good passes. Not called in B4CC; B559
+; calls it from SubLoopC.
 ;---------------------------------------------------------------------------------------------------
 FurtherMAPAndBaroDiagnostics2_SM:
         brset   <b58_IPL1,#$20,L6420
@@ -2082,6 +2118,12 @@ L64B8:
 
 ;---------------------------------------------------------------------------------------------------
 ; IncrementOrClearKnockDiagCounter_SM  ($64B9)
+;
+; Knock sensor signal check (fault code 16). [reviewed]
+;
+; With the engine running and IPL1 bit 2 set, counts DiagCounter_KnockSensorActive while
+; KnockVolts is outside the LE020 window and reports code 16 when it reaches LE022; a voltage
+; inside the window clears the counter. Not called in B4CC; B559 calls it from SubLoopC.
 ;---------------------------------------------------------------------------------------------------
 IncrementOrClearKnockDiagCounter_SM:
         ldaa    <EngineRpm_HB

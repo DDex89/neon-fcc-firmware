@@ -39,7 +39,7 @@ calls `DRBFunctionTable[command - $10]`.
 | `$1B` | `InitByteModeDownload` | Enters byte-mode code download | [code] |
 | `$1C` | `DRB_ResetEMR` | Stores an address for a later write (answers `$E2`); the original name says emission maintenance reminder reset | [inferred] |
 | `$1D`, `$1E` | `DRB_UseRAM…SpecialProgramRoutine` | Writes a byte into RAM at an offset from `$0000` or `$0438` (answers `$E5`) | [code] |
-| `$1F`, `$20` | `L52E9`, `L5312` | Builds and checks a block at `$021C` with a sum; part of the RAM program loader | [inferred] |
+| `$1F`, `$20` | `L52E9`, `L5312` | Builds and checks a block at `$021C` (`DrbRamBuffer`, `$021E` in B559) with a sum; part of the RAM program loader | [inferred] |
 | `$21`, `$22` | `DRB_Special1`, `DRB_Special2` | Requests a special mode; `$21` answers `$02` (refused) with the throttle open, `$03` when `BitFlags_AIS` bit 3 is set, otherwise `$01` | [code] |
 | `$23` | `L53AB` | Sub-commands `$01`-`$04`, `$0B`, engine stopped only; function not decoded | |
 | `$25` | `L54E4` | Output override: target 1-4 in `DrbOverrideTarget`, state in `DrbOverrideState`. Target 1 is the output in `$00EE` bit 7, target 3 is the purge solenoid | [code] |
@@ -78,9 +78,10 @@ fault descriptor it reports and three calibration pointers for its enable condit
 ($E9C5) walks the table, checks the enable conditions and calls each monitor whose status byte allows it.
 `ObdMonitorInit` ($E8EA) prepares the status bytes; it is called (from `StoreMAPVoltsAndCalcMAPValue`). [code]
 
-**Nothing calls `ObdMonitorScheduler` in this code base.** There is no JSR, JMP or pointer to $E9C5 anywhere
+**Nothing calls `ObdMonitorScheduler` in B4CC.** There is no JSR, JMP or pointer to $E9C5 anywhere
 in the ROM, so in 5269718 and 5007033 none of these monitors runs, although most of their fault descriptors
-are enabled. [code] The one exception is the O2 heater test, which runs from the key-off sequence;
+are enabled. [code] The factory code base B559 calls it from MainSubLoop on every pass, so in the
+factory 1995 calibrations the monitors do run; see [code_bases.md](code_bases.md#b559-compared-with-b4cc). [code] The one exception is the O2 heater test, which runs from the key-off sequence;
 its result is stored but never processed into a code. This is the main piece of work for an OBD-II "Enhanced Edition": the monitors exist,
 they only need to be scheduled, checked against the calibration and tested.
 
@@ -125,7 +126,7 @@ Each monitor's status byte uses the same bits: 7 enabled this trip, 6 completed,
 
 | Monitor | Runs when | Method | Verdict |
 |---|---|---|---|
-| O2 heaters (P0135, P0141) | After key-off, power held (`ShutDownSubroutineA`) | ASD on to heat the sensors; samples both sensors with and without a load switched onto the lines (`O2LoadTestSample`) | Passes when the readings rise by `LCCA0`/`LCCA1`. This test **does run** at each key-off; its result is never reported because the scheduler is dormant |
+| O2 heaters (P0135, P0141) | After key-off, power held (`ShutDownSubroutineA`) | ASD on to heat the sensors; samples both sensors with and without a load switched onto the lines (`O2LoadTestSample`) | Passes when the readings rise by `LCCA0`/`LCCA1`. This test **does run** at each key-off; in B4CC its result is never reported because the scheduler is dormant |
 | O2 response (P0133) | Warm engine, time at speed, adaptive cell `LCCB4`, closed loop, steady state, RPM window | Counts large voltage steps (`LCCC1`) and lean/rich switches | Pass on `LCCC2` steps or `LCCC4` switches; fail when `LCCC5` elapses first |
 | Catalyst (P0422) | Warm engine, catalyst warm estimate (driving above `LCB6E`), MAP/RPM windows, closed loop | Purge forced off, settle `LCB6C`, measure `LCB74` | Result against `LCB76` (stricter after earlier fails) |
 | EGR flow (P0401) | Warm engine, speed, closed loop, steady state, vacuum and MAP/TPS/RPM windows | Short-term fuel trim averaged with EGR normal, then with EGR switched | Difference inside the window at `$CB59/$CB5A` = flow; fault after `LCB5B` fails |
@@ -182,7 +183,7 @@ Service `$02` (freeze frame) supports PIDs `$00`, `$02` (code that stored the fr
 
 The calibration declares which monitors PID `$01` reports as supported: `$B81F` = `$07` (misfire,
 fuel system, components) and `$B820` = `$61` (catalyst, O2 sensor, O2 heater) in 5269718; `$00` and
-`$E1` (adds EGR) in 5007033. The monitors themselves are dormant (see above), so a scan tool would
+`$E1` (adds EGR) in 5007033. In B4CC the monitors themselves are dormant (see above), so a scan tool would
 never see them complete. [code]
 
 ## Lamps

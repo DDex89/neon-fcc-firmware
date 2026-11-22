@@ -477,7 +477,7 @@
  "0219": "ObdMapValue",
  "021A": "CoolantTempVolts",
  "021B": "ChargeTempVolts",
- "021C": "Var_021C",
+ "021C": "DrbRamBuffer",
  "021E": "DrbRamProgramEntry",
  "0400": "SwitchPortAccessReg1",
  "0401": "SwitchPortAccessReg2",

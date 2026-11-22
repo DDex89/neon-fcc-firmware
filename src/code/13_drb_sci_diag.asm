@@ -791,7 +791,7 @@ L52E9:
         cpx     #$0438
         bcs     L5300
         ldaa    #$FF
-        staa    >Var_021C
+        staa    >DrbRamBuffer
 L52FD:
         jmp     >L525C
 

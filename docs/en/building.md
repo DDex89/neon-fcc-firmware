@@ -96,6 +96,43 @@ Never edit `src/` by hand while the annotations are still being developed: the n
 would overwrite the edit. Later, for the modified "Enhanced Edition", the source will be forked and
 maintained by hand.
 
+## Other code bases
+
+The factory code base B559 is built the same way from its own generated source in `src_b559/`:
+
+```sh
+python tools/build.py --base B559            # all eleven B559 images
+python tools/build.py --base B559 4874154    # one image
+```
+
+The images go to `build/B559/`. The B559 source is not annotated separately. It is generated from the
+same annotation database, with every address moved to B559 through a translation map:
+
+- `annotations/bases/B559/base.json` - code ranges, RAM differences, the variants and their hashes;
+- `annotations/bases/B559/map.json` - runs `[lo, hi, delta]` of B4CC addresses and how far they move;
+- the same file names as in `annotations/` (`rom_labels.json`, `ram_symbols.json`, `routines.md`,
+  `comments.txt`, ...) for names and notes of code that exists only in B559, keyed by B559 addresses.
+
+`tools/port_base.py` builds the map. It aligns the two programs instruction by instruction (ROM
+operands masked first, then compared after translation) and derives the calibration runs from the
+pairs of calibration addresses that matching instructions use:
+
+```sh
+python tools/port_base.py --base B559 --ref roms/5269718.bin --img roms_b559/4874154.bin \
+    --cal-img roms_b559/4874164.bin \
+    --code-ref 1200:B4CD,E229:FFD6 --code-img 1200:B55A,E229:FFD6
+python tools/gen_source.py --roms roms_b559 --base B559
+python tools/build.py --base B559
+```
+
+The calibration is aligned byte by byte, so `--cal-img` should be a B559 image of the same application
+as the reference: 5269718 is rev B of 4874164. (4874164 itself is not among the build variants because
+its $FF50 byte was edited, but its calibration is fine for the alignment.)
+
+An annotation added for B4CC therefore appears in B559 at the next regeneration. The generator prints
+how many labels, comments and routine notes had no counterpart; for B559 that count is zero. The
+differences between the two code bases are described in [code_bases.md](code_bases.md#b559-compared-with-b4cc).
+
 ## Why the rebuild is exact
 
 - Every instruction is printed with an explicit addressing mode: `<` forces direct (8-bit) and `>`

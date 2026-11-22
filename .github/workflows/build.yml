@@ -20,3 +20,6 @@ jobs:
 
       - name: Assemble and verify byte-identical images
         run: python3 tools/build.py
+
+      - name: Assemble and verify the B559 images
+        run: python3 tools/build.py --base B559

@@ -13,6 +13,11 @@
 ; CalculateVariableRevLimit_MM  ($FC69)
 ;
 ; Variable rev limiter (rev limit that depends on vehicle speed / TPS / MAP state). [from name]
+;
+; Writes VariableRevLimit from vehicle speed, baro (VarRevLimitBaroFactor) and the TPS table
+; RevLimitFromTPSOverMinThr. Not called in B4CC; B559 calls it from MainSubLoop. In B4CC
+; VariableRevLimit keeps the value $FF set at reset, so the fuel cut-off checks against it never
+; trigger and only the fixed rev limits act. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CalculateVariableRevLimit_MM:
         ldaa    >SystemStatusFlag_4b6

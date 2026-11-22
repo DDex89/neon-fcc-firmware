@@ -484,7 +484,7 @@ Var_0218                                     equ $0218
 ObdMapValue                                  equ $0219
 CoolantTempVolts                             equ $021A
 ChargeTempVolts                              equ $021B
-Var_021C                                     equ $021C
+DrbRamBuffer                                 equ $021C
 DrbRamProgramEntry                           equ $021E
 SwitchPortAccessReg1                         equ $0400
 SwitchPortAccessReg2                         equ $0401

@@ -30,20 +30,29 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("variants", nargs="*")
     ap.add_argument("--no-verify", action="store_true", help="do not compare with the original image hash")
+    ap.add_argument("--base", help="build another code base (annotations/bases/<name>/base.json)")
     args = ap.parse_args()
-    with open(os.path.join(ROOT, "annotations", "variants.json"), encoding="utf-8") as f:
-        variants = json.load(f)
+    srcdir, outdir = os.path.join(ROOT, "src"), os.path.join(ROOT, "build")
+    if args.base:
+        with open(os.path.join(ROOT, "annotations", "bases", args.base, "base.json"), encoding="utf-8") as f:
+            cfg = json.load(f)
+        variants = cfg["variants"]
+        srcdir = os.path.join(ROOT, cfg["src"])
+        outdir = os.path.join(ROOT, "build", args.base)
+    else:
+        with open(os.path.join(ROOT, "annotations", "variants.json"), encoding="utf-8") as f:
+            variants = json.load(f)
     todo = args.variants or list(variants)
     vasm = find_vasm()
-    os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
+    os.makedirs(outdir, exist_ok=True)
     ok = True
     for pn in todo:
         if pn not in variants:
             sys.exit("unknown variant " + pn)
-        src = os.path.join(ROOT, "src", "fcc_%s.asm" % pn)
-        out = os.path.join(ROOT, "build", "%s.bin" % pn)
-        lst = os.path.join(ROOT, "build", "%s.lst" % pn)
-        cmd = [vasm, "-m68hc11", "-Fbin", "-quiet", "-I", os.path.join(ROOT, "src"), "-L", lst, "-o", out, src]
+        src = os.path.join(srcdir, "fcc_%s.asm" % pn)
+        out = os.path.join(outdir, "%s.bin" % pn)
+        lst = os.path.join(outdir, "%s.lst" % pn)
+        cmd = [vasm, "-m68hc11", "-Fbin", "-quiet", "-I", srcdir, "-L", lst, "-o", out, src]
         r = subprocess.run(cmd)
         if r.returncode != 0:
             print("%s: assembler failed" % pn)

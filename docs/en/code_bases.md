@@ -8,7 +8,7 @@ Applications and revision letters come from the "Neon Code Families" spreadsheet
 | Code base | Images | Copyright | Notes |
 |---|---|---|---|
 | B588 | 1 | 1993 | 94½ generation |
-| B559 | 12 | 1994 | The original 1995 part numbers, SOHC and DOHC, all markets |
+| B559 | 12 | 1994 | The original 1995 part numbers, SOHC and DOHC, all markets; buildable from this repository (`src_b559/`) |
 | B4F3 | 3 | 1994 | Later revisions (rev D of 4874154 and 4874156, export automatic) |
 | B4C2 | 1 | 1994 | Rev C of 4874154; not listed in the spreadsheet |
 | B4CC | 3 (+2 "enh") | 1994 | Mopar Performance SOHC/DOHC and 5269718 (rev B of 4874164); the code base of this repository |
@@ -57,3 +57,51 @@ Applications and revision letters come from the "Neon Code Families" spreadsheet
 
 The calibration layout differs between code bases (for example the fault descriptor table is at
 $D4E9 in B559 and at $D4E3 in B4CC), so tables must not be copied byte for byte between them.
+
+## B559 compared with B4CC
+
+The annotations of this repository were made on B4CC and ported to B559 with
+`tools/port_base.py` (see [building.md](building.md#other-code-bases)). The comparison below comes
+from that alignment: code part 2 ($E229-$FFD5) is identical, and in code part 1 41,653 of 41,677
+B4CC bytes have an exact counterpart in B559. [code]
+
+**B4CC is B559 with calls removed.** The B4CC program is 141 bytes shorter. About 100 of them are the
+three temperature features listed below; the rest are `jsr` instructions that B4CC no longer has.
+The called routines are still in the B4CC ROM, byte for byte, but nothing reaches them there. [code]
+
+| Routine | Called from (B559) | What B4CC loses |
+|---|---|---|
+| `ObdMonitorScheduler` | MainSubLoop | All ten OBD-II monitors (see [diagnostics.md](diagnostics.md#obd-ii-monitors)) |
+| `ControlPurgeSolenoid_MM` | MainSubLoop | Canister purge control (`OutputBits2` bit 7); only the DRB actuator test drives it |
+| `DetermineIndividualInjectorTrims_MM` | MainSubLoop | Individual cylinder fuel trims |
+| `CalculateVariableRevLimit_MM` | MainSubLoop | Variable rev limit; `VariableRevLimit` stays at $FF from reset, only the fixed limits act |
+| `CheckIfCheckEngineLightShouldBeOn_A_MM`, `_B_MM` | MainSubLoop | Charge-warning lamp logic (`OutputBits2` bit 4); despite the name not the MIL. Only the fan code (with CONFIG2 bit 6 set) and the DRB tests still touch the bit |
+| `EmmissionMaintenanceRemider1_MM` | MainSubLoop | Emission maintenance reminder record in EEPROM, code 62 |
+| `VerifyOperationOfDownstreamO2Sensor_MM` | MainSubLoop | Downstream O2 sensor check (code 21) |
+| `DecrementDSO2SensorDiagnosticCounter_MM` | MainSubLoop | Downstream O2 diagnostic counter |
+| `VerifyOperationOfAmbientTempSensor_MM` | MainSubLoop | Ambient / battery temperature plausibility check (code 23) |
+| `CheckErrorMaskingAndSetCodes_MM` | SubLoopA | A speed / TPS related check (not decoded yet) |
+| `FurtherMAPAndBaroDiagnostics2_SM` | SubLoopC | MAP versus TPS rationality check (code 24) |
+| `IncrementOrClearKnockDiagCounter_SM` | SubLoopC | Knock sensor signal check (code 16) |
+
+So the racing / Mopar code base runs without OBD-II monitors, purge, cylinder trims, the variable
+rev limit and several sensor checks, which fits its use. The fault descriptors of these checks are
+still in the calibration and may be enabled, but nothing reports them. [code]
+
+**Code only in B559.** Three short additions, all using the same start temperature: `BatteryTemp`,
+or `AmbientAirTemp` when CONFIG2 bit 5 is set. [code]
+
+| Where (B559) | What it does | Calibration (B559) |
+|---|---|---|
+| Reset init, $9202-$9224 | Sets the purge delay `PurgeDelayTimer` ($021C): colder than `PurgeDelayTempCold` gives $FFFF, colder than `PurgeDelayTempWarm` gives `PurgeDelayTime`, warmer gives no delay | $C983, $C984, $C985-$C986 |
+| `ControlPurgeSolenoid_MM`, $9CF9-$9D1D | While the delay runs and the car is below `MPHREF`, counts the delay down (once per `Counter_MainLoop` wrap) and keeps purge from running | - |
+| `ExhGasRecirc_MM`, $B257-$B272 | EGR only above `EgrTempOn`; once on, it stays on down to `EgrTempOff` | $CB3C, $CB3B |
+
+Values in the factory images: $C983-$C986 = `6E 8A 02 21` and $CB3B/$CB3C = `73 74` in all of
+4874154-4874165; 5013113 has `6E 84 02 8E` and `7B 7C`. The temperature scale of these inputs is not
+decoded yet. [code]
+
+**Layout consequences.** Because of these additions the B559 calibration has 4 extra bytes after the
+idle purge table and 2 after the EGR constants: B4CC addresses $C983-$CB36 are 4 higher in B559 and
+$CB37-$DFF7 are 6 higher. RAM is the same except the DRB RAM-program buffer, which moved from $021C to
+$021E to make room for `PurgeDelayTimer`. [code]
