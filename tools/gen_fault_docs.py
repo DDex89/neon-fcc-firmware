@@ -179,8 +179,8 @@ T = {
                 "(*italic*). **Reported by** lists the routines that load this descriptor directly; many "
                 "descriptors are reached through an index (index × 8 + $D4E3) and show none."),
         note_53=("**Checksum (code 53).** In both images descriptor 2, which `CaculateChecksum` reports, has "
-                 "the enable bit clear, so a checksum mismatch is not stored at all. Other calibrations may "
-                 "enable it, so keep fixing the sum after edits."),
+                 "the enable bit clear, so a checksum mismatch is not stored at all. In the factory B559 images "
+                 "(table at $D4E9) it is enabled, so keep fixing the sum after edits."),
         diff_none="none",
     ),
     "ru": dict(
@@ -224,8 +224,8 @@ T = {
                 "дескрипторы выбираются по индексу (индекс × 8 + $D4E3), и для них поле пустое."),
         note_53=("**Контрольная сумма (код 53).** В обоих образах у дескриптора 2, который сообщает "
                  "`CaculateChecksum`, сброшен бит включения, так что несовпадение суммы вообще не "
-                 "записывается. В других калибровках он может быть включён, поэтому сумму после правок "
-                 "всё равно подгоняйте."),
+                 "записывается. В заводских образах B559 (таблица по адресу $D4E9) он включён, поэтому сумму "
+                 "после правок всё равно подгоняйте."),
         diff_none="нет",
     ),
 }
