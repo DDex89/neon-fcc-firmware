@@ -12,6 +12,16 @@
 ;---------------------------------------------------------------------------------------------------
 ; IncrementLoopCounters_MM  ($F88C)
 ;
+; Main-loop counters, sub-loop requests and stall detection. [reviewed]
+;
+; Counts CrankActivityTimer down and Counter_MainLoop up. Each bit of Counter_MainLoop that
+; changes from 0 to 1 sets the same bit in SubLoopRequests, so sub-loop n is requested every
+; 2^(n+1) passes (A every 21.5 ms ... H every 2.75 s). On each wrap of Counter_MainLoop (2.75 s)
+; it counts KeyOnOrEngineRunningTime and, while the engine runs, EngineRunningTimeMaxFF (both
+; saturating). When two or more timer overflows pass between cam pulses the engine has stopped: it
+; sets BitFlags71 bits 7, 4 and 1, leaves closed loop (BitFlags65 bits 4-5) and saves
+; EngineRunningTimeBeforeStall.
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 IncrementLoopCounters_MM:
@@ -35,7 +45,7 @@ LF895:
         beq     LF8B3
         inc     >KeyOnOrEngineRunningTime
 LF8B3:
-        brset   <BitFlags71,#$80,LF8C1
+        brset   <BitFlags71,#$80,LF8C1               ; engine not running (stopped or cranking)
         bclr    <BitFlags_AIS,#$03
         cmpa    <EngineRunningTimeMaxFF
         beq     LF8C1
@@ -45,8 +55,8 @@ LF8C1:
         ldaa    <TimerOverflowsBetweenCamPulses
         cmpa    #$02
         bcs     LF8D5
-        bset    <BitFlags71,#$92
-        bclr    <BitFlags65,#$30
+        bset    <BitFlags71,#$92                     ; engine not running (stopped or cranking); start-to-run transition pending; crank pulse seen since the last coil scheduling
+        bclr    <BitFlags65,#$30                     ; closed-loop timer CLTIME expired; closed loop (O2 feedback in use)
         bclr    <BitFlags66,#$02
         ldaa    <EngineRunningTimeMaxFF
         staa    <EngineRunningTimeBeforeStall
@@ -67,7 +77,7 @@ LF8DC:
 DRB_SomethingLikeEMR_MM:
         brset   <BitFlags6b,#$01,LF90B
         brclr   <BitFlags6b,#$02,LF90B
-        brset   <BitFlags71,#$80,LF90B
+        brset   <BitFlags71,#$80,LF90B               ; engine not running (stopped or cranking)
         sei
         ldaa    <BitFlags72
         bita    #$03
@@ -378,7 +388,7 @@ LFACB:
 ;---------------------------------------------------------------------------------------------------
 ; ScaleYbyA  ($FACF)
 ;
-; D = Y x A / 256 (unsigned fractional multiply). [from name]
+; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply). [reviewed]
 ;
 ; Called from: CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT, CODEf101, CODEfbfa, CalculateAverageKnockVolts_SM, CalculateInjectorPulsewidthForEngineRunning, CalculateInjectorPulsewidthForStarting_MM, CalculateSumOfAllFuelModifiers_MM, CheckErrorMaskingAndSetCodes_MM ... (22 total)
 ;---------------------------------------------------------------------------------------------------
@@ -400,7 +410,10 @@ ScaleYbyA:
 ;---------------------------------------------------------------------------------------------------
 ; ScaleXbyB_addingA_intoD  ($FADF)
 ;
-; Fractional multiply-accumulate helper used by the fuel modifier code. [from name]
+; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 instead.
+; [reviewed]
+;
+; The sum saturates at $FFFF. Used to apply fuel modifiers as a fraction or as an added fraction.
 ;
 ; Called from: CalculateSumOfAllFuelModifiers_MM, MonitorFuelSystemLean, MonitorFuelSystemRich
 ;---------------------------------------------------------------------------------------------------
@@ -408,7 +421,7 @@ ScaleXbyB_addingA_intoD:
         psha
         tba
         ldy     $00,x
-        bsr     ScaleYbyA                            ; D = Y x A / 256 (unsigned fractional multiply).
+        bsr     ScaleYbyA                            ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pula
         tsta
         xgdy
@@ -449,6 +462,14 @@ LFB0F:
 ;---------------------------------------------------------------------------------------------------
 ; GetControlFeedback_DetermineIfShutdownRequired_MM  ($FB10)
 ;
+; Key-off shutdown sequence. [reviewed]
+;
+; While SwitchPortAccessReg1 bit 6 is clear it only resets CountdownTimerFromKeyOn. Once it is set
+; the countdown runs (from $17, or $09 when the engine is turning); at zero it runs
+; ShutDownSubroutineA (the key-off tests), the ROM checksum, waits for $0400 bit 6, sets the coil
+; outputs to a safe state, releases the power hold and then only kicks the COP until the supply
+; drops.
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 GetControlFeedback_DetermineIfShutdownRequired_MM:
@@ -478,10 +499,10 @@ LFB2A:
 LFB30:
         jsr     >ShutDownSubroutineA                 ; After-key-off sequence, including the O2 heater test.
         sei
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >CaculateChecksum                    ; ROM self test: 8-bit sum of $1200-$B5FF and $B800-$FFFF must equal the byte at $B805.
         sei
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldx     #$0113
         brset   $00,x,#$04,LFB8B
         ldx     #$0114
@@ -519,7 +540,7 @@ LFB8B:
         bclr    $00,x,#$04
         ldx     #$0114
         bclr    $00,x,#$04
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >CountRamValuesFrom05to38            ; 16-bit sum of RAM $0005-$0036 and $0100-$014D, used to validate RAM on a warm start.
         std     <BYTE03
         ldx     #$0400
@@ -560,7 +581,10 @@ LFBCB:
 ;---------------------------------------------------------------------------------------------------
 ; ResetCOPTimer  ($FBD5)
 ;
-; Kicks the COP watchdog (writes $55, $AA to COPRST). [from name]
+; Kicks both watchdogs. [reviewed]
+;
+; Pulls IODev_0409 bit 4 low for a short delay (the external heartbeat), writes $55, $AA to COPRST
+; (the 68HC11 COP) and sets bit 4 again. Every sub-loop starts with it.
 ;
 ; Called from: CaculateChecksum, CrankInterrupt_FallingEdge, GetControlFeedback_DetermineIfShutdownRequired_MM, MainSubLoop, O2LoadTestSample, ResetInterrupt, ShutDownSubroutineA, StoreMAPVoltsAndCalcMAPValue ... (16 total)
 ;---------------------------------------------------------------------------------------------------
@@ -605,7 +629,7 @@ LFBFD:
         bhi     LFBFC
         suba    $00,x
         ldy     $03,x
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    $01,x
 LFC0D:
@@ -615,7 +639,9 @@ LFC0D:
 ;---------------------------------------------------------------------------------------------------
 ; ScaleYbyD_resultD  ($FC0E)
 ;
-; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors. [from name]
+; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF. [reviewed]
+;
+; Used to chain the 16-bit fuel factors.
 ;
 ; Called from: CalculateInjectorPulsewidthForEngineRunning, CalculateInjectorPulsewidthForStarting_MM, CalculateSumOfAllFuelModifiers_MM, LA0DB
 ;---------------------------------------------------------------------------------------------------
@@ -623,7 +649,7 @@ ScaleYbyD_resultD:
         psha
         pshy
         tba
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         tsx
         ldaa    $04,x
@@ -665,7 +691,7 @@ FilterTPSbyB:
         addd    #$0001
         xgdy
         pula
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         coma
         comb
@@ -676,7 +702,7 @@ FilterTPSbyB:
 LFC57:
         xgdy
         pula
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    $00,x
         bcc     LFC66

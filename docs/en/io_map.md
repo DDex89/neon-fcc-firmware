@@ -22,7 +22,7 @@ handles the CCD bus, the idle air stepper, the lamps and the switch inputs; see
 | PA3 | OC5 | Ignition coil driver (ATM test `$01`) | 21 or 1 | [code] |
 | PA4 | OC4 | Knock window timer; also forced high at the start of an ISO 9141 session | — | [code] |
 | PA5 | OC3 | Ignition coil driver (ATM test `$02`) | 1 or 21 | [code] |
-| PA6 | OC2 / output | Plain output in the intake air temperature routines (probably switches the sensor pull-up for two ranges) | — | [inferred] |
+| PA6 | OC2 / output | Intake air temperature sensor pull-up range: set selects the cold range (table `TMPTL1`), clear the hot range (`TMPTL2`); switched by `CheckAndFilterChargeTempSensor_SM` | — | [code] |
 | PA7 | PAI | Cam sensor, both edges | 26 | [code] |
 
 Which OC pin drives coil #1 (pin 21) and which drives coil #2 (pin 1) is not known yet.
@@ -79,7 +79,7 @@ not mapped yet. They are most likely among the companion chip bits above.
 |---|---|---|---|
 | `$0400` (write) | 0-1 | Select for the AN4 / AN5 analog multiplexers | [code] |
 | | 2 | Output driven by ATM test `$0D`, latched by a pulse on `$0402` bit 2 | [code], output unknown |
-| | 7 | Coolant sensor pull-up range (dual-range temperature input) | [inferred] |
+| | 7 | Coolant sensor pull-up range: set selects the cold range (`TMPTL1`), clear the hot range (`TMPTL2`); switched after four readings beyond $40 / $DC | [code] |
 | `$0400` (read) | 3 | Companion chip ready: every link byte waits for this bit to clear | [code] |
 | | 4 | Injector driver status, checked before each injection command | [code] |
 | | 6 | Read by the shutdown routine | [code] |

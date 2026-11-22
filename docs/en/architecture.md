@@ -107,7 +107,9 @@ appears in many calibration constants.
    further always-run tasks.
 2. Then at most **one** of the eight sub-loops `SubLoopA`..`SubLoopH` runs. Their request bits are in
    RAM $0150; the lowest pending bit is served and cleared. Slow tasks (temperature sensors,
-   diagnostics ...) are spread this way.
+   diagnostics ...) are spread this way. `IncrementLoopCounters_MM` sets request bit n each time bit n
+   of `Counter_MainLoop` changes from 0 to 1, so sub-loop A runs every 2 passes (21.5 ms), B every 4,
+   and so on up to H every 256 passes (2.75 s). [code]
 3. The loop measures how long the pass took (RAM $0455, worst case in $0454) and waits until TCNT
    reaches the next 10.75 ms slot.
 
@@ -151,8 +153,8 @@ not by the map itself. Changing `RPMSCL` moves every map that uses it.
 EEPROM window). The result must equal the byte at **$B805**, the last byte of the part number. On a
 mismatch the routine reports fault code 53 (internal controller failure). In both images in this
 repository that fault descriptor is disabled (flag bit 7 clear, see [fault_codes.md](fault_codes.md)), so
-nothing is stored and the engine runs normally. In the factory B559 images (4874154/155/156/158/159)
-the same descriptor (at $D4F9 there) is enabled, so a wrong sum does store code 53.
+nothing is stored and the engine runs normally. In the factory images (B559, B4F3 and B4C2)
+the same descriptor (at $D4F9 in B559) is enabled, so a wrong sum does store code 53.
 
 Anyone who changes the calibration should fix the sum with a spare byte. Factory images keep $FF50
 at $FF for this. Some images edited with MP Tune that were examined for this project do not pass

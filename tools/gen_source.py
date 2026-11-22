@@ -205,6 +205,8 @@ class Gen:
         self.pwords = {int(a, 16) for a in load_json("pointer_words.json", [])}
         self.routines = load_routines()
         self.inline = load_inline()
+        self.bits = {int(k, 16): {int(b): t[0] for b, t in v.items()}
+                     for k, v in load_json("ram_bits.json", {}).items() if not k.startswith("_")}
         self.lost = {}
         if base:
             self.translate(base)
@@ -235,6 +237,7 @@ class Gen:
             self.pwords.add(int(a, 16))
         for k, v in base.extra_json("tables.json", {}).items():
             self.tables[int(k, 16)] = v
+        self.bits = {base.ram(a): v for a, v in self.bits.items() if base.ram(a) is not None}
         p = os.path.join(base.dir, "routines.md")
         if os.path.exists(p):
             self.routines.update(load_routines(p))
@@ -346,6 +349,13 @@ class Gen:
         """Short automatic comment: table meaning, register name, callee summary."""
         if ins.addr in self.inline:
             return self.inline[ins.addr]
+        if ins.mn in ("bset", "bclr", "brset", "brclr") and ins.ops[0][0] in ("dir", "ext") \
+                and ins.ops[0][1] in self.bits:
+            mask = next(op[1] for op in ins.ops if op[0] == "imm")
+            known = self.bits[ins.ops[0][1]]
+            names = [known[b] for b in range(7, -1, -1) if mask >> b & 1 and b in known]
+            if names:
+                return "; ".join(names)
         for op in ins.ops:
             if op[0] == "idx" and ((op[2] == "x" and xregs) or (op[2] == "y" and yregs)):
                 rn = regname(op[1])

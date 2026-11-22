@@ -5,7 +5,7 @@ write it. Built from the 5269718 image (both images share the code).
 
 Usage: python3 tools/gen_ram_docs.py --roms roms
 """
-import argparse, bisect, collections, os, re, sys
+import argparse, bisect, collections, json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -33,6 +33,9 @@ T = {
         "through bit instructions; `Unref_xxxx` has no direct access in the code. Unnamed rows are low "
         "bytes reached only through a 16-bit access to the address before."),
         cols="| Addr | Name | R | W | Read by | Written by |", unnamed="unnamed",
+        bits="Flag bits", bitcols="| Bit | Meaning |",
+        bits_intro="Bits whose meaning is decoded, from `annotations/ram_bits.json`. The generated source "
+        "repeats them as comments on `bset`, `bclr`, `brset` and `brclr` instructions.",
         summary="%d addresses listed, %d of them named; %d placeholder names (`Lxxxx`) left."),
     "ru": dict(title="Карта ОЗУ", intro=(
         "Генерируется `tools/gen_ram_docs.py`; не редактируйте вручную. Имена берутся из "
@@ -48,6 +51,9 @@ T = {
         "в коде нет. Строки без имени — младшие байты, к которым обращаются только 16-битной командой через "
         "предыдущий адрес."),
         cols="| Адрес | Имя | R | W | Читают | Пишут |", unnamed="без имени",
+        bits="Биты флагов", bitcols="| Бит | Значение |",
+        bits_intro="Биты, смысл которых расшифрован, из `annotations/ram_bits.json`. Сгенерированный исходник "
+        "повторяет их в комментариях к инструкциям `bset`, `bclr`, `brset` и `brclr`.",
         summary="Всего адресов: %d, с именами: %d; временных имён (`Lxxxx`) осталось: %d."),
 }
 
@@ -94,6 +100,14 @@ def main():
                 fmt = lambda c: ", ".join(sorted(c)[:5]) + (" …" if len(c) > 5 else "")
                 o.append("| `$%04X` | %s | %d | %d | %s | %s |" % (
                     a, n, sum(r.values()), sum(w.values()), fmt(r), fmt(w)))
+            o.append("")
+        bits = json.load(open(os.path.join(ROOT, "annotations", "ram_bits.json"), encoding="utf-8"))
+        o += ["## " + t["bits"], "", t["bits_intro"], ""]
+        for k in sorted(x for x in bits if not x.startswith("_")):
+            a = int(k, 16)
+            o += ["### `$%04X` `%s`" % (a, names.get(a, "")), "", t["bitcols"], "|---|---|"]
+            for b in sorted(bits[k], key=int, reverse=True):
+                o.append("| %s | %s |" % (b, bits[k][b][L]))
             o.append("")
         path = os.path.join(ROOT, "docs", lang, "ram_map.md")
         open(path, "w", encoding="utf-8").write("\n".join(o))

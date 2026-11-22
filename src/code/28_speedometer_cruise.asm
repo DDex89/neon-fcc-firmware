@@ -12,8 +12,12 @@
 ;---------------------------------------------------------------------------------------------------
 ; Interrupt_SpeedometerSignal  ($AFFA)  -- interrupt vector: TIC2
 ;
-; Input capture 2 interrupt: vehicle speed sensor pulse; measures the period between pulses. [from
-; name]
+; Input capture 2: vehicle speed sensor pulse. [reviewed]
+;
+; Counts pulses in Counter_SpeedSensorInterrupt (two counts per pulse when CONFIG2 bit 5 is set),
+; measures the time between pulses with the timer overflow count, steps VehicleSpeed by $5C and
+; updates VehicleSpeedScaled (0.5 mph per count, $FF above $1FD0). It also filters out pulses that
+; come too soon for the current speed (BitFlags73).
 ;---------------------------------------------------------------------------------------------------
 Interrupt_SpeedometerSignal:
         ldd     >TIC2
@@ -260,7 +264,7 @@ LB16C:
 LB170:
         bset    <BitFlags71,#$20
 LB173:
-        brclr   <BitFlags65,#$80,LB17B
+        brclr   <BitFlags65,#$80,LB17B               ; throttle open (off idle)
 LB177:
         bclr    <BitFlags66,#$48
         rts

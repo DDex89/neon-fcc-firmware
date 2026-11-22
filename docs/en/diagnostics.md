@@ -165,14 +165,14 @@ Service `$01` PIDs (handlers `ObdPid…`):
 | `$01` | Code count and MIL bit; supported and completed monitors | `ObdDtcCount`, `ObdStatusFlags` bit 7, calibration `$B81F`/`$B820`, RAM `$0100` |
 | `$03` | Fuel system status | `FuelSystemStatus` ($043B) |
 | `$04` | Calculated load | `MaxRPMxMaxMAPFraction` |
-| `$05` | Coolant temperature | `CoolantTempVolts` − `$58` |
+| `$05` | Coolant temperature | `CoolantTempUnfiltered` − `$58` |
 | `$06` | Short-term fuel trim | O2 feedback counter |
 | `$07` | Long-term fuel trim | `ValueFromAdaptiveMemory` |
 | `$0B` | MAP | `$0219` × `$69` / 256 |
 | `$0C` | Engine RPM | `EngineRpm_HB` |
 | `$0D` | Vehicle speed | `VehicleSpeed_HB` |
 | `$0E` | Spark advance | `AdvanceTemporary` + `$80` |
-| `$0F` | Intake air temperature | `ChargeTempVolts` − `$58` |
+| `$0F` | Intake air temperature | `ChargeTempUnfiltered` − `$58` |
 | `$11` | Throttle position | `LastTpsVolts` |
 | `$12` | Secondary air status | `OutputDriverBits` bit 5 |
 | `$13` | O2 sensors present | `$03` (bank 1, sensors 1 and 2) |

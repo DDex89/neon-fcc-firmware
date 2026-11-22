@@ -1179,10 +1179,10 @@ ObdPid04_Load:
 ;---------------------------------------------------------------------------------------------------
 ; ObdPid05_Coolant  ($223E)
 ;
-; Service 1 PID $05: coolant temperature (CoolantTempVolts - $58). [reviewed]
+; Service 1 PID $05: coolant temperature (CoolantTempUnfiltered - $58). [reviewed]
 ;---------------------------------------------------------------------------------------------------
 ObdPid05_Coolant:
-        ldaa    >CoolantTempVolts
+        ldaa    >CoolantTempUnfiltered
         suba    #$58
         bcc     L2246
         clra
@@ -1293,10 +1293,10 @@ ObdPid0E_Advance:
 ;---------------------------------------------------------------------------------------------------
 ; ObdPid0F_IntakeAirTemp  ($22B5)
 ;
-; Service 1 PID $0F: charge air temperature (ChargeTempVolts - $58). [reviewed]
+; Service 1 PID $0F: charge air temperature (ChargeTempUnfiltered - $58). [reviewed]
 ;---------------------------------------------------------------------------------------------------
 ObdPid0F_IntakeAirTemp:
-        ldaa    >ChargeTempVolts
+        ldaa    >ChargeTempUnfiltered
         suba    #$58
         bcc     L22BD
         clra
@@ -1324,7 +1324,7 @@ ObdPid11_Throttle:
 ; Service 1 PID $12: secondary air status from OutputDriverBits bit 5 (1 or 4). [reviewed]
 ;---------------------------------------------------------------------------------------------------
 ObdPid12_SecondaryAir:
-        brset   <OutputDriverBits,#$20,L22DA
+        brset   <OutputDriverBits,#$20,L22DA         ; purge on/off output (secondary air with that option)
         ldaa    #$01
         bra     L22DC
 
@@ -1359,7 +1359,7 @@ ObdPid14_O2Sensor1:
         cmpa    #$41
         bcc     L2304
         ldy     #$03ED
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         bra     L2306
 
@@ -1391,7 +1391,7 @@ ObdPid15_O2Sensor2:
         cmpa    #$41
         bcc     L2331
         ldy     #$03ED
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         bra     L2333
 

@@ -67,7 +67,7 @@ LB273:
 LB1F4:
         cmpa    >LCB36                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcs     LB1FF
-        brset   <BitFlags65,#$10,LB218
+        brset   <BitFlags65,#$10,LB218               ; closed loop (O2 feedback in use)
         bra     LB213
 
 LB1FF:
@@ -80,7 +80,7 @@ LB1FF:
         bra     LB213
 
 LB20F:
-        brset   <BitFlags65,#$10,LB218
+        brset   <BitFlags65,#$10,LB218               ; closed loop (O2 feedback in use)
 LB213:
         bra     LB256
 
@@ -92,16 +92,16 @@ LB218:
         bitb    #$03
         bne     LB256
         ldab    <BaroPressure
-        brset   <OutputDriverBits,#$02,LB227
+        brset   <OutputDriverBits,#$02,LB227         ; EGR solenoid
         subb    >EGR26_ExhGasRecircConstFromBaro2    ; EGR26 (ExhGasRecircConstFromBaro2)
 LB227:
         subb    >EGR25_ExhGasRecircConstFromBaro1    ; EGR25 (ExhGasRecircConstFromBaro1)
         cmpb    <MapValue
         bcs     LB256
-        brclr   <BitFlags65,#$80,LB256
+        brclr   <BitFlags65,#$80,LB256               ; throttle open (off idle)
         ldaa    >EGR21_ExhGasRecircConstFromRPM1     ; EGR21 (ExhGasRecircConstFromRPM1)
         ldab    >EGR23_ExhGasRecircConstFromMAP1     ; EGR23 (ExhGasRecircConstFromMAP1)
-        brset   <OutputDriverBits,#$02,LB24C
+        brset   <OutputDriverBits,#$02,LB24C         ; EGR solenoid
         adda    >EGR22_ExhGasRecircConstFromRPM2     ; EGR22 (ExhGasRecircConstFromRPM2)
         addb    >EGR24_ExhGasRecircConstFromMAP2     ; EGR24 (ExhGasRecircConstFromMAP2)
         cmpa    <EngineRpm_HB
@@ -119,7 +119,7 @@ LB24C:
 
 LB256:
         bset    <EGRVar2,#$10
-        brclr   <OutputDriverBits,#$02,LB261
+        brclr   <OutputDriverBits,#$02,LB261         ; EGR solenoid
         clra
         staa    >Var_045F
 LB261:
@@ -129,11 +129,11 @@ LB261:
         bcs     LB270
         bclr    <BitFlags66,#$01
 LB270:
-        bclr    <OutputDriverBits,#$02
+        bclr    <OutputDriverBits,#$02               ; EGR solenoid
         bra     LB28F
 
 LB275:
-        brset   <OutputDriverBits,#$02,LB27D
+        brset   <OutputDriverBits,#$02,LB27D         ; EGR solenoid
         clra
         staa    >Var_045F
 LB27D:
@@ -143,7 +143,7 @@ LB27D:
         bcs     LB28C
         bset    <BitFlags66,#$01
 LB28C:
-        bset    <OutputDriverBits,#$02
+        bset    <OutputDriverBits,#$02               ; EGR solenoid
 LB28F:
         rts
 
@@ -160,18 +160,18 @@ LB290:
         ldaa    >DrbOverrideState
         cmpa    #$02
         bne     LB2A3
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         bra     LB2AA
 
 LB2A3:
         cmpa    #$01
         bne     LB2AD
-        bclr    <OutputDriverBits,#$20
+        bclr    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
 LB2AA:
         jmp     >LB3C9
 
 LB2AD:
-        brclr   <BitFlags71,#$80,LB2BA
+        brclr   <BitFlags71,#$80,LB2BA               ; engine not running (stopped or cranking)
         clr     >Egr_01E8
         clr     >Egr_01E9
 LB2B7:
@@ -321,13 +321,13 @@ LB3A8:
         ldaa    >LCABC+1                             ; CRMASK (CruiseMask)
         staa    >Var_01E7
 LB3BE:
-        bclr    <OutputDriverBits,#$20
+        bclr    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         bra     LB3C9
 
 LB3C3:
         clr     >Var_01E7
 LB3C6:
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
 LB3C9:
         rts
 
@@ -335,7 +335,12 @@ LB3C9:
 ;---------------------------------------------------------------------------------------------------
 ; Lookup3DTableRoutine  ($B457)
 ;
-; 3D table lookup (bilinear interpolation), variant 1. [from name]
+; 3D table lookup with bilinear interpolation, variant with the column axis stored in the table.
+; [reviewed]
+;
+; Picks InterpSigned or InterpUnsigned from the table's sign byte (+2), searches B along the axis
+; bytes that follow the header, interpolates between the two columns and then along the rows by A.
+; Used by the cold-load fuel tables (CLDLDP/CLDLDI with CoolantTemp in B) and one spark table.
 ;
 ; Called from: CalculateSparkAdvance_MM, CalculateSumOfAllFuelModifiers_MM
 ;---------------------------------------------------------------------------------------------------

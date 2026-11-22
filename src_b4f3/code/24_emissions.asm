@@ -33,7 +33,7 @@ L9BC2:
         jmp     >L9C69
 
 L9BC5:
-        brclr   <BitFlags65,#$01,L9C0F
+        brclr   <BitFlags65,#$01,L9C0F               ; wide-open throttle
         ldaa    >O2SensorVolts
         cmpa    >O2HIGH_HighLimitForImmediateSwitchToClosedLoop ; O2HIGH: HighLimitForImmediateSwitchToClosedLoop $26 = 0.73v
         bcs     L9C0F
@@ -107,10 +107,15 @@ L9C69:
 ;---------------------------------------------------------------------------------------------------
 ; ControlPurgeSolenoid_MM  ($9C91)
 ;
-; Evaporative canister purge solenoid control. [from name]
+; Canister purge duty: on/off times for the companion chip register frame $58. [reviewed]
 ;
-; Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In B4CC nothing reaches this
-; routine, so the purge solenoid is only driven by the DRB actuator tests. [reviewed]
+; Works out EvapPurgeDuty from the purge tables and writes LinkReg58Data / LinkReg58DataLo, the
+; two times sent to the companion chip with register header $58 (period $C3, or $62 when
+; BitFlagsE3 bit 1 is set). OutputBits2 bit 7 (DRB override target 1) forces fixed values. Not
+; called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In B4CC the two times keep their
+; reset value. The separate on/off logic at $B2B7 (OutputDriverBits bit 5, coolant / MAP / rpm
+; windows $CAB6-$CAC5) runs in every code base; which of the two switches the purge solenoid at
+; pin 16 is not confirmed.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -121,7 +126,7 @@ ControlPurgeSolenoid_MM:
         ldaa    >DrbOverrideState
         cmpa    #$02
         bne     L9C87
-        bset    <OutputBits2,#$80
+        bset    <OutputBits2,#$80                    ; purge duty forced (DRB override target 1)
         ldaa    #$C3
         staa    >LinkReg58Data
         clra
@@ -131,7 +136,7 @@ ControlPurgeSolenoid_MM:
 L9C87:
         cmpa    #$01
         bne     L9C9A
-        bclr    <OutputBits2,#$80
+        bclr    <OutputBits2,#$80                    ; purge duty forced (DRB override target 1)
         ldaa    #$C3
         staa    >LinkReg58DataLo
         clra
@@ -145,7 +150,7 @@ L9C9A:
         cmpa    #$14
         bne     L9CAF
 L9CA4:
-        bclr    <OutputBits2,#$80
+        bclr    <OutputBits2,#$80                    ; purge duty forced (DRB override target 1)
         bclr    <BitFlagsE3,#$02
         ldab    #$80
         jmp     >L9EFF
@@ -164,7 +169,7 @@ L9CAF:
         bita    #$04
         bne     L9CEA
 L9CCB:
-        brset   <BitFlags71,#$80,L9CEA
+        brset   <BitFlags71,#$80,L9CEA               ; engine not running (stopped or cranking)
         ldaa    <CoolantTemp
         cmpa    >LC8ED
         bcs     L9CEA
@@ -232,7 +237,7 @@ L9D45:
         beq     L9D4A
         staa    <CylTrim_Adaptive_Var1
 L9D4A:
-        bset    <OutputBits2,#$80
+        bset    <OutputBits2,#$80                    ; purge duty forced (DRB override target 1)
         bra     L9DB4
 
 L9D4F:
@@ -250,7 +255,7 @@ L9D54:
         stab    <CylTrimFlags
 L9D60:
         clr     >CylTrim_Adaptive_Var1
-        bclr    <OutputBits2,#$80
+        bclr    <OutputBits2,#$80                    ; purge duty forced (DRB override target 1)
         bra     L9DB0
 
 L9D68:
@@ -300,7 +305,7 @@ L9D97:
 L9DAD:
         clr     >CylTrim_Adaptive_Var1
 L9DB0:
-        brclr   <BitFlags65,#$01,L9DBB
+        brclr   <BitFlags65,#$01,L9DBB               ; wide-open throttle
 L9DB4:
         clrb
         clr     >Purge_01EC
@@ -355,7 +360,7 @@ L9E12:
         jmp     >L9ED1
 
 L9E15:
-        brclr   <BitFlags65,#$04,L9E25
+        brclr   <BitFlags65,#$04,L9E25               ; O2 rich/lean state, flips on each O2 switch
         brset   <BitFlagsE3,#$01,L9E28
         inc     >Purge_01EC
         bset    <BitFlagsE3,#$01
@@ -401,7 +406,7 @@ L9E6A:
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         cmpa    >LC987
         blt     L9E8F
-        brset   <BitFlags65,#$80,L9E82
+        brset   <BitFlags65,#$80,L9E82               ; throttle open (off idle)
         tst     >LC983
         beq     L9EAF
 L9E82:
@@ -420,7 +425,7 @@ L9E8F:
         ldaa    <Counter_MainLoop
         anda    >LC98E
         bne     L9EAF
-        brset   <BitFlags65,#$80,L9EA6
+        brset   <BitFlags65,#$80,L9EA6               ; throttle open (off idle)
         tst     >LC983
         beq     L9EAF
 L9EA6:
@@ -435,7 +440,7 @@ L9EAF:
         adca    #$00
         adda    <Temp1
         bcs     L9ECF
-        brset   <BitFlags65,#$80,L9EC3
+        brset   <BitFlags65,#$80,L9EC3               ; throttle open (off idle)
         tst     >LC983
         beq     L9ED1
 L9EC3:
@@ -448,7 +453,7 @@ L9EC3:
 L9ECF:
         ldaa    #$FF
 L9ED1:
-        brset   <BitFlags65,#$80,L9EF6
+        brset   <BitFlags65,#$80,L9EF6               ; throttle open (off idle)
         ldab    >LC8F3
         brclr   <BitFlags66,#$40,L9EE2
         bitb    #$40
@@ -499,7 +504,7 @@ L9F28:
         ldab    >EvapPurgeDuty
 L9F2B:
         stab    <Var_00E4
-        brclr   <OutputBits2,#$80,L9F3C
+        brclr   <OutputBits2,#$80,L9F3C              ; purge duty forced (DRB override target 1)
         ldaa    #$C3
         staa    >LinkReg58Data
         clra
@@ -782,9 +787,9 @@ LA0DB:
 LA0E5:
         tba
         ldy     <EngineRpm_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         ldd     >LC8F1
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
         cmpa    #$FF
         beq     LA0F9
         rolb
@@ -831,7 +836,7 @@ LA122:
         jmp     >LA325
 
 LA129:
-        brset   <BitFlags71,#$80,LA136
+        brset   <BitFlags71,#$80,LA136               ; engine not running (stopped or cranking)
         ldaa    <CylTrimFlags
         bita    #$38
         beq     LA139
@@ -939,11 +944,11 @@ LA1FC:
         staa    >EvapBaseO2Trim
         ldaa    >LCD2F
         ldy     <EngineRpm_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    >MonEvap_0201
         ldy     >EvapBaseRpm
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         sty     <Temp0
         pula
         pulb
@@ -1006,11 +1011,11 @@ LA288:
         staa    >EvapTestO2Trim
         ldaa    >LCD2F
         ldy     <EngineRpm_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    >MonEvap_0201
         ldy     >EvapTestRpm
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         sty     <Temp0
         pula
         pulb
@@ -1143,7 +1148,7 @@ LA366:
         jmp     >LA55E
 
 LA375:
-        brclr   <BitFlags65,#$10,LA387
+        brclr   <BitFlags65,#$10,LA387               ; closed loop (O2 feedback in use)
         brset   <BitFlags66,#$10,LA387
         ldaa    >ObdMonStatus_FuelRich
         bita    #$04
@@ -1168,7 +1173,7 @@ LA390:
 LA399:
         asrb
         ldx     #$00F4
-        jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
+        jsr     >ScaleXbyB_addingA_intoD             ; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 inst
         std     >FuelSysTrimSum
         ldaa    <CoolantTemp
         ldx     #TABLEcd00
@@ -1283,7 +1288,7 @@ LA477:
         inca
 LA480:
         asrb
-        jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
+        jsr     >ScaleXbyB_addingA_intoD             ; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 inst
         std     >FuelSysTrimSum
         ldaa    <CoolantTemp
         ldx     #CylTrimTable3
@@ -1411,7 +1416,7 @@ LA570:
         ldab    >ObdStatusFlags
         bitb    #$01
         bne     LA57F
-        brclr   <BitFlags65,#$10,LA57F
+        brclr   <BitFlags65,#$10,LA57F               ; closed loop (O2 feedback in use)
         brclr   <BitFlags66,#$10,LA582
 LA57F:
         jmp     >LA669
@@ -1431,7 +1436,7 @@ LA588:
 LA591:
         asrb
         ldx     #$00F4
-        jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
+        jsr     >ScaleXbyB_addingA_intoD             ; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 inst
         std     >FuelSysTrimSum
         ldaa    <CoolantTemp
         ldx     #TABLEcd1e

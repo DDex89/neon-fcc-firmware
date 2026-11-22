@@ -64,7 +64,7 @@ L2FA4:
         rts
 
 L2FB1:
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         ldaa    >ObdMonStatus_SecondaryAir
         anda    #$FB
         staa    >ObdMonStatus_SecondaryAir
@@ -84,7 +84,7 @@ L2FCC:
 ; Called from: MonitorSecondaryAir
 ;---------------------------------------------------------------------------------------------------
 L2FCD:
-        brset   <BitFlags71,#$80,L3007
+        brset   <BitFlags71,#$80,L3007               ; engine not running (stopped or cranking)
         ldaa    >MonSecAir_04AB
         bne     L2FFF
         ldaa    >Timer_OffThrottleFuelEnrich
@@ -221,8 +221,8 @@ L3081:
 ; Called from: L2FCD, MonitorSecondaryAir
 ;---------------------------------------------------------------------------------------------------
 L308A:
-        brclr   <BitFlags65,#$10,L30C2
-        brset   <BitFlags65,#$80,L30C2
+        brclr   <BitFlags65,#$10,L30C2               ; closed loop (O2 feedback in use)
+        brset   <BitFlags65,#$80,L30C2               ; throttle open (off idle)
         ldaa    <VehicleSpeedScaled
         cmpa    >MPHREF_SwitchPointForDecelIdleAisControl ; MPHREF: Switch point between Decel or Idle AIS control. Note there is also a 1
         bhi     L30C2
@@ -248,7 +248,7 @@ L30BC:
 L30C2:
         ldaa    #$06
         staa    >MonSecAir_04A5
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         ldaa    >ObdMonStatus_SecondaryAir
         anda    #$FB
         staa    >ObdMonStatus_SecondaryAir
@@ -263,7 +263,7 @@ L30DA:
 ; L30DB  ($30DB)
 ;---------------------------------------------------------------------------------------------------
 L30DB:
-        brclr   <OutputDriverBits,#$20,L30F7
+        brclr   <OutputDriverBits,#$20,L30F7         ; purge on/off output (secondary air with that option)
         inc     >MonSecAir_04A5
         ldd     #$0000
         std     >MonSecAir_04A3
@@ -452,7 +452,7 @@ L3203:
 ; L3209  ($3209)
 ;---------------------------------------------------------------------------------------------------
 L3209:
-        bclr    <OutputDriverBits,#$20
+        bclr    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD3
         bcs     L3221
@@ -490,7 +490,7 @@ L3241:
         bclr    <IPL2,#$10
         clr     >MonSecAir_04AB
         clr     >MonSecAir_0149
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         bclr    $00,x,#$04
         clra
         staa    >MonSecAir_04A8
@@ -530,7 +530,7 @@ L32A0:
         clra
         staa    >MonSecAir_04A8
         bclr    $00,x,#$04
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         rts
 
 

@@ -521,8 +521,8 @@
 | `$0217` | `Var_0217` | 2 | 2 | CODEe74f_MM | CODEe74f_MM |
 | `$0218` | `Var_0218` | 3 | 2 | CODE600e_SM, CODE7242_SM, CheckStuffAndSetStatusFlags_SM | CODE7242_SM, StoreMAPVoltsAndCalcMAPValue |
 | `$0219` | `ObdMapValue` | 2 | 1 | CaptureFreezeFrame, ObdPid0B_Map | TurnAlternatorOff |
-| `$021A` | `CoolantTempVolts` | 2 | 2 | CaptureFreezeFrame, ObdPid05_Coolant | CheckAndFilterCoolantTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
-| `$021B` | `ChargeTempVolts` | 1 | 2 | ObdPid0F_IntakeAirTemp | CheckAndFilterChargeTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
+| `$021A` | `CoolantTempUnfiltered` | 2 | 2 | CaptureFreezeFrame, ObdPid05_Coolant | CheckAndFilterCoolantTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
+| `$021B` | `ChargeTempUnfiltered` | 1 | 2 | ObdPid0F_IntakeAirTemp | CheckAndFilterChargeTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
 | `$021C` | `DrbRamBuffer` | 0 | 1 |  | DRB_UseRAM2ForSpecialProgramRoutine |
 | `$021E` | `DrbRamProgramEntry` | 1 | 0 | DRB_UseRAM2ForSpecialProgramRoutine |  |
 
@@ -682,3 +682,52 @@
 | `$04C3` | `DebugTemp3` | 1 | 2 | AltSerialComsRoutine | AltSerialComsRoutine |
 | `$04C4` | `DebugTemp4Counter` | 0 | 0 |  |  |
 | `$083E` | `Unref_083E` | 0 | 0 |  |  |
+
+## Биты флагов
+
+Биты, смысл которых расшифрован, из `annotations/ram_bits.json`. Сгенерированный исходник повторяет их в комментариях к инструкциям `bset`, `bclr`, `brset` и `brclr`.
+
+### `$003A` `OutputDriverBits`
+
+| Бит | Значение |
+|---|---|
+| 7 | клапан круиз-контроля |
+| 6 | клапан круиз-контроля |
+| 5 | выход вкл/выкл продувки (с опцией — вторичный воздух) |
+| 4 | реле топливного насоса |
+| 3 | реле вентилятора радиатора |
+| 2 | реле ASD |
+| 1 | клапан EGR |
+| 0 | реле муфты компрессора кондиционера |
+
+### `$0065` `BitFlags65`
+
+| Бит | Значение |
+|---|---|
+| 7 | дроссель открыт (не холостой ход) |
+| 6 | MINTHR поднят за это открытие дросселя |
+| 5 | таймер замкнутого контура CLTIME истёк |
+| 4 | замкнутый контур (обратная связь по O2) |
+| 3 | шаг самокалибровки MINTHR выполнен |
+| 2 | состояние O2 богато/бедно, меняется при каждом переключении O2 |
+| 1 | обогащение при частичном дросселе включено |
+| 0 | дроссель открыт полностью |
+
+### `$0071` `BitFlags71`
+
+| Бит | Значение |
+|---|---|
+| 7 | двигатель не работает (стоит или прокручивается стартером) |
+| 4 | ожидается переход от пуска к работе |
+| 1 | импульс коленвала после последнего расчёта катушек |
+
+### `$00EE` `OutputBits2`
+
+| Бит | Значение |
+|---|---|
+| 7 | скважность продувки задана принудительно (цель 1 DRB) |
+| 6 | лампа Check Engine |
+| 5 | клапан TCC / PTU |
+| 4 | лампа зарядки |
+| 3 | ключ нагрузки на линиях O2 (тест подогрева) |
+| 0 | удержание питания после выключения зажигания (тест подогрева O2) |

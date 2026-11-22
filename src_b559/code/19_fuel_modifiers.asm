@@ -24,7 +24,7 @@
 ;---------------------------------------------------------------------------------------------------
 CalculatePartThrottleEnrichmentAndLatency_MM:
         clra
-        brset   <BitFlags71,#$80,L7308
+        brset   <BitFlags71,#$80,L7308               ; engine not running (stopped or cranking)
         ldaa    <Counter_MainLoop
         bita    #$1F
         bne     L730A
@@ -117,7 +117,7 @@ L739A:
 L739D:
         brset   <IPL2,#$08,L73A7
         clrb
-        bclr    <BitFlags65,#$02
+        bclr    <BitFlags65,#$02                     ; part-throttle enrichment active
         bra     L73E2
 
 L73A7:
@@ -130,7 +130,7 @@ L73A7:
         tab
         cmpb    <TempA
         bls     L73DF
-        brclr   <BitFlags65,#$02,L73DB
+        brclr   <BitFlags65,#$02,L73DB               ; part-throttle enrichment active
         ldab    <Timer_OffThrottleFuelEnrich
         beq     L73D8
         sba
@@ -145,13 +145,13 @@ L73A7:
         cmpb    <Temp0
         bcc     L73DB
 L73D8:
-        bclr    <BitFlags65,#$02
+        bclr    <BitFlags65,#$02                     ; part-throttle enrichment active
 L73DB:
         ldab    <TempA
         bra     L73E2
 
 L73DF:
-        bset    <BitFlags65,#$02
+        bset    <BitFlags65,#$02                     ; part-throttle enrichment active
 L73E2:
         ldaa    <EngineRpm_HB
         cmpa    >LC08E                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
@@ -173,7 +173,7 @@ L73FF:
 L7400:
         stab    <Timer_OffThrottleFuelEnrich
 L7402:
-        brclr   <BitFlags65,#$01,PTESaveFractionToThrottleFactor
+        brclr   <BitFlags65,#$01,PTESaveFractionToThrottleFactor ; wide-open throttle
         ldaa    <MapValue
         ldx     #MAPWOT_ModifiedMAPforWOTEnrichment  ; MAPWOT: Output is used as the input to the WOT Enrich 3D table
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -230,12 +230,12 @@ PTELookupLatency:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <InjectorLatencyPW
         ldaa    >LBD76                               ; RETSPD: Retard from Speed.
-        brset   <BitFlags71,#$80,L748A
+        brset   <BitFlags71,#$80,L748A               ; engine not running (stopped or cranking)
         ldaa    #$06
         ldab    <CoolantTemp
         cmpb    >LBD71                               ; RETSPD: Retard from Speed.
         bcs     L746D
-        brclr   <BitFlags65,#$80,L7470
+        brclr   <BitFlags65,#$80,L7470               ; throttle open (off idle)
         bclr    <InjMaskCE,#$80
         bra     L748D
 
@@ -381,7 +381,7 @@ L7552:
         suba    >LC362                               ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
         bcs     L754C
         brset   <CCDFlags5,#$20,L754C
-        brset   <BitFlags71,#$80,L754C
+        brset   <BitFlags71,#$80,L754C               ; engine not running (stopped or cranking)
         brset   <BitFlags69,#$04,L754C
         ldd     <EngineRpm_HB
         rolb
@@ -462,7 +462,7 @@ L75EA:
         lsrd
         xgdy
         ldaa    >FuelPressureFactor
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         std     <Temp0
         ldab    <InjectorLatencyPW
@@ -564,10 +564,10 @@ L769F:
 ;---------------------------------------------------------------------------------------------------
 CalculateSumOfAllFuelModifiers_MM:
         clra
-        brclr   <BitFlags65,#$10,L76D5
+        brclr   <BitFlags65,#$10,L76D5               ; closed loop (O2 feedback in use)
         brset   <b58_IPL1,#$02,L76E5
         brclr   <BitFlagsE3,#$80,L76E5
-        brset   <BitFlags65,#$01,L76E5
+        brset   <BitFlags65,#$01,L76E5               ; wide-open throttle
         ldaa    >Var_0470
         beq     L76BD
         deca
@@ -608,16 +608,16 @@ L76F2:
         staa    >ValueFromAdaptiveMemory_0474
         ldaa    <MapValue
         ldx     #MAPHIP_HiMAP3DInputModifierFromMAPPart ; MAPHIP: HiMAP3DInputModifierFromMAPPart
-        brset   <BitFlags65,#$80,L7701
+        brset   <BitFlags65,#$80,L7701               ; throttle open (off idle)
         ldx     #MAPHII_HiMAP3DInputModifierFromMAPIdle ; MAPHII: HiMAP3DInputModifierFromMAPIdle
 L7701:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldx     #CLDLDP_ColdLoad3DTableOffIdle       ; CLDLDP: Base Fuel Modifier for Off-Idle
-        brset   <BitFlags65,#$80,L770E
+        brset   <BitFlags65,#$80,L770E               ; throttle open (off idle)
         ldx     #CLDLDI_ColdLoad3DTableIdle          ; CLDLDI: Base Fuel Modifier for Idle
 L770E:
         ldab    <CoolantTemp
-        jsr     >Lookup3DTableRoutine                ; 3D table lookup (bilinear interpolation), variant 1.
+        jsr     >Lookup3DTableRoutine                ; 3D table lookup with bilinear interpolation, variant with the column axis stored in the ta
         tab
         clra
         asld
@@ -631,7 +631,7 @@ L770E:
         tab
         pula
         ldx     #CURV3D_CurveABC_3DTable             ; CURV3D: Fuel Modifier from coolant temp and time.
-        jsr     >Lookup3DTableRoutine                ; 3D table lookup (bilinear interpolation), variant 1.
+        jsr     >Lookup3DTableRoutine                ; 3D table lookup with bilinear interpolation, variant with the column axis stored in the ta
         tab
         clra
         asld
@@ -645,7 +645,7 @@ L770E:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         puly
         beq     L7751
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <Temp0
         bcc     L7753
@@ -698,21 +698,21 @@ L7753:
         xgdy
         ldab    <BaroCompFactorFuel
         ldaa    #$01
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
         xgdy
         ldaa    <Factor_DecelLeanoutWhenMAPDecreasing
         beq     L77B3
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
 L77B3:
         sty     <Temp0
         ldx     #$00F4
         ldab    <Timer_FuelEnrich
         beq     L77C4
         ldaa    #$01
-        jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
+        jsr     >ScaleXbyB_addingA_intoD             ; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 inst
         std     <Temp0
 L77C4:
-        brset   <BitFlags65,#$01,L77E0
+        brset   <BitFlags65,#$01,L77E0               ; wide-open throttle
         clra
         ldab    <Timer_OffThrottleFuelEnrich
         bne     L77DB
@@ -722,7 +722,7 @@ L77D2:
         inca
 L77D3:
         asrb
-        jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
+        jsr     >ScaleXbyB_addingA_intoD             ; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 inst
         std     <Temp0
         bra     L77E0
 
@@ -736,7 +736,7 @@ L77E0:
         inca
 L77E6:
         asrb
-        jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
+        jsr     >ScaleXbyB_addingA_intoD             ; D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 inst
         std     <Temp0
         brclr   <BitFlags66,#$01,L781B
         ldaa    <BaroPressure
@@ -760,7 +760,7 @@ L77F7:
         sba
         inca
         ldy     <Temp0
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         sty     <Temp0
 L781B:
         ldaa    <BaroPressure
@@ -810,10 +810,16 @@ L784C:
 ;---------------------------------------------------------------------------------------------------
 ; DealWithSpecialIdle_SetBasicTiming_MM  ($784D)
 ;
+; Open-loop enrichment for the DRB set-up modes at closed throttle. [reviewed]
+;
+; Uses RICHSA while basic timing is being set (IPL1 bit 1 or BitFlags6b bit 5) and RIDLST while
+; the minimum throttle opening is being set (BitFlags6b bit 4), otherwise none; also loads the O2
+; inhibit timer O2ITIM.
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 DealWithSpecialIdle_SetBasicTiming_MM:
-        brset   <BitFlags65,#$80,THROTTLE_PRESSED1
+        brset   <BitFlags65,#$80,THROTTLE_PRESSED1   ; throttle open (off idle)
         ldaa    >RICHSA_OpenLoopEnrichFactorWhenSettingBasicTiming ; RICHSA: Open loop enrich factor when setting mechanical basic timing
         brset   <b58_IPL1,#$02,L7864
         brset   <BitFlags6b,#$20,L7864
@@ -845,7 +851,7 @@ L7878:
         ldaa    <Counter_MainLoop
         bne     L78DB
         brset   <b58_IPL1,#$40,L78A8
-        brclr   <BitFlags65,#$01,L78A8
+        brclr   <BitFlags65,#$01,L78A8               ; wide-open throttle
         ldaa    <CoolantTemp
 
 ;---------------------------------------------------------------------------------------------------

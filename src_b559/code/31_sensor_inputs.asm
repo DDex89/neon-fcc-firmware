@@ -12,7 +12,10 @@
 ;---------------------------------------------------------------------------------------------------
 ; A2DAndStoreBatteryVolts_MM  ($E229)
 ;
-; Battery voltage A/D conversion and storage. [from name]
+; Battery voltage A/D. [reviewed]
+;
+; Starts a multi-channel conversion of AN0-AN3 (ADCTL = $10), waits about 14 loops and stores ADR2
+; (AN1) in BatteryVolts and ADR3 (AN2) in the byte after it. Interrupts are off meanwhile.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -33,6 +36,11 @@ LE230:
 
 ;---------------------------------------------------------------------------------------------------
 ; A2DAndStoreCoolantAndChargeTempVolts_SM  ($E23C)
+;
+; A/D of the coolant and charge temperature sensors. [reviewed]
+;
+; Selects multiplexer input 00 ($0400 bits 0-1), converts AN4-AN7 (ADCTL = $14) and stores
+; ADR1/ADR2 (AN4 coolant, AN5 charge temperature) in LastCoolantTempVolts and the byte after it.
 ;
 ; Called from: SubLoopC
 ;---------------------------------------------------------------------------------------------------
@@ -55,6 +63,12 @@ LE24B:
 
 ;---------------------------------------------------------------------------------------------------
 ; A2DAndStoreTPS_and_CruiseVolts_MM  ($E258)
+;
+; A/D of TPS and the cruise switches, plus multiplexer input 01. [reviewed]
+;
+; Selects multiplexer input 01 and converts AN4-AN7: ADR1/ADR2 go to AnalogMux01_AN4 (AN5 with
+; this selection is the downstream O2 sensor), ADR3/ADR4 to LastTpsVolts (AN6 TPS, AN7 cruise
+; switch ladder).
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -79,6 +93,11 @@ LE26C:
 ;---------------------------------------------------------------------------------------------------
 ; A2DAndStoreAmbientTempVolts_SM  ($E27C)
 ;
+; A/D of multiplexer input 10: the ASD output voltage. [reviewed]
+;
+; Despite the original name it stores ADR1 (AN4 with selection 10, the ASD output voltage) in
+; AsdOutputVolts and ADR2 in the byte after it.
+;
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 A2DAndStoreAmbientTempVolts_SM:
@@ -101,6 +120,11 @@ LE28F:
 
 ;---------------------------------------------------------------------------------------------------
 ; CheckAndFilterAmbientTempSensor_SM  ($E29C)
+;
+; A/D of multiplexer input 11: the ambient / battery temperature sensor. [reviewed]
+;
+; Stores ADR1/ADR2 in AnalogMux11_AN4 and the byte after it. The conversion to AmbientAirTemp and
+; BatteryTemp (table TMPAMB) is done in SomethingWithAmbientSensor_SM.
 ;
 ; Called from: StoreMAPVoltsAndCalcMAPValue, TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
@@ -229,6 +253,13 @@ LE37B:
 ;---------------------------------------------------------------------------------------------------
 ; UseDefaultCoolantTempLimpIn_MM  ($E37E)
 ;
+; Coolant sensor out-of-range fault and limp-in value (code 22). [reviewed]
+;
+; An A/D value above TMPHIG or below TMPLOW reports the matching descriptor ($D5E1 / $D5D9). On a
+; new fault it switches the sensor to the hot pull-up range ($0400 bit 7 clear), sets IPL1 bit 1,
+; leaves closed loop and clears the closed-loop and thermostat timers. While the fault is set
+; CoolantTemp is DEFTMP; back in range the fault clears through ResetErrorCodeIfTimerExpired.
+;
 ; Called from: SubLoopC
 ;---------------------------------------------------------------------------------------------------
 UseDefaultCoolantTempLimpIn_MM:
@@ -249,7 +280,7 @@ LE395:
         ldy     #$0400
         bclr    $00,y,#$80
         bset    <b58_IPL1,#$02
-        bclr    <BitFlags65,#$10
+        bclr    <BitFlags65,#$10                     ; closed loop (O2 feedback in use)
         clra
         staa    <Timer_CLTIME_ClosedLoopTimer
         staa    >Timer_ThermostatDiagnostics
@@ -269,6 +300,14 @@ LE3C2:
 ;---------------------------------------------------------------------------------------------------
 ; CheckAndFilterCoolantTempSensor_SM  ($E3C3)
 ;
+; Coolant temperature: conversion, pull-up range switching and filter. [reviewed]
+;
+; Converts LastCoolantTempVolts with TMPTL1 (cold range, $0400 bit 7 set) or TMPTL2 (hot range)
+; into CoolantTempUnfiltered. The range switches after four passes in a row beyond the limit (A/D
+; below $40 in the cold range, above $DC in the hot range; BitFlags68 bits 6-7 count). CoolantTemp
+; then follows by one count per pass: down at once, up only when the new value is at least 3
+; counts higher.
+;
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 CheckAndFilterCoolantTempSensor_SM:
@@ -279,7 +318,7 @@ CheckAndFilterCoolantTempSensor_SM:
         ldx     #TMPTL2_TempForHotScaleA2D           ; TMPTL2 (TempForHotScaleA2D)
 LE3D5:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        staa    >CoolantTempVolts
+        staa    >CoolantTempUnfiltered
         ldaa    >LastCoolantTempVolts
         cmpa    >TMPHIG_OutOfRangeColdTooHighA2D     ; TMPHIG (OutOfRangeColdTooHighA2D)
         bhi     LE434
@@ -336,6 +375,13 @@ LE434:
 ;---------------------------------------------------------------------------------------------------
 ; UseDefaultChargeTempLimpIn_MM  ($E435)
 ;
+; Charge (intake air) temperature sensor out-of-range fault and limp-in value (code 23).
+; [reviewed]
+;
+; Above CHGHIG or below CHGLOW reports ErrBytes_CODE23 / _a; on a new fault it clears PORTA bit 6
+; (the hot pull-up range) and sets IPL1 bit 0. While faulted ChargeTemp is CoolantTemp, or DEFCHG
+; when the coolant sensor has failed too.
+;
 ; Called from: SubLoopC
 ;---------------------------------------------------------------------------------------------------
 UseDefaultChargeTempLimpIn_MM:
@@ -378,6 +424,12 @@ LE476:
 ;---------------------------------------------------------------------------------------------------
 ; CheckAndFilterChargeTempSensor_SM  ($E477)
 ;
+; Charge temperature: conversion, pull-up range switching and filter. [reviewed]
+;
+; Same as the coolant routine with the same TMPTL1 / TMPTL2 tables, but the range is switched with
+; PORTA bit 6 (an output-compare pin used as a plain output) and counted in BitFlags6a bits 6-7.
+; Stores ChargeTempUnfiltered and steps ChargeTemp towards it.
+;
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 CheckAndFilterChargeTempSensor_SM:
@@ -389,7 +441,7 @@ CheckAndFilterChargeTempSensor_SM:
         ldx     #TMPTL2_TempForHotScaleA2D           ; TMPTL2 (TempForHotScaleA2D)
 LE487:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        staa    >ChargeTempVolts
+        staa    >ChargeTempUnfiltered
         ldaa    >LastChargeTempVolts
         cmpa    >CHGHIG_ChargeTempOutOfRangeHigh     ; CHGHIG (ChargeTempOutOfRangeHigh)
         bhi     LE4F6

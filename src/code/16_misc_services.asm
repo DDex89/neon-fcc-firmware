@@ -262,7 +262,7 @@ EmmissionMaintenanceRemider1_MM:
         ldd     >EEPROM3
         subd    #$5AA5
 L68C9:
-        brclr   <BitFlags71,#$80,L68CF
+        brclr   <BitFlags71,#$80,L68CF               ; engine not running (stopped or cranking)
         ldaa    <KeyOnOrEngineRunningTime
 L68CF:
         bne     L68D1
@@ -538,7 +538,7 @@ L6A6A:
 L6A74:
         bset    <BitFlags6E,#$08
         brset   <EGRVar2,#$10,L6A83
-        brclr   <BitFlags65,#$10,L6A83
+        brclr   <BitFlags65,#$10,L6A83               ; closed loop (O2 feedback in use)
         brclr   <BitFlags66,#$10,L6A86
 L6A83:
         jmp     >L6AF1

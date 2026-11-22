@@ -75,6 +75,30 @@ checked against the code.
     the slot width. Checking it means probing the CPU pins, which requires opening the controller
     (the board is potted in soft compound), so it has not been done yet.
 
+## Units of the main inputs
+
+The J1979 PIDs convert the internal values to the units fixed by SAE J1979, so they give the exact
+internal scaling. [code]
+
+| Value | Unit | From |
+|---|---|---|
+| `CoolantTemp`, `ChargeTemp`, `AmbientAirTemp`, `BatteryTemp` and the temperature axes of the calibration | °C = count − 128 (0 = −128 °C, $80 = 0 °C, $FF = 127 °C) | PIDs $05/$0F send count − $58, J1979 defines A − 40 °C |
+| `EngineRpm` (16 bit) | 1/8 rpm; `EngineRpm_HB` = 32 rpm per count | PID $0C sends `EngineRpm` / 2, J1979 unit 1/4 rpm |
+| `VehicleSpeed` (16 bit) | 1/64 mph | PID $0D |
+| `VehicleSpeedScaled` | 0.5 mph | PID $0D sends it × $CE / 256 = km/h |
+| `ObdMapValue` | 105/256 = 0.41 kPa | PID $0B sends it × $69 / 256 |
+| `AdvanceTemporary` | 0.5° signed | PID $0E sends it + $80, J1979 unit 0.5° − 64° |
+| `MaxRPMxMaxMAPFraction` | 0-255 = 0-100 % load | PID $04 |
+
+The temperature lookup tables (`TMPTL1`/`TMPTL2` for coolant with the two pull-up ranges, `TMPAMB`
+for the ambient / battery sensor) output this unit directly. MP Tune shows it as "raw × 1.797 − 200 °F",
+which is the same scale rounded ((count − 128) × 1.8 + 32 = 1.8 × count − 198.4). For example
+`CLTEMP` $94 = 20 °C. When the ambient / battery sensor fails, both temperatures are set to $88 = 8 °C. [code]
+
+`CoolantTempUnfiltered` / `ChargeTempUnfiltered` ($021A/$021B, `CoolantTempVolts` / `ChargeTempVolts` in the
+original names) hold the table result before filtering; `CoolantTemp` follows it by at most one count
+per update. [code]
+
 ## Input coordinates
 
 Most maps are 3D tables whose axes are 0-255 coordinates produced by transfer curves:
@@ -255,9 +279,11 @@ Fuel is cut for whole engine revolutions:
 - **EGR** (`ExhGasRecirc_MM`): the solenoid is enabled when RPM, MAP (depending on baro), coolant
   temperature and time since start are inside the `EGR21`..`EGR27` windows, and only if
   configuration bit $B811.6 is set.
-- **Canister purge**: duty-cycle routine at $B290 (output bit 5 of `OutputDriverBits`) and
-  `ControlPurgeSolenoid_MM` ($9C6A, `OutputBits2` bit 7). B4CC never calls `ControlPurgeSolenoid_MM`;
-  the factory code bases do (see [code_bases.md](code_bases.md#b559-compared-with-b4cc)).
+- **Canister purge**: two paths. The routine at $B290 switches output bit 5 of `OutputDriverBits`
+  on and off with coolant, MAP and rpm windows ($CAB6-$CAC5) and a delay. `ControlPurgeSolenoid_MM`
+  ($9C6A) works out the purge duty and sends on/off times to the companion chip in register frame
+  $58 (`OutputBits2` bit 7 forces it). Which path drives the solenoid at pin 16 is not confirmed.
+  B4CC never calls `ControlPurgeSolenoid_MM`; the factory code bases do (see [code_bases.md](code_bases.md#b559-compared-with-b4cc)).
 - **Downstream O2** sensor monitor (`VerifyOperationOfDownstreamO2Sensor_MM`), not called in B4CC.
 - **OBD-II monitors (dormant).** The code contains ten OBD-II monitors (O2 heaters, O2 response,
   secondary air, EVAP purge flow, catalyst, EGR flow, fuel system rich / lean, misfire) with their

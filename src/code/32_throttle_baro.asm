@@ -56,13 +56,13 @@ CheckThrottle_BadTpsSignal:
 CheckThrottle_ErrorAlreadyFlagged:
         ldaa    #$33
         staa    <MINTHR_LowestSessionTPS
-        brset   <BitFlags71,#$80,LE55B
+        brset   <BitFlags71,#$80,LE55B               ; engine not running (stopped or cranking)
         ldab    <BaroPressure
         subb    <MapValue
         bcc     LE54B
         clrb
 LE54B:
-        brclr   <BitFlags65,#$01,LE554
+        brclr   <BitFlags65,#$01,LE554               ; wide-open throttle
         subb    #$06
         bcc     LE554
         clrb
@@ -86,12 +86,12 @@ LE563:
 LE56F:
         ldab    #$D0
 LE571:
-        brclr   <BitFlags65,#$01,LE578
+        brclr   <BitFlags65,#$01,LE578               ; wide-open throttle
         subb    >TPSOFS_TPSOffset                    ; TPSOFS: Throttle self calibration
 LE578:
         cba
         bcc     CheckThrottle_AtFullThrottle
-        bclr    <BitFlags65,#$01
+        bclr    <BitFlags65,#$01                     ; wide-open throttle
         bra     LE583
 
 
@@ -99,7 +99,7 @@ LE578:
 ; CheckThrottle_AtFullThrottle  ($E580)
 ;---------------------------------------------------------------------------------------------------
 CheckThrottle_AtFullThrottle:
-        bset    <BitFlags65,#$01
+        bset    <BitFlags65,#$01                     ; wide-open throttle
 LE583:
         ldaa    >SystemStatusFlag_4b6
         bita    #$02
@@ -139,7 +139,7 @@ LE5B4:
 LE5C8:
         ldaa    <Timer_CountdownFromStartRunForAisFeedback
         bne     LE5EB
-        brset   <BitFlags71,#$80,LE5EB
+        brset   <BitFlags71,#$80,LE5EB               ; engine not running (stopped or cranking)
         brclr   <KeyOnOrEngineRunningTime,#$FF,LE5EB
         ldaa    <Counter_MINTHR
         deca
@@ -318,8 +318,8 @@ LE6FA:
         bset    <BitFlags_AIS,#$08
 LE704:
         bclr    <BitFlags66,#$40
-        brset   <BitFlags71,#$80,LE73F
-        brset   <BitFlags65,#$80,LE73F
+        brset   <BitFlags71,#$80,LE73F               ; engine not running (stopped or cranking)
+        brset   <BitFlags65,#$80,LE73F               ; throttle open (off idle)
         bset    <BitFlags_AIS,#$04
         ldaa    <CoolantTemp
         ldx     #ICCNT2_IdleControlCounterInit2      ; ICCNT2 (IdleControlCounterInit2)
@@ -520,14 +520,20 @@ LE85C:
 ;---------------------------------------------------------------------------------------------------
 ; HandleBaroReadRequirement_MM  ($E85D)
 ;
-; Barometric pressure update: reads MAP as baro at key-on and at wide open throttle, low RPM.
-; [from name]
+; Barometric pressure: key-on reading and slow tracking while running. [reviewed]
+;
+; With the engine not running and no key-on reading yet (BitFlags67 bit 6 clear) it waits for
+; MinTimerBaroRead_C, checks that the MAP voltage is steady (MAPOffsetForBaroRead, MAPTemp_A/B),
+; converts it and stores it through SaveBaroPressure, then sets BitFlags67 bit 6. While running it
+; steps BaroPressure by one count: up when MapValue + BARCMP(rpm) is above it (after
+; MinTimerBaroRead_A), down when it is not and the throttle is at least MaxTPSForBaroRead above
+; MINTHR (after MinTimerBaroRead_B). Timer_BaroReadInterval paces the steps.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 HandleBaroReadRequirement_MM:
         brset   <BitFlags67,#$40,LE865
-        brset   <BitFlags71,#$80,LE891
+        brset   <BitFlags71,#$80,LE891               ; engine not running (stopped or cranking)
 LE865:
         ldaa    <EngineRpm_HB
         ldx     #BARCMP_BaroCompensationFromRPM      ; CRMASK (CruiseMask)
@@ -564,7 +570,7 @@ LE891:
 LE8A0:
         ldaa    <MapVolts
         psha
-        bsr     ConvertMAPVoltsToValue               ; Converts the MAP sensor voltage to the internal MAP value.
+        bsr     ConvertMAPVoltsToValue               ; MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF.
         staa    >Temp0_X
         pula
         tab
@@ -577,10 +583,10 @@ LE8A0:
         bcs     LE8C4
         cmpa    >MAPTemp_B
         bls     LE8C4
-        bsr     ConvertMAPVoltsToValue               ; Converts the MAP sensor voltage to the internal MAP value.
+        bsr     ConvertMAPVoltsToValue               ; MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF.
         tab
 LE8C2:
-        bsr     SaveBaroPressure
+        bsr     SaveBaroPressure                     ; Stores B in BaroPressure if it is within BAROLO..BAROHI.
 LE8C4:
         bset    <BitFlags67,#$40
 LE8C7:
@@ -596,6 +602,8 @@ LE8D1:
 
 ;---------------------------------------------------------------------------------------------------
 ; SaveBaroPressure  ($E8D2)
+;
+; Stores B in BaroPressure if it is within BAROLO..BAROHI. [reviewed]
 ;
 ; Called from: HandleBaroReadRequirement_MM, StoreMAPVoltsAndCalcMAPValue
 ;---------------------------------------------------------------------------------------------------

@@ -201,7 +201,7 @@ Cutout_CheckMPHLimitingValues:
         ldaa    >LC8F3
         bita    #$20
         bne     L715A
-        brclr   <OutputDriverBits,#$01,L7164
+        brclr   <OutputDriverBits,#$01,L7164         ; A/C clutch relay
 L715A:
         brset   <BitFlags69,#$08,L7164
         bset    <BitFlags69,#$0C
@@ -258,7 +258,7 @@ L7195:
         ldaa    >LC8F3
         bita    #$20
         bne     L7161
-        brset   <OutputDriverBits,#$01,L7161
+        brset   <OutputDriverBits,#$01,L7161         ; A/C clutch relay
 
 ;---------------------------------------------------------------------------------------------------
 ; Cutout_TurnFuelBackOn  ($718E)
@@ -323,7 +323,7 @@ L720B:
         bra     L721F
 
 L721B:
-        brset   <BitFlags65,#$80,L7229
+        brset   <BitFlags65,#$80,L7229               ; throttle open (off idle)
 L721F:
         ldab    <BaroPressure
         lsrb
@@ -353,6 +353,12 @@ L7241:
 
 ;---------------------------------------------------------------------------------------------------
 ; CODE7242_SM  ($7211)
+;
+; ASD supply voltage processing. [reviewed]
+;
+; Converts AsdOutputVolts and BatteryVolts through TABLEce82 and TABLEce95, combines them and
+; filters the result into AsdVolts_000B with weight LCE94 (with a start-up delay Var_0218). Sets
+; SystemStatusFlag_4b6 bit 5 above LCEA3 and clears it below LCEA4. Runs in SubLoopG.
 ;
 ; Called from: SubLoopG
 ;---------------------------------------------------------------------------------------------------

@@ -12,7 +12,11 @@
 ;---------------------------------------------------------------------------------------------------
 ; InterpSigned  ($B49E)
 ;
-; Signed interpolation step used by the 3D lookups. [from name]
+; Interpolation step for signed cells: A = cell + (difference x fraction / 256). [reviewed]
+;
+; On entry X points at the first cell, A holds the difference to the next cell and B the fraction
+; (0-255). The sign of the difference comes from the preceding compare (N xor V); the product is
+; rounded.
 ;---------------------------------------------------------------------------------------------------
 InterpSigned:
         blt     LB4B4
@@ -22,7 +26,10 @@ InterpSigned:
 ;---------------------------------------------------------------------------------------------------
 ; InterpUnsigned  ($B4A2)
 ;
-; Unsigned interpolation step used by the 3D lookups. [from name]
+; Interpolation step for unsigned cells: A = cell + (difference x fraction / 256). [reviewed]
+;
+; Same as InterpSigned, with the sign of the difference taken from the carry of the preceding
+; subtraction.
 ;---------------------------------------------------------------------------------------------------
 InterpUnsigned:
         bcs     LB4B4
@@ -44,8 +51,11 @@ LB4B8:
 ;---------------------------------------------------------------------------------------------------
 ; RescaleEngineRPM_MM  ($B4B1)
 ;
-; Converts engine RPM to the 3D-table column coordinate through RPMSCL (RPMRescaledfor3D). [from
-; name]
+; Converts engine RPM to the 3D-table column coordinate RPMRescaledfor3D. [reviewed]
+;
+; Rounds EngineRpm to 32 rpm per count (EngineRpm_HB plus the carry of the low byte) and passes it
+; through the RPMSCL curve. The last routine of code part 1 in B4CC: the 307 bytes after it, up to
+; $B5FF, are $FF.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

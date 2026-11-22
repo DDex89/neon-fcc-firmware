@@ -104,17 +104,17 @@ MainSubLoop:
         ldd     <Temp0
         jsr     >DetermineNumberOfOverflowsBetweenSpeedoPulses_MM
         cli
-        jsr     >A2DAndStoreBatteryVolts_MM          ; Battery voltage A/D conversion and storage.
-        jsr     >A2DAndStoreTPS_and_CruiseVolts_MM
+        jsr     >A2DAndStoreBatteryVolts_MM          ; Battery voltage A/D.
+        jsr     >A2DAndStoreTPS_and_CruiseVolts_MM   ; A/D of TPS and the cruise switches, plus multiplexer input 01.
         jsr     >EmmissionMaintenanceRemider1_MM     ; Emission maintenance reminder (EMR): keeps a mileage record in the internal EEPROM.
         jsr     >DRB_SomethingLikeEMR_MM
         jsr     >EmmissionMaintenanceRemider2_MM
         jsr     >CheckThrottleRoutine_MM             ; Throttle position processing: minimum-throttle learning (MINTHR), idle / WOT detection, TP
-        jsr     >HandleBaroReadRequirement_MM        ; Barometric pressure update: reads MAP as baro at key-on and at wide open throttle, low RPM
+        jsr     >HandleBaroReadRequirement_MM        ; Barometric pressure: key-on reading and slow tracking while running.
         jsr     >CalculateInjectorPulsewidthForStarting_MM ; Cranking fuel: pulse width from coolant temperature, engine position pulses, RPM and baro.
         jsr     >SomethingWithAIS_MM
         jsr     >ResetAverageValues_MM
-        jsr     >RescaleEngineRPM_MM                 ; Converts engine RPM to the 3D-table column coordinate through RPMSCL (RPMRescaledfor3D).
+        jsr     >RescaleEngineRPM_MM                 ; Converts engine RPM to the 3D-table column coordinate RPMRescaledfor3D.
         jsr     >IncrementBadMAPCounter_MM
         jsr     >ControlCruiseServo0_MM
         jsr     >ControlCruiseServo1_MM
@@ -122,25 +122,25 @@ MainSubLoop:
         jsr     >ControlFan_MM                       ; Radiator fan relay control from coolant temperature, vehicle speed and A/C state.
         jsr     >CalculateTargetIdleSpeed_MM         ; Target idle speed.
         jsr     >ControlAIS_MM                       ; Idle air control dispatcher: runs the AIS state in the low nibble of AISSubIndex.
-        jsr     >ControlAsdRelay_MM                  ; Auto shutdown (ASD) relay: powers fuel pump, injectors and coils while the engine turns.
+        jsr     >ControlAsdRelay_MM                  ; ASD and fuel pump relays (OutputDriverBits bits 2 and 4, switched together).
         jsr     >CalculateSparkAdvance_MM            ; Spark advance calculation (main loop).
         jsr     >CalculatePartThrottleEnrichmentAndLatency_MM ; Throttle enrichment factor (part throttle / WOT) and injector latency.
-        jsr     >HandleAmTimer_MM
+        jsr     >HandleAmTimer_MM                    ; Key-on set-up of the closed-loop timers.
         jsr     >HandleO2Processing_MM               ; Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller.
-        jsr     >ModifyO2FeedbackCountVarToMaintainStoich_MM
+        jsr     >ModifyO2FeedbackCountVarToMaintainStoich_MM ; Selects the closed-loop ramp step for the current O2 side.
         jsr     >AdaptiveMemory_DetermineWhichCellApplies_MM ; Selects the adaptive memory cell for the current operating point.
-        jsr     >ClearO2SensorFeedbackCounterSigned_MM
-        jsr     >ControlPurgeSolenoid_MM             ; Evaporative canister purge solenoid control.
+        jsr     >ClearO2SensorFeedbackCounterSigned_MM ; Resets the closed-loop feedback counter in a defined condition.
+        jsr     >ControlPurgeSolenoid_MM             ; Canister purge duty: on/off times for the companion chip register frame $58.
         jsr     >DetermineIndividualInjectorTrims_MM ; Individual cylinder fuel trims (CL1PTR..CLTRP4).
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >AdaptiveMemory_UpdateCellIfRequired ; Adaptive (learned) fuel correction: updates the current RPM/MAP cell (AutoCalCell0-12).
-        jsr     >DealWithSpecialIdle_SetBasicTiming_MM
+        jsr     >DealWithSpecialIdle_SetBasicTiming_MM ; Open-loop enrichment for the DRB set-up modes at closed throttle.
         jsr     >ControlEngineCutout_MM              ; Fuel cut-off decisions: rev limiter, speed limiter, overboost/MAP and limp-mode limits.
         jsr     >CalculatePartThrottleTransientFuel  ; Transient fuel: accelerator-pump style enrichment and deceleration lean-out.
         jsr     >CalculateSumOfAllFuelModifiers_MM   ; Product of all slow fuel corrections, stored in SumOfFuelModifiers.
         jsr     >ObdMonitorScheduler                 ; Runs the ten OBD-II monitors from the table at $E939.
         jsr     >CalculateKnockRetard_MM             ; Knock detection: compares the knock sample with the background average (main loop).
-        jsr     >GetControlFeedback_DetermineIfShutdownRequired_MM
+        jsr     >GetControlFeedback_DetermineIfShutdownRequired_MM ; Key-off shutdown sequence.
         jsr     >CheckForErrorsAndSetCodes_MM
         jsr     >VerifyOperationOfBatteryVoltage_MM
         jsr     >DetectAlternatorFault_MM
@@ -148,7 +148,7 @@ MainSubLoop:
         jsr     >VerifyOperationOfDownstreamO2Sensor_MM ; Downstream O2 sensor check (fault code 21, the ErrBytes_CODE21_f descriptor).
         jsr     >VerifyOperationOfFuelInjectorDrivers_MM
         jsr     >DecrementDSO2SensorDiagnosticCounter_MM ; Downstream O2 sensor diagnostic counter (rich-signal timing).
-        jsr     >VerifyOperationOfAmbientTempSensor_MM ; Plausibility check of the ambient / battery temperature sensor (fault code 23).
+        jsr     >VerifyOperationOfAmbientTempSensor_MM ; Plausibility check of the air temperature sensors at key-on (fault code 23, descriptor Err
         jsr     >VerifyOperationOfMapSensor_MM
         jsr     >VerifyOperationOfThermostat_MM
         sei
@@ -169,35 +169,42 @@ MainSubLoop:
         jsr     >DRBIIOuput_MM                       ; Dispatches the received DRB command: handler = DRBFunctionTable[command - $10].
         jsr     >PrepareCCDDataForXmit_MM_2          ; Handles a received CCD message: calls CCDDataStream_2[CcdRxId & $0F].
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
-        jsr     >IncrementLoopCounters_MM
+        jsr     >IncrementLoopCounters_MM            ; Main-loop counters, sub-loop requests and stall detection.
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopA  ($93BF)
 ;
-; Sub-loop A of the round-robin scheduler (one of eight jobs spread over main-loop passes). [from
-; name]
+; Sub-loop A of the round-robin scheduler, requested every 21.5 ms (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, PrepareCCDDataForXmit_MM_1, CODEe74f_MM, Set_ErrorBits_20_MM,
+; DecrementCounter048D_SM (B559, B4F3, B4C2 add CheckErrorMaskingAndSetCodes_MM).
 ;---------------------------------------------------------------------------------------------------
 SubLoopA:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >PrepareCCDDataForXmit_MM_1          ; Builds the next CCD message from the 128-slot schedule CCDDataStream_1 (index CcdTxSlot).
         jsr     >CODEe74f_MM
         jsr     >Set_ErrorBits_20_MM
         jsr     >DecrementCounter048D_SM
-        jsr     >CheckErrorMaskingAndSetCodes_MM     ; Filters cruise distance pulse width and TPS (FaultMask_01D2/01D6) and runs a speed-related
+        jsr     >CheckErrorMaskingAndSetCodes_MM     ; Torque converter clutch system monitor (code 37, P0740, descriptor $D983).
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopB  ($93D2)
 ;
-; Sub-loop B of the round-robin scheduler. [from name]
+; Sub-loop B of the round-robin scheduler, requested every 43 ms (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, IncrementDeltaRPMCounter_SM, LookupValueFor0476_SM, CODE8059_MM,
+; CalculateAverageKnockVolts_SM.
 ;---------------------------------------------------------------------------------------------------
 SubLoopB:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
-        jsr     >IncrementDeltaRPMCounter_SM
-        jsr     >LookupValueFor0476_SM
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
+        jsr     >IncrementDeltaRPMCounter_SM         ; Counts Counter_DeltaEngineRPM_1 up (saturating) while the throttle is closed.
+        jsr     >LookupValueFor0476_SM               ; Threshold Var_0476 for the per-event RPM and MAP change checks in CrankMapRpmUpdate.
         jsr     >CODE8059_MM
         jsr     >CalculateAverageKnockVolts_SM       ; Running average of the knock sensor background level (window: KNAMAP, KNARPM, KNACLT ...).
         rts
@@ -206,15 +213,21 @@ SubLoopB:
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopC  ($93E2)
 ;
-; Sub-loop C of the round-robin scheduler. [from name]
+; Sub-loop C of the round-robin scheduler, requested every 86 ms (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, CalculateMaxRPMxMaxMAPFraction_MM, CODE600e_SM, coolant and charge
+; temperature A/D and limp-in, Set_ErrorBits_16_MM, IncrementOrClearDiagFaultCounter_SM, and
+; Set_ErrorBits_3_MM when CONFIG2 bit 5 is set (B559, B4F3, B4C2 add the MAP and knock signal
+; checks).
 ;---------------------------------------------------------------------------------------------------
 SubLoopC:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >CalculateMaxRPMxMaxMAPFraction_MM
         jsr     >CODE600e_SM
-        jsr     >A2DAndStoreCoolantAndChargeTempVolts_SM
-        jsr     >UseDefaultCoolantTempLimpIn_MM
-        jsr     >UseDefaultChargeTempLimpIn_MM
+        jsr     >A2DAndStoreCoolantAndChargeTempVolts_SM ; A/D of the coolant and charge temperature sensors.
+        jsr     >UseDefaultCoolantTempLimpIn_MM      ; Coolant sensor out-of-range fault and limp-in value (code 22).
+        jsr     >UseDefaultChargeTempLimpIn_MM       ; Charge (intake air) temperature sensor out-of-range fault and limp-in value (code 23).
         jsr     >Set_ErrorBits_16_MM
         jsr     >IncrementOrClearDiagFaultCounter_SM
         jsr     >FurtherMAPAndBaroDiagnostics2_SM    ; MAP sensor rationality check against TPS (fault code 24, the ErrBytes_CODE24_b descriptor)
@@ -230,10 +243,14 @@ L93E3:
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopD  ($940B)
 ;
-; Sub-loop D of the round-robin scheduler. [from name]
+; Sub-loop D of the round-robin scheduler, requested every 172 ms (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, Load05Into0167_SM, IncrementCounter0483_MM,
+; IncrementBatteryVoltsOKCounter_MM.
 ;---------------------------------------------------------------------------------------------------
 SubLoopD:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >Load05Into0167_SM
         jsr     >IncrementCounter0483_MM
         jsr     >IncrementBatteryVoltsOKCounter_MM
@@ -243,10 +260,13 @@ SubLoopD:
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopE  ($9418)
 ;
-; Sub-loop E of the round-robin scheduler. [from name]
+; Sub-loop E of the round-robin scheduler, requested every 344 ms (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer and LACBD.
 ;---------------------------------------------------------------------------------------------------
 SubLoopE:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >LACBD
         rts
 
@@ -254,15 +274,18 @@ SubLoopE:
 ;---------------------------------------------------------------------------------------------------
 ; TempSensorSubLoop_F  ($941F)
 ;
-; Sub-loop F: coolant, charge-air and ambient temperature sensor sampling and filtering. [from
-; name]
+; Sub-loop F of the round-robin scheduler, requested every 0.69 s (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, the coolant, charge and ambient temperature filters and checks, and fifteen
+; status checks.
 ;---------------------------------------------------------------------------------------------------
 TempSensorSubLoop_F:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
-        jsr     >CheckAndFilterCoolantTempSensor_SM
-        jsr     >CheckAndFilterChargeTempSensor_SM
-        jsr     >A2DAndStoreAmbientTempVolts_SM
-        jsr     >CheckAndFilterAmbientTempSensor_SM
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
+        jsr     >CheckAndFilterCoolantTempSensor_SM  ; Coolant temperature: conversion, pull-up range switching and filter.
+        jsr     >CheckAndFilterChargeTempSensor_SM   ; Charge temperature: conversion, pull-up range switching and filter.
+        jsr     >A2DAndStoreAmbientTempVolts_SM      ; A/D of multiplexer input 10: the ASD output voltage.
+        jsr     >CheckAndFilterAmbientTempSensor_SM  ; A/D of multiplexer input 11: the ambient / battery temperature sensor.
         jsr     >CheckCoolantTempStatus_SM
         jsr     >CheckSpeedStatus_SM
         jsr     >CheckCoolantTempStatus2_SM
@@ -280,25 +303,32 @@ TempSensorSubLoop_F:
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopG  ($9450)
 ;
-; Sub-loop G of the round-robin scheduler. [from name]
+; Sub-loop G of the round-robin scheduler, requested every 1.38 s (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, the purge on/off logic at $B2B7, two counters and the ASD voltage
+; processing CODE7242_SM.
 ;---------------------------------------------------------------------------------------------------
 SubLoopG:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         jsr     >LB290
         jsr     >IncrementCounter01fc_SM
         jsr     >IncrementCounter01fb_MM
-        jsr     >CODE7242_SM
+        jsr     >CODE7242_SM                         ; ASD supply voltage processing.
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
 ; SubLoopH  ($9460)
 ;
-; Sub-loop H of the round-robin scheduler. [from name]
+; Sub-loop H of the round-robin scheduler, requested every 2.75 s (at most one sub-loop per main-
+; loop pass). [reviewed]
+;
+; Calls ResetCOPTimer, DecrementAdaptiveRetardFactor and four counters.
 ;---------------------------------------------------------------------------------------------------
 SubLoopH:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
-        jsr     >DecrementAdaptiveRetardFactor
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
+        jsr     >DecrementAdaptiveRetardFactor       ; AdaptiveRetardIndex -= ARSUBC, not below zero (the adaptive knock retard decays).
         jsr     >DecrementCounter01ff_SM
         jsr     >IncrementCounters01cb_01ca_MM
         jsr     >DecrementCounter04ae_SM
@@ -432,10 +462,10 @@ L9507:
 L9512:
         dey
         beq     L952D
-        bset    <OutputBits2,#$01
+        bset    <OutputBits2,#$01                    ; key-off power hold (O2 heater test)
         pshy
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         puly
         ldx     #$0682
 L9526:
@@ -447,7 +477,7 @@ L952D:
         anda    #$F0
         oraa    #$02
         staa    >Shutdown_0109
-        bset    <OutputDriverBits,#$04
+        bset    <OutputDriverBits,#$04               ; ASD relay
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         ldx     #$FFFF
         stx     >Shutdown_010A
@@ -613,7 +643,7 @@ L96A2:
         ldaa    >Shutdown_010C
         cmpa    >LCC95
         bcs     L969B
-        bclr    <OutputDriverBits,#$04
+        bclr    <OutputDriverBits,#$04               ; ASD relay
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         ldaa    >Shutdown_0109
         anda    #$F0
@@ -720,7 +750,7 @@ L9779:
 L977C:
         dex
         bne     L977C
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldaa    >SwitchPortAccessReg1
         bita    #$40
         beq     L97D2
@@ -748,7 +778,7 @@ L97B5:
         brclr   $00,x,#$10,L97D2
         bset    $00,x,#$01
 L97D2:
-        bset    <OutputDriverBits,#$04
+        bset    <OutputDriverBits,#$04               ; ASD relay
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
 L97D8:
         rts
@@ -794,11 +824,11 @@ L9800:
 L981B:
         dey
         beq     L9838
-        bset    <OutputBits2,#$08
+        bset    <OutputBits2,#$08                    ; O2 line load switch (heater test)
         pshb
         pshy
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         puly
         pulb
         ldx     #$0682
@@ -825,11 +855,11 @@ L9850:
 L9862:
         dey
         beq     L987F
-        bclr    <OutputBits2,#$08
+        bclr    <OutputBits2,#$08                    ; O2 line load switch (heater test)
         pshb
         pshy
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         puly
         pulb
         ldx     #$0682
@@ -993,12 +1023,12 @@ L99AB:
         brset   $09,y,#$04,L99E1
 L99B0:
         inc     >Temp0
-        brclr   <BitFlags65,#$10,L99E1
+        brclr   <BitFlags65,#$10,L99E1               ; closed loop (O2 feedback in use)
         inc     >Temp0
         brset   <BitFlags66,#$10,L99E1
         inc     >Temp0
         inc     >Temp0
-        brset   <OutputBits2,#$80,L99D0
+        brset   <OutputBits2,#$80,L99D0              ; purge duty forced (DRB override target 1)
         ldaa    <CylTrim_Adaptive_Var1
         beq     L99D0
         brclr   <BitFlags37,#$08,L99E1

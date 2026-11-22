@@ -50,7 +50,3 @@ LAAAA                                        equ $AAD1
 LF33B                                        equ $F33B
 LF88A                                        equ $F88A
 LFBF7                                        equ $FBF7
-LFF07                                        equ $FF07
-LFF22                                        equ $FF22
-LFF89                                        equ $FF89
-ChryslerCopyrightNotice                      equ $FFA4

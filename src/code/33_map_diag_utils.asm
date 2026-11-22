@@ -12,7 +12,9 @@
 ;---------------------------------------------------------------------------------------------------
 ; ConvertMAPVoltsToValue  ($E8DF)
 ;
-; Converts the MAP sensor voltage to the internal MAP value. [from name]
+; MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF. [reviewed]
+;
+; That is MAP value = 0.953 x MAP volts count + 21.9. Used for MapValue and for the baro reading.
 ;
 ; Called from: CrankMapRpmUpdate, HandleBaroReadRequirement_MM, ResetInterrupt, StoreMAPVoltsAndCalcMAPValue
 ;---------------------------------------------------------------------------------------------------
@@ -566,9 +568,10 @@ LEC82:
 ; Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than the
 ; stored one. [reviewed]
 ;
-; Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempVolts, the O2 feedback
-; counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, EngineRpm_HB and
-; VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
+; Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempUnfiltered, the O2
+; feedback counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219,
+; EngineRpm_HB and VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes
+; clears the frame.
 ;
 ; Called from: ObdProcessMonitorResult, ThrowNonCriticalError
 ;---------------------------------------------------------------------------------------------------
@@ -588,7 +591,7 @@ CaptureFreezeFrame:
         staa    $01,x
         ldaa    >MaxRPMxMaxMAPFraction
         staa    $02,x
-        ldaa    >CoolantTempVolts
+        ldaa    >CoolantTempUnfiltered
         staa    $03,x
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         staa    $04,x
@@ -822,7 +825,7 @@ LEDCF:
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 ObdAutoClearCodes:
-        brclr   <BitFlags71,#$80,LEE13
+        brclr   <BitFlags71,#$80,LEE13               ; engine not running (stopped or cranking)
         ldx     #$011A
         brset   $00,x,#$80,LEE13
         ldaa    >WarmupCycleCount

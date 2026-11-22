@@ -72,19 +72,19 @@ The called routines are still in the B4CC ROM, byte for byte, but nothing reache
 | Routine | Called from (B559) | What B4CC loses |
 |---|---|---|
 | `ObdMonitorScheduler` | MainSubLoop | All ten OBD-II monitors (see [diagnostics.md](diagnostics.md#obd-ii-monitors)) |
-| `ControlPurgeSolenoid_MM` | MainSubLoop | Canister purge control (`OutputBits2` bit 7); only the DRB actuator test drives it |
+| `ControlPurgeSolenoid_MM` | MainSubLoop | Purge duty calculation: the on/off times sent to the companion chip in register frame $58 stay at their reset value. The separate on/off logic at $B290 (`OutputDriverBits` bit 5) still runs in B4CC; which of the two switches the solenoid at pin 16 is not confirmed yet |
 | `DetermineIndividualInjectorTrims_MM` | MainSubLoop | Individual cylinder fuel trims |
 | `CalculateVariableRevLimit_MM` | MainSubLoop | Variable rev limit; `VariableRevLimit` stays at $FF from reset, only the fixed limits act |
 | `CheckIfCheckEngineLightShouldBeOn_A_MM`, `_B_MM` | MainSubLoop | Charge-warning lamp logic (`OutputBits2` bit 4); despite the name not the MIL. Only the fan code (with CONFIG2 bit 6 set) and the DRB tests still touch the bit |
 | `EmmissionMaintenanceRemider1_MM` | MainSubLoop | Emission maintenance reminder record in EEPROM, code 62 |
 | `VerifyOperationOfDownstreamO2Sensor_MM` | MainSubLoop | Downstream O2 sensor check (code 21) |
 | `DecrementDSO2SensorDiagnosticCounter_MM` | MainSubLoop | Downstream O2 diagnostic counter |
-| `VerifyOperationOfAmbientTempSensor_MM` | MainSubLoop | Ambient / battery temperature plausibility check (code 23) |
+| `VerifyOperationOfAmbientTempSensor_MM` | MainSubLoop | Key-on plausibility check of the air temperature sensors (code 23) |
 | `CheckErrorMaskingAndSetCodes_MM` | SubLoopA | A speed / TPS related check (not decoded yet) |
 | `FurtherMAPAndBaroDiagnostics2_SM` | SubLoopC | MAP versus TPS rationality check (code 24) |
 | `IncrementOrClearKnockDiagCounter_SM` | SubLoopC | Knock sensor signal check (code 16) |
 
-So the racing / Mopar code base runs without OBD-II monitors, purge, cylinder trims, the variable
+So the racing / Mopar code base runs without OBD-II monitors, the purge duty calculation, cylinder trims, the variable
 rev limit and several sensor checks, which fits its use. The fault descriptors of these checks are
 still in the calibration and may be enabled, but nothing reports them. [code]
 
@@ -94,12 +94,24 @@ or `AmbientAirTemp` when CONFIG2 bit 5 is set. [code]
 | Where (B559) | What it does | Calibration (B559) |
 |---|---|---|
 | Reset init, $9202-$9224 | Sets the purge delay `PurgeDelayTimer` ($021C): colder than `PurgeDelayTempCold` gives $FFFF, colder than `PurgeDelayTempWarm` gives `PurgeDelayTime`, warmer gives no delay | $C983, $C984, $C985-$C986 |
-| `ControlPurgeSolenoid_MM`, $9CF9-$9D1D | While the delay runs and the car is below `MPHREF`, counts the delay down (once per `Counter_MainLoop` wrap) and keeps purge from running | - |
+| `ControlPurgeSolenoid_MM`, $9CF9-$9D1D | While the delay runs, the throttle is closed and the car is below `MPHREF`, counts the delay down (once per `Counter_MainLoop` wrap) and keeps purge from running | - |
 | `ExhGasRecirc_MM`, $B257-$B272 | EGR only above `EgrTempOn`; once on, it stays on down to `EgrTempOff` | $CB3C, $CB3B |
 
-Values in the factory images: $C983-$C986 = `6E 8A 02 21` and $CB3B/$CB3C = `73 74` in all of
-4874154-4874165; 5013113 has `6E 84 02 8E` and `7B 7C`. The temperature scale of these inputs is not
-decoded yet. [code]
+Values in the factory images (temperatures in °C = count − 128, see
+[engine_control.md](engine_control.md#units-of-the-main-inputs); one `Counter_MainLoop` wrap is
+256 × 10.75 ms = 2.75 s): [code]
+
+| | 4874154-4874165 | 5013113 |
+|---|---|---|
+| `PurgeDelayTempCold` | $6E = −18 °C | $6E = −18 °C |
+| `PurgeDelayTempWarm` | $8A = 10 °C | $84 = 4 °C |
+| `PurgeDelayTime` | $0221 = 545 wraps ≈ 25 min | $028E = 654 wraps ≈ 30 min |
+| `EgrTempOff` / `EgrTempOn` | $73 / $74 = −13 / −12 °C | $7B / $7C = −5 / −4 °C |
+| `MPHREF` | 7 = 3.5 mph | 5 = 2.5 mph |
+
+So after a start below 10 °C the factory calibration keeps the purge off while the car stands or
+creeps until about 25 minutes of such time have passed (practically for the whole trip below −18 °C),
+and EGR is not used below about −12 °C. [code]
 
 **Layout consequences.** Because of these additions the B559 calibration has 4 extra bytes after the
 idle purge table and 2 after the EGR constants: B4CC addresses $C983-$CB36 are 4 higher in B559 and
@@ -114,7 +126,7 @@ are the same as B4CC's: every one of about 1,020 calibration references in the c
 address. [code]
 
 **B4F3 is B4CC plus the thirteen calls.** The only difference is in MainSubLoop, SubLoopA and SubLoopC:
-B4F3 has the same thirteen `jsr` instructions as B559 (39 bytes), so its OBD-II monitors, purge, cylinder
+B4F3 has the same thirteen `jsr` instructions as B559 (39 bytes), so its OBD-II monitors, purge duty, cylinder
 trims, variable rev limit and sensor checks run. It does not have B559's three temperature features
 (purge delay, EGR temperature gate). [code]
 
@@ -131,7 +143,7 @@ trims, variable rev limit and sensor checks run. It does not have B559's three t
 |---|---|---|---|---|
 | Images | 4874154-4874165, 5013113 | 5269646 (rev C) | 5269709, 5269712, 5269738 (rev D) | 5269718, 5007033, 5007034 |
 | Calibration layout | own (+4/+6 bytes) | as B4CC | as B4CC | reference |
-| OBD-II monitors, purge, cylinder trims, variable rev limit, sensor checks | yes | yes | yes | not called |
+| OBD-II monitors, purge duty calculation, cylinder trims, variable rev limit, sensor checks | yes | yes | yes | not called |
 | Purge delay and EGR temperature gate | yes | no | no | no |
 | O2 PIDs scaled to 5 mV | yes | no (raw) | yes | yes |
 | Battery check on companion status 6 | yes | no | yes | yes |

@@ -555,7 +555,6 @@
  "FBC6": "speculative",
  "FBD5": "named entry",
  "FBF2": "named entry",
- "FBF7": "pointer @8D06",
  "FBFA": "named entry",
  "FC0E": "named entry",
  "FC3B": "named entry",
@@ -567,6 +566,5 @@
  "FD84": "named entry",
  "FD95": "named entry",
  "FDD4": "named entry",
- "FDD9": "named entry",
- "FEFD": "pointer @8D04"
+ "FDD9": "named entry"
 }

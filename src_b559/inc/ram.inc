@@ -482,8 +482,8 @@ CcdRxTimeout                                 equ $0216
 Var_0217                                     equ $0217
 Var_0218                                     equ $0218
 ObdMapValue                                  equ $0219
-CoolantTempVolts                             equ $021A
-ChargeTempVolts                              equ $021B
+CoolantTempUnfiltered                        equ $021A
+ChargeTempUnfiltered                         equ $021B
 PurgeDelayTimer                              equ $021C
 DrbRamBuffer                                 equ $021E
 DrbRamProgramEntry                           equ $0220

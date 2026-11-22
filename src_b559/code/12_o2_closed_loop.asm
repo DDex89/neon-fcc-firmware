@@ -31,7 +31,7 @@ HandleO2Processing_MM:
         bne     L4902
         ldab    <Timer_OffThrottleFuelEnrich
         beq     L48FD
-        brset   <BitFlags65,#$80,L4902
+        brset   <BitFlags65,#$80,L4902               ; throttle open (off idle)
 L48FD:
         bclr    <BitFlags66,#$10
         bra     L4907
@@ -40,8 +40,8 @@ L4902:
         bset    <BitFlags66,#$10
         staa    <Timer_OutOfClosedLoopMode
 L4907:
-        brclr   <BitFlags65,#$10,L4922
-        brset   <BitFlags65,#$01,L491B
+        brclr   <BitFlags65,#$10,L4922               ; closed loop (O2 feedback in use)
+        brset   <BitFlags65,#$01,L491B               ; wide-open throttle
         ldaa    >LC5D6                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
         anda    #$04
 L4914:
@@ -57,7 +57,7 @@ L4922:
         ldab    <CoolantTemp
         cmpb    >CLTEMP_TempToStartCLTIMETimer       ; CLTEMP: Temperature to start CLTIME Timer - $94 = 70degreesF
         bcs     O2_StopUsingFeedback
-        brset   <BitFlags65,#$20,L493D
+        brset   <BitFlags65,#$20,L493D               ; closed-loop timer CLTIME expired
         ldab    <Counter_MainLoop
         bne     O2_StopUsingFeedback
         ldab    <Timer_CLTIME_ClosedLoopTimer
@@ -66,7 +66,7 @@ L4922:
         stab    <Timer_CLTIME_ClosedLoopTimer
         bne     O2_StopUsingFeedback
 L493A:
-        bset    <BitFlags65,#$20
+        bset    <BitFlags65,#$20                     ; closed-loop timer CLTIME expired
 L493D:
         ldab    <O2SensorVolts
         cmpb    >O2HIGH_HighLimitForImmediateSwitchToClosedLoop ; O2HIGH: HighLimitForImmediateSwitchToClosedLoop $26 = 0.73v
@@ -78,8 +78,8 @@ L493D:
 ; O2_ValidSignal_OutsideMiddleRange  ($4949)
 ;---------------------------------------------------------------------------------------------------
 O2_ValidSignal_OutsideMiddleRange:
-        brset   <OutputBits2,#$01,O2_StopUsingFeedback
-        bset    <BitFlags65,#$10
+        brset   <OutputBits2,#$01,O2_StopUsingFeedback ; key-off power hold (O2 heater test)
+        bset    <BitFlags65,#$10                     ; closed loop (O2 feedback in use)
         clrb
         bra     L4970
 
@@ -138,7 +138,7 @@ L4993:
         staa    <Timer_CLTIME_ClosedLoopTimer
         ldaa    #$08
         staa    >FuelSystemStatus
-        bclr    <BitFlags65,#$10
+        bclr    <BitFlags65,#$10                     ; closed loop (O2 feedback in use)
 L49A4:
         ldaa    <BitFlags65
         asla
@@ -242,7 +242,7 @@ L4A3B:
         bcs     SwitchOrStayOpenLoop
 L4A6C:
         ldab    >CALTHP_O2ControllerDeadbandLimitForUpdatingCellsPos ; CALTHP: O2 Controller Deadband Limit For Updating Cells
-        brset   <BitFlags65,#$80,L4A7A
+        brset   <BitFlags65,#$80,L4A7A               ; throttle open (off idle)
         brset   <BitFlags66,#$40,L4A7A
         ldab    >CALTHN_O2ControllerDeadbandLimitForUpdatingCellsNeg ; CALTHN: O2 Controller Deadband Limit For Updating Cells
 L4A7A:
@@ -311,7 +311,7 @@ L4AE8:
         brclr   $00,x,#$04,L4AFE
         inc     >Var_01F3
 L4AFE:
-        brclr   <BitFlags65,#$04,L4B1B
+        brclr   <BitFlags65,#$04,L4B1B               ; O2 rich/lean state, flips on each O2 switch
         ldx     #$0111
         brclr   $00,x,#$04,L4B1B
         ldx     #$043D
@@ -344,7 +344,7 @@ L4B2F:
         ldy     #$010E
         brclr   $00,y,#$04,L4B46
         ldx     #$CCBE
-        brclr   <BitFlags65,#$04,L4B42
+        brclr   <BitFlags65,#$04,L4B42               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4B42:
         ldaa    $02,x
@@ -356,7 +356,7 @@ L4B46:
         ldy     #$043D
         brclr   $00,y,#$08,L4B64
         ldx     #LCB86                               ; SCRMP1 (SecondaryRampSubtractor1)
-        brclr   <BitFlags65,#$04,L4B60
+        brclr   <BitFlags65,#$04,L4B60               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4B60:
         ldaa    $02,x
@@ -368,7 +368,7 @@ L4B64:
         beq     WorkWithPrimaryRamp
         brclr   <IPL2,#$10,WorkWithPrimaryRamp
         ldx     #LCCE0
-        brclr   <BitFlags65,#$04,L4B77
+        brclr   <BitFlags65,#$04,L4B77               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4B77:
         ldaa    $02,x
@@ -416,11 +416,18 @@ L4BA8:
 ;---------------------------------------------------------------------------------------------------
 ; ModifyO2FeedbackCountVarToMaintainStoich_MM  ($4BAB)
 ;
+; Selects the closed-loop ramp step for the current O2 side. [reviewed]
+;
+; Only in closed loop (BitFlags65 bit 4) and without BitFlags66 bit 4. The step comes from a pair
+; of constants (rich or lean side by BitFlags65 bit 2): the catalyst monitor ($CCC2), the O2
+; response monitor (LCB8A) and the secondary air monitor (LCCE4) use their own pairs while they
+; run, otherwise the normal ramp values are used.
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 ModifyO2FeedbackCountVarToMaintainStoich_MM:
         brset   <BitFlags66,#$10,L4BB3
-        brset   <BitFlags65,#$10,L4BB7
+        brset   <BitFlags65,#$10,L4BB7               ; closed loop (O2 feedback in use)
 L4BB3:
         clra
         staa    <Timer_O2ToggleDuration
@@ -431,7 +438,7 @@ L4BB7:
         ldy     #$010E
         brclr   $00,y,#$04,L4BCD
         ldx     #$CCC2
-        brclr   <BitFlags65,#$04,L4BC8
+        brclr   <BitFlags65,#$04,L4BC8               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4BC8:
         ldaa    $02,x
@@ -444,7 +451,7 @@ L4BCD:
         ldy     #$043D
         brclr   $00,y,#$08,L4BEC
         ldx     #LCB8A                               ; SCRMP1 (SecondaryRampSubtractor1)
-        brclr   <BitFlags65,#$04,L4BE7
+        brclr   <BitFlags65,#$04,L4BE7               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4BE7:
         ldaa    $02,x
@@ -457,7 +464,7 @@ L4BEC:
         beq     WorkWithSecondaryRamp
         brclr   <IPL2,#$10,WorkWithSecondaryRamp
         ldx     #LCCE4
-        brclr   <BitFlags65,#$04,L4BFF
+        brclr   <BitFlags65,#$04,L4BFF               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4BFF:
         ldaa    $02,x
@@ -568,7 +575,7 @@ DontUpdateO2FeedbackCount:
 ;---------------------------------------------------------------------------------------------------
 DetermineRampCellFromRPMandMAP:
         brset   <BitFlags66,#$40,L4C75
-        brset   <BitFlags65,#$80,L4C75
+        brset   <BitFlags65,#$80,L4C75               ; throttle open (off idle)
         ldab    #$16
         bra     L4C9F
 
@@ -610,7 +617,7 @@ L4C9D:
 L4C9E:
         aslb
 L4C9F:
-        brclr   <BitFlags65,#$04,L4CA4
+        brclr   <BitFlags65,#$04,L4CA4               ; O2 rich/lean state, flips on each O2 switch
         incb
 L4CA4:
         abx
@@ -655,7 +662,7 @@ L4CD3:
         bset    <CylTrim_Flags_2,#$10
 L4CE0:
         ldab    >AMUPDT_EPPsBetweenCalChangeUpdateOpenThrottle ; AMUPDT: EPPs Between Cal Change Update (Open Throttle)
-        brset   <BitFlags65,#$80,L4CEA
+        brset   <BitFlags65,#$80,L4CEA               ; throttle open (off idle)
         ldab    >AMUPDI_EPPsBetweenCalChangeUpdateClosedThrottle ; AMUPDI: EPPs Between Cal Change Update (Closed Throttle)
 L4CEA:
         brset   <BitFlags66,#$04,L4D3E
@@ -772,7 +779,7 @@ AdaptiveMemory_DetermineWhichCellApplies_MM:
         staa    <Temp0
         ldx     #MP1_AutoCalMapCellBoundary1         ; MP1: AutoCalMapCellBoundary1
         ldab    <PointerIntoAdaptiveMemory
-        brset   <BitFlags65,#$80,ONTHROTTLE_OR_RPMTOOHIGHFORIDLE
+        brset   <BitFlags65,#$80,ONTHROTTLE_OR_RPMTOOHIGHFORIDLE ; throttle open (off idle)
         ldaa    <TargetIdleSpeedHB
         adda    >IDLOFS_DeltaForIdleRPMForClosedThrottleCell ; IDLOFS: RPM Delta for Idle RPM For Closed Throttle Cell
         cmpb    #$0C
@@ -845,6 +852,12 @@ L4E00:
 ;---------------------------------------------------------------------------------------------------
 ; ClearO2SensorFeedbackCounterSigned_MM  ($4E03)
 ;
+; Resets the closed-loop feedback counter in a defined condition. [reviewed]
+;
+; Clears Counter_O2SensorFeedbackCount_Signed when it is below LC46E, Temp1_X is above LC46F, MAP
+; is within LC470 of baro, coolant is above LC471, the car is slower than LC472 (VehicleSpeed_HB),
+; the engine has run longer than LC473 and BitFlags37 bit 7 is set.
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 ClearO2SensorFeedbackCounterSigned_MM:
@@ -880,10 +893,16 @@ L4E3B:
 ;---------------------------------------------------------------------------------------------------
 ; HandleAmTimer_MM  ($4E3C)
 ;
+; Key-on set-up of the closed-loop timers. [reviewed]
+;
+; While the engine is not running it loads the AM timer from AMTPSW(coolant) and the closed-loop
+; timer CLTIME from coolant temperature, clears BitFlags65 bit 5 and sets FuelSystemStatus to 1
+; (open loop).
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 HandleAmTimer_MM:
-        brclr   <BitFlags71,#$80,AMTimer_EngineRunning
+        brclr   <BitFlags71,#$80,AMTimer_EngineRunning ; engine not running (stopped or cranking)
         ldaa    <CoolantTemp
         ldx     #AMTPSW_TempPointToEnableSelectedAMTimer ; AMTPSW: AM temp inhibit time from coolant temp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -892,7 +911,7 @@ HandleAmTimer_MM:
         ldx     #CLTIME_ClosedLoopTimeFromEngTempAtStartup_FromTemp ; CLTIME: Leave at one - 2.8 sec
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Timer_CLTIME_ClosedLoopTimer
-        bclr    <BitFlags65,#$20
+        bclr    <BitFlags65,#$20                     ; closed-loop timer CLTIME expired
         ldaa    #$01
         staa    >FuelSystemStatus
 

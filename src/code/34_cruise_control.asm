@@ -196,7 +196,7 @@ LF120:
         mul
         xgdy
         ldaa    #$11
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         tst     >Temp0
 LF12F:
@@ -1219,11 +1219,11 @@ LF7EB:
 
 LF7F0:
         brset   <CruiseStatus_1,#$80,LF7F9
-        bclr    <OutputBits2,#$20
+        bclr    <OutputBits2,#$20                    ; TCC / PTU solenoid
         bra     LF7FC
 
 LF7F9:
-        bset    <OutputBits2,#$20
+        bset    <OutputBits2,#$20                    ; TCC / PTU solenoid
 LF7FC:
         brset   <CruiseStatus_1,#$80,LF811
         ldab    <CruiseControlVar3
@@ -1235,12 +1235,12 @@ LF7FC:
         beq     LF811
         stab    <Counter_Cruise_3
 LF811:
-        bset    <OutputDriverBits,#$C0
+        bset    <OutputDriverBits,#$C0               ; speed control solenoid; speed control solenoid
         bra     LF839
 
 LF816:
-        bset    <OutputDriverBits,#$80
-        bclr    <OutputDriverBits,#$40
+        bset    <OutputDriverBits,#$80               ; speed control solenoid
+        bclr    <OutputDriverBits,#$40               ; speed control solenoid
         bra     LF839
 
 LF81E:
@@ -1260,7 +1260,7 @@ LF82A:
         bra     LF816
 
 LF836:
-        bclr    <OutputDriverBits,#$C0
+        bclr    <OutputDriverBits,#$C0               ; speed control solenoid; speed control solenoid
 LF839:
         ldab    <CruiseControlVar3
         beq     LF849

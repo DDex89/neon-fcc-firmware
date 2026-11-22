@@ -271,7 +271,7 @@ L7A28:
         bra     L7A61
 
 L7A4E:
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
         brset   $24,x,#$10,L7A58
         bset    <Var_00F3,#$80
 L7A58:
@@ -280,7 +280,7 @@ L7A58:
 L7A5E:
         bclr    <SyncFlags75,#$07
 L7A61:
-        brclr   <BitFlags71,#$02,L7AA2
+        brclr   <BitFlags71,#$02,L7AA2               ; crank pulse seen since the last coil scheduling
         brclr   $00,x,#$80,L7A6E
         bclr    $26,x,#$10
         bra     L7A71
@@ -353,7 +353,7 @@ CrankInterrupt_FallingEdge:
         ldaa    <EngineRpm_HB
         cmpa    #$AC
         bls     L7AD4
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
 L7AD4:
         ldaa    <EngineRpm_HB
         cmpa    >REVLMT6_RPMLimiterNormalOffRPM      ; REVLMT6 (RPMLimiterNormalOffRPM)
@@ -439,7 +439,7 @@ L7B71:
         ldaa    #$D8
 L7B75:
         staa    <Temp5
-        jsr     >HandleSparkScatter
+        jsr     >HandleSparkScatter                  ; Entry of the idle spark scatter (spark used to hold idle speed).
 
 ;---------------------------------------------------------------------------------------------------
 ; ScheduleIgnitionCoils  ($7B7A)
@@ -463,7 +463,7 @@ L7B8B:
         clra
         ldab    <TimerOverflowsBetweenCamPulses
         beq     L7B9E
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
         staa    <Ign_00C4
         jmp     >L7CE8
 
@@ -474,13 +474,13 @@ L7B9E:
         bcs     L7BC2
         cmpb    >LB821                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BBD
-        brclr   <BitFlags71,#$02,L7BB3
+        brclr   <BitFlags71,#$02,L7BB3               ; crank pulse seen since the last coil scheduling
         clra
         staa    <Ign_00C4
 L7BB3:
         cmpb    >LB822                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BDA
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
         bra     L7BDA
 
 L7BBD:
@@ -500,7 +500,7 @@ L7BD2:
         cmpa    >LB825                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BDA
 L7BD7:
-        bclr    <BitFlags71,#$02
+        bclr    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
 L7BDA:
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
@@ -514,7 +514,7 @@ L7BE5:
         mul
         adca    #$00
         ldy     <DistributorFallingEdgePulsewidth_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <LastDistributorFallingEdgeTime
         subd    #$000A
@@ -684,7 +684,7 @@ L7D61:
         ldd     <VehicleSpeed_HB
         cpd     #$0040
         bcc     L7D85
-        brset   <BitFlags65,#$80,L7D85
+        brset   <BitFlags65,#$80,L7D85               ; throttle open (off idle)
         ldd     <EngineRpm_HB
         subd    <TargetIdleSpeedHB
         bcc     L7D7F
@@ -767,7 +767,7 @@ L7DF0:
         subd    <LastCamFallingEdgeTime
         cpd     #$13F8
         bcs     L7E07
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
 L7E07:
         asld
         asld
@@ -785,7 +785,7 @@ L7E18:
         aslb
         adca    #$00
         xgdy
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <LastDistributorFallingEdgeTime
         subd    #$000A
@@ -798,7 +798,7 @@ L7E18:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlags71,#$02,L7E48
+        brset   <BitFlags71,#$02,L7E48               ; crank pulse seen since the last coil scheduling
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L7E5F
@@ -823,7 +823,7 @@ L7E5F:
         bita    #$08
         bne     L7E8C
         brclr   $20,x,#$01,L7EB9
-        brclr   <BitFlags65,#$80,L7E71
+        brclr   <BitFlags65,#$80,L7E71               ; throttle open (off idle)
         brclr   <BitFlags66,#$40,L7E7A
 L7E71:
         ldd     <Temp5
@@ -871,7 +871,7 @@ L7EBB:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlags71,#$02,L7ED3
+        brset   <BitFlags71,#$02,L7ED3               ; crank pulse seen since the last coil scheduling
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L7EE5
@@ -1116,7 +1116,7 @@ L8058:
 ;---------------------------------------------------------------------------------------------------
 CODE8059_MM:
         ldx     #REGS
-        brclr   <BitFlags71,#$02,L8083
+        brclr   <BitFlags71,#$02,L8083               ; crank pulse seen since the last coil scheduling
         brclr   $00,x,#$80,L8069                     ; PORTA: Port A data (timer pins: IC1-IC3, OC2-OC5, PAI)
         bclr    $26,x,#$10                           ; PACTL: Pulse accumulator control / RTI rate
         bra     L806C
@@ -1156,7 +1156,7 @@ L80A1:
         cmpa    >LCC92
         bhi     L809E
 L80A8:
-        brset   <BitFlags65,#$01,L809E
+        brset   <BitFlags65,#$01,L809E               ; wide-open throttle
         ldaa    <EngineRpm_HB
         cmpa    #$7D
         bhi     L80C0
@@ -1244,7 +1244,7 @@ L813A:
         ldaa    >Code8059_0101
         cmpa    >LCC88
         bhi     L8192
-        brset   <BitFlags65,#$80,L81C5
+        brset   <BitFlags65,#$80,L81C5               ; throttle open (off idle)
         ldaa    <VehicleSpeed_HB
         cmpa    #$01
         bcc     L81C5
@@ -1379,7 +1379,7 @@ CrankInterrupt_HandleCamSensorRisingEdgeB:
         subd    <Crank_0063
         cpd     #$13F8
         bcs     L8285
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
 L8285:
         asld
         asld
@@ -1397,7 +1397,7 @@ L8296:
         aslb
         adca    #$00
         xgdy
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <LastDistributorFallingEdgeTime
         subd    #$000A
@@ -1410,7 +1410,7 @@ L8296:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlags71,#$02,L82C6
+        brset   <BitFlags71,#$02,L82C6               ; crank pulse seen since the last coil scheduling
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L82D8
@@ -1419,7 +1419,7 @@ L82C6:
         bclr    $22,x,#$08
         ldaa    #$08
         staa    $23,x
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
         bra     L8325
 
 
@@ -1477,7 +1477,7 @@ L832A:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlags71,#$02,L8342
+        brset   <BitFlags71,#$02,L8342               ; crank pulse seen since the last coil scheduling
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L8351
@@ -1486,7 +1486,7 @@ L8342:
         bclr    $22,x,#$20
         ldaa    #$20
         staa    $23,x
-        bset    <BitFlags71,#$02
+        bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
         bra     L839E
 
 L8351:
@@ -1539,8 +1539,8 @@ L83A1:
         ldab    <DistributorFallingEdgePulsewidth_HB
         cmpb    >LBD72                               ; RETSPD: Retard from Speed.
         bcc     L83D9
-        brclr   <BitFlags71,#$80,L83E1
-        bclr    <BitFlags71,#$A0
+        brclr   <BitFlags71,#$80,L83E1               ; engine not running (stopped or cranking)
+        bclr    <BitFlags71,#$A0                     ; engine not running (stopped or cranking)
         clra
         clrb
         std     <KeyOnOrEngineRunningTime
@@ -1559,7 +1559,7 @@ L83D9:
         cmpb    >LBD73                               ; RETSPD: Retard from Speed.
         bcs     L83E1
 L83DE:
-        bset    <BitFlags71,#$90
+        bset    <BitFlags71,#$90                     ; engine not running (stopped or cranking); start-to-run transition pending
 L83E1:
         jmp     >L7F35
 
@@ -1604,7 +1604,7 @@ L8403:
 L840E:
         ldaa    #$10
         staa    $30,x
-        brclr   <BitFlags71,#$02,L8428
+        brclr   <BitFlags71,#$02,L8428               ; crank pulse seen since the last coil scheduling
         brset   <SyncFlags74,#$01,L8422
         bclr    $20,x,#$01
         bset    $0B,x,#$08
@@ -1629,7 +1629,7 @@ L843D:
         asld
         xgdy
         ldaa    >TimeToAngleAdvanceConvFactor        ; ARCMS3 (AdaptiveRetardCounterMask3_FF)
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <LastDistributorFallingEdgeTime
         std     $1C,x
@@ -1729,7 +1729,7 @@ CrankMapRpmUpdate:
         adda    <MapVolts
         rora
 L84F9:
-        jsr     >ConvertMAPVoltsToValue              ; Converts the MAP sensor voltage to the internal MAP value.
+        jsr     >ConvertMAPVoltsToValue              ; MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF.
         staa    <MapValue
         bclr    <BitFlags76,#$02
         ldaa    <TimerOverflowsBetweenCamPulses
@@ -2004,7 +2004,7 @@ L86ED:
         bcc     L86F9
         ldaa    >LCBD5
 L86F9:
-        brclr   <BitFlags71,#$02,L8705
+        brclr   <BitFlags71,#$02,L8705               ; crank pulse seen since the last coil scheduling
         cmpa    >LCBDA
         bcc     L8705
         ldaa    >LCBDA
@@ -2247,7 +2247,7 @@ L88B2:
         ldy     #$0400
         bclr    <SyncFlags75,#$10
         ldaa    #$82
-        brset   <BitFlags71,#$02,L88CD
+        brset   <BitFlags71,#$02,L88CD               ; crank pulse seen since the last coil scheduling
         ldaa    #$C2
 L88CD:
         cmpa    <BatteryVolts
@@ -2273,7 +2273,7 @@ L88E5:
         brset   $10,y,#$02,L8929
         ldab    <SyncFlags74
         andb    #$01
-        brset   <BitFlags71,#$02,L891A
+        brset   <BitFlags71,#$02,L891A               ; crank pulse seen since the last coil scheduling
         ldx     #$018F
         abx
         ldaa    $00,x
@@ -2317,7 +2317,7 @@ L8929:
         ldaa    <EngineRpm_HB
         cmpa    >KNKRPM_MinRpmforKnockRetard         ; KNKRPM: Minimum RPM for Knock Retard
         bls     L897E
-        brclr   <BitFlags65,#$80,L897E
+        brclr   <BitFlags65,#$80,L897E               ; throttle open (off idle)
         ldaa    <KnockVolts
         suba    <KnockSensorThreshold
         bls     L897E
@@ -2362,7 +2362,7 @@ L897E:
 
 L898F:
         ldy     >Knock_0191
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <TpsVolts
         ldab    >TPSFL1_TPSFilterForTPSRetard_NoAR   ; TPSFL1 (TPSFilterForTPSRetard_NoAR)
@@ -2384,7 +2384,7 @@ L89A8:
 
 L89BC:
         ldy     >Knock_0193
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <TpsVolts
         ldab    >TPSFL2_TPSFilterForTPSRetard_WithAR ; TPSFL2 (TPSFilterForTPSRetard_WithAR)
@@ -2406,7 +2406,7 @@ L89D5:
 
 L89E7:
         ldy     <TpsAverageValue_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <TpsVolts
         ldab    <Factor_LeanoutOrEnrichTime_TPS
@@ -2418,7 +2418,7 @@ L89E7:
 L89FD:
         std     <TpsAverageValue_HB
 L89FF:
-        brset   <BitFlags65,#$01,L8A09
+        brset   <BitFlags65,#$01,L8A09               ; wide-open throttle
         ldaa    <MapValue
         cmpa    <MapPrevious
         bcs     L8A2A
@@ -2431,7 +2431,7 @@ L8A09:
 
 L8A12:
         ldy     <MapPrevious
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <MapValue
         ldab    <Factor_LeanoutOrEnrichTime_MAP
@@ -2457,7 +2457,7 @@ L8A31:
 
 L8A3D:
         ldy     <EngineRpmDouble_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <Temp5
         ldab    >RPMFC1_RPMAveragingFactor1          ; RPMFC1 (RPMAveragingFactor1)
@@ -2481,12 +2481,12 @@ L8A54:
 L8A66:
         ldy     <AverageRPMIncremental
         bmi     L8A72
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         bra     L8A7C
 
 L8A72:
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         suba    >RPMFC2_RPMAveragingFactor2          ; RPMFC1 (RPMAveragingFactor1)
         pshb
@@ -2557,7 +2557,7 @@ L8AA8:
         puly
         tsta
         beq     L8AD1
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <Temp5
         bcc     L8AD3
@@ -2580,12 +2580,12 @@ L8AD3:
         xgdy
         ldab    <ThrottleEnrichmentFactor
         ldaa    #$01
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
         ldy     <SumOfFuelModifiers_HB
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
         ldy     <BaseInjectorPulsewidthX
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
-        brset   <BitFlags65,#$01,L8B03
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
+        brset   <BitFlags65,#$01,L8B03               ; wide-open throttle
         tst     >Timer_OffThrottleFuelEnrich
         beq     L8B2D
 L8B03:
@@ -2614,7 +2614,7 @@ L8B23:
 L8B26:
         ldaa    #$01
         puly
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
 L8B2D:
         addd    <Pulsewidth_PartThrottleEnrichment_HB
         bcs     LOAD_MAX_INJ_PULSEWIDTH
@@ -2638,7 +2638,7 @@ LOAD_MAX_INJ_PULSEWIDTH:
 ; running fuel remains. Falls through into IncludeInjectorLatency.
 ;---------------------------------------------------------------------------------------------------
 HandleTransitionFromStartToRun:
-        brclr   <BitFlags71,#$10,IncludeInjectorLatency
+        brclr   <BitFlags71,#$10,IncludeInjectorLatency ; start-to-run transition pending
         std     <Temp5
         ldd     <InjectorPulsewidth_HB
         suba    <Factor_StartFuelDecayIntoRunFuel
@@ -2651,7 +2651,7 @@ HandleTransitionFromStartToRun:
 ;---------------------------------------------------------------------------------------------------
 TransitionFromStartToRunComplete:
         ldd     <Temp5
-        bclr    <BitFlags71,#$10
+        bclr    <BitFlags71,#$10                     ; start-to-run transition pending
 
 ;---------------------------------------------------------------------------------------------------
 ; IncludeInjectorLatency  ($8B4D)
@@ -2671,7 +2671,7 @@ TransitionFromStartToRunComplete:
 IncludeInjectorLatency:
         xgdy
         ldaa    >FuelPressureFactor
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         jsr     >TweakInjectorPW                     ; Diagnostic override of the injector pulse width.
         std     <InjectorPulsewidth_HB
@@ -2722,7 +2722,7 @@ L8B8E:
         bra     L8BD6
 
 L8BAE:
-        brset   <BitFlags71,#$80,L8C19
+        brset   <BitFlags71,#$80,L8C19               ; engine not running (stopped or cranking)
         ldx     #BYTE8229
         ldab    <SyncFlags74
         andb    #$03
@@ -2737,7 +2737,7 @@ L8BAE:
         ldx     #TABLEbd9b                           ; RETSPD: Retard from Speed.
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldy     <InjectorPulsewidth_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
 L8BD6:
         std     <Temp5
@@ -2769,7 +2769,7 @@ L8C05:
         lsra
         bcc     L8C05
         beq     L8C19
-        jsr     >L8D0A
+        jsr     >L8D0A                               ; Points X at the injector clear mask for cylinder number B (1-4) in InjCylinderClearMasks.
         andb    $00,x
         stab    <InjCylinderMask
         ldaa    <Counter_FuelEngRunning
@@ -2801,7 +2801,7 @@ L8C28:
         deca
         staa    <Counter_FuelEngRunning
         ldd     <LastDistributorFallingEdgeTime
-        jsr     >L8D0A
+        jsr     >L8D0A                               ; Points X at the injector clear mask for cylinder number B (1-4) in InjCylinderClearMasks.
         andb    $01,x
         stab    <InjCylinderMask
         deca
@@ -2829,7 +2829,7 @@ L8C59:
         deca
         staa    <Counter_FuelEngRunning
         ldd     <LastDistributorFallingEdgeTime
-        jsr     >L8D0A
+        jsr     >L8D0A                               ; Points X at the injector clear mask for cylinder number B (1-4) in InjCylinderClearMasks.
 L8C79:
         andb    $02,x
         stab    <InjCylinderMask
@@ -2906,18 +2906,23 @@ L8D03:
         rts
 
 
-POINTER8d04:
-        dc.w    LFDDA
-        dc.w    LFBF7
-        dc.w    LFDDA
+InjCylinderClearMasks:
+        dc.b    $FE,$FD,$FB,$F7,$FE,$FD
 
 ;---------------------------------------------------------------------------------------------------
 ; L8D0A  ($8D0A)
 ;
+; Points X at the injector clear mask for cylinder number B (1-4) in InjCylinderClearMasks.
+; [reviewed]
+;
+; The table at $8D04 holds the bytes FE FD FB F7 FE FD: the callers AND InjCylinderMask with the
+; byte to drop one cylinder from the mask. (Earlier versions of these annotations read the table
+; as code pointers, which made the $FF filler at $FEFD look like code.)
+;
 ; Called from: IncludeInjectorLatency
 ;---------------------------------------------------------------------------------------------------
 L8D0A:
-        ldx     #POINTER8d04
+        ldx     #InjCylinderClearMasks
         decb
         bne     L8D1B
         cmpa    #$04

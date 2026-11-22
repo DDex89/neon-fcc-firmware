@@ -287,7 +287,7 @@ L34E0:
         ldaa    <Temp0
 L34E2:
         brclr   <BitFlags6b,#$02,L34FB
-        brset   <BitFlags71,#$80,L34FB
+        brset   <BitFlags71,#$80,L34FB               ; engine not running (stopped or cranking)
         ldx     <KeyOnOrEngineRunningTime
         cpx     #$0744
         bls     L34FB
@@ -358,7 +358,7 @@ ControlAIS_MM:
         cmpa    #$14
         beq     L3572
         ldab    <AISSubIndex
-        brclr   <BitFlags71,#$80,L355D
+        brclr   <BitFlags71,#$80,L355D               ; engine not running (stopped or cranking)
         ldaa    <EngineRpm_HB
         cmpa    >BYTEc581                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
         bcc     L3557
@@ -424,7 +424,7 @@ AisState_Unused:
 ; state 1 once RPM reaches BYTEc581. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
 AisState0_EngineStopped:
-        brset   <BitFlags71,#$80,L35A5
+        brset   <BitFlags71,#$80,L35A5               ; engine not running (stopped or cranking)
         ldaa    <EngineRpm_HB
         cmpa    >BYTEc581                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
         bcs     L35A8
@@ -443,7 +443,7 @@ L35A8:
 ; [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
 AisState1_Cranking:
-        brset   <BitFlags71,#$80,L35BE
+        brset   <BitFlags71,#$80,L35BE               ; engine not running (stopped or cranking)
         ldaa    <DesiredNewAisPosition
         cmpa    <CurrentAisPosition
         bne     L35BE
@@ -1109,7 +1109,7 @@ L39C2:
         ldaa    >LC5D6                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
         bita    #$08
         bne     L39D8
-        brclr   <OutputDriverBits,#$01,L39DB
+        brclr   <OutputDriverBits,#$01,L39DB         ; A/C clutch relay
         ldaa    >BYTEc57f                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
         staa    >Var_04AE
 L39D8:
@@ -1367,7 +1367,7 @@ L3B3B:
         xgdx
         xgdy
         ldaa    #$F4
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         brset   <BitFlags76,#$04,L3B4F
         coma
@@ -1428,12 +1428,12 @@ L3BA5:
         bra     L3BCA
 
 L3BB7:
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         sty     <Temp0
         ldy     >Ais_01BA
         ldaa    >LC6CC                               ; AMBAIS (AmbientTempAISCompensation)
         nega
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
 L3BCA:
         addd    <Temp0
@@ -1534,7 +1534,7 @@ L3C57:
         mul
         adca    #$00
         bne     L3CBF
-        brset   <BitFlags65,#$80,L3CBC
+        brset   <BitFlags65,#$80,L3CBC               ; throttle open (off idle)
         ldab    <VehicleSpeed_HB
         bne     L3CBC
         ldab    <CoolantTemp
@@ -1598,7 +1598,7 @@ L3CCD:
         mul
         adca    #$00
         bne     L3D2B
-        brset   <BitFlags65,#$80,L3D28
+        brset   <BitFlags65,#$80,L3D28               ; throttle open (off idle)
         ldab    <VehicleSpeed_HB
         bne     L3D28
         ldab    <CoolantTemp
@@ -1662,7 +1662,7 @@ L3D39:
         adda    >CALPOS_PositionAisMotorIsAtIdle     ; CALPOS: AIS: Position electronics thinks motor is (at idle)
         bcs     L3D67
 L3D55:
-        brset   <OutputDriverBits,#$01,L3D69
+        brset   <OutputDriverBits,#$01,L3D69         ; A/C clutch relay
         staa    <Temp0
         ldaa    <AISACCompensation
         ldx     #TABLEc77d                           ; AISINC (AISPOSIncrementForSW2b7)
@@ -2419,7 +2419,7 @@ SelectAisStateA:
         ldaa    #$0E
         brset   <BitFlags66,#$40,L41BC
         ldaa    #$0D
-        brclr   <BitFlags65,#$80,L41BC
+        brclr   <BitFlags65,#$80,L41BC               ; throttle open (off idle)
         ldaa    #$0C
         brclr   <SwitchInputs,#$40,L41BC
         ldx     #TABLEc681                           ; BARAIS: Barometric compensation factor for AIS control
@@ -2456,7 +2456,7 @@ SelectAisStateB:
         ldaa    #$06
         brset   <BitFlags66,#$40,L41EE
         ldaa    #$05
-        brclr   <BitFlags65,#$80,L41EE
+        brclr   <BitFlags65,#$80,L41EE               ; throttle open (off idle)
         ldaa    #$04
         brclr   <SwitchInputs,#$40,L41EE
         ldx     #TABLEc681                           ; BARAIS: Barometric compensation factor for AIS control
@@ -2625,7 +2625,7 @@ L429E:
 L42AF:
         bset    $00,x,#$04
 L42B2:
-        brclr   <BitFlags65,#$80,L42D9
+        brclr   <BitFlags65,#$80,L42D9               ; throttle open (off idle)
         ldd     <VehicleSpeed_HB
         asld
         asld
@@ -2688,7 +2688,7 @@ L431C:
         cmpa    $03,y
         bcs     L433F
         bset    $00,x,#$10
-        brclr   <BitFlags65,#$10,L433F
+        brclr   <BitFlags65,#$10,L433F               ; closed loop (O2 feedback in use)
         brclr   <BitFlags66,#$10,L4342
 L433F:
         jmp     >L4484
@@ -2709,7 +2709,7 @@ L4342:
 L4364:
         brset   $00,x,#$01,L4383
         bset    $00,y,#$04
-        bset    <OutputDriverBits,#$20
+        bset    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)
         ldd     >CatSettleTimer
         addd    #$0001
         beq     L4380

@@ -56,7 +56,7 @@ L570E:
         bne     L570E
         brclr   <Temp0,#$FF,L5734
         psha
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldaa    #$12
         adda    <Temp0
         staa    <Temp0

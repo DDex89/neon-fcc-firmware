@@ -260,11 +260,11 @@ ControlAirConditioning_MM:
         beq     L252D
         cmpa    #$14
         beq     L252D
-        brset   <BitFlags71,#$80,L2520
+        brset   <BitFlags71,#$80,L2520               ; engine not running (stopped or cranking)
 L251C:
         brset   <BitFlags6E,#$04,L252E
 L2520:
-        bset    <OutputDriverBits,#$01
+        bset    <OutputDriverBits,#$01               ; A/C clutch relay
         ldaa    >AcState
         anda    #$F0
         oraa    #$02
@@ -300,7 +300,7 @@ L254A:
 ; AC_Rout2  ($251A)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout2:
-        bset    <OutputDriverBits,#$01
+        bset    <OutputDriverBits,#$01               ; A/C clutch relay
         ldaa    >LC8C0                               ; FANTMP6: Detailed Description3
         staa    <Ac_00E9
         inc     >AcState
@@ -402,7 +402,7 @@ ACSubroutineTable2:
 ; AC_Rout5  ($25B4)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout5:
-        bset    <OutputDriverBits,#$01
+        bset    <OutputDriverBits,#$01               ; A/C clutch relay
         clra
         staa    >AcTimer
         inc     >AcState
@@ -494,7 +494,7 @@ L2664:
 AC_Rout7:
         ldaa    >Var_04AE
         bne     L2679
-        bclr    <OutputDriverBits,#$01
+        bclr    <OutputDriverBits,#$01               ; A/C clutch relay
         ldaa    >LC8B1                               ; FANTMP6: Detailed Description3
         staa    >AcTimer
         inc     >AcState
@@ -897,7 +897,7 @@ L28D4:
 ;---------------------------------------------------------------------------------------------------
 DecrementCounter01ff_SM:
         brset   <BitFlags6E,#$04,L28E5
-        brset   <BitFlags71,#$80,L28E5
+        brset   <BitFlags71,#$80,L28E5               ; engine not running (stopped or cranking)
         dec     >AcTimer
         bne     L28E5
         bset    <BitFlags6E,#$04

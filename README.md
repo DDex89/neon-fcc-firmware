@@ -18,7 +18,7 @@ exactly which change produces which byte.
 Both images share the same program code (code base "B4CC"); only the calibration differs. Most
 factory 1995 calibrations (4874154-4874165, 5013113) use the earlier code base "B559". Its source is
 generated from the same annotations into `src_b559/`, and its eleven factory images rebuild
-byte-identically too. B4CC turns out to be B559 with the OBD-II monitors, canister purge, cylinder
+byte-identically too. B4CC turns out to be B559 with the OBD-II monitors, the purge duty calculation, cylinder
 trims, the variable rev limit and several sensor checks no longer called. The later factory revisions
 on code bases B4F3 (5269709, 5269712, 5269738) and B4C2 (5269646) are ported and rebuild the same
 way; see [docs/en/code_bases.md](docs/en/code_bases.md#feature-summary).
@@ -82,15 +82,16 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - [Fault codes](docs/en/fault_codes.md) (generated): all 160 fault descriptors with flash and OBD-II codes
 - [RAM map](docs/en/ram_map.md) (generated): every RAM and I/O address with its readers and writers
 - [Code bases](docs/en/code_bases.md): which program version each known part number uses
+- [Free space](docs/en/free_space.md): unused ROM, RAM and EEPROM for changes to the firmware
 - [Calibration table reference](docs/en/calibration_tables.md) (generated)
 - [Differences between the two calibrations](docs/en/calibration_variants.md) (generated)
 
 ## Status
 
 - Byte-identical rebuild of 17 images on four code bases (B4CC 2, B559 11, B4F3 3, B4C2 1), checked in CI.
-- 20,075 instructions identified. All code reached through pointer tables is now traced; only 7
+- 20,018 instructions identified. All code reached through pointer tables is now traced; only 7
   instructions in four unreferenced fragments remain, marked as dead code.
-- 617 routine headers with call graph; 188 routines described by hand, 155 of them checked (fully or partly) against the
+- 616 routine headers with call graph; 209 routines described by hand, 198 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
 - 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
 - RAM map with readers and writers of every address; every directly accessed address is named.

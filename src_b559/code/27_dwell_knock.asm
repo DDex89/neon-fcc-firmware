@@ -28,7 +28,7 @@ Interrupt_DwellTimerA:
         asld
         tsta
         bne     LAC6B
-        brset   <BitFlags71,#$02,LAC6B
+        brset   <BitFlags71,#$02,LAC6B               ; crank pulse seen since the last coil scheduling
         brclr   $20,x,#$10,LAC6B                     ; TCTL1: Timer control 1 (OC2-OC5 pin actions)
         brclr   <SyncFlags74,#$01,LAC6B
         ldaa    >AdvanceTemporary
@@ -77,7 +77,7 @@ Interrupt_DwellTimerB:
         asld
         tsta
         bne     LACB9
-        brset   <BitFlags71,#$02,LACB9
+        brset   <BitFlags71,#$02,LACB9               ; crank pulse seen since the last coil scheduling
         brclr   $20,x,#$01,LACB9                     ; TCTL1: Timer control 1 (OC2-OC5 pin actions)
         brset   <SyncFlags74,#$01,LACB9
         ldaa    >AdvanceTemporary
@@ -118,7 +118,7 @@ LACB9:
 ;---------------------------------------------------------------------------------------------------
 LACBD:
         brclr   <SyncFlags75,#$10,LACD8
-        brset   <BitFlags71,#$02,LACD8
+        brset   <BitFlags71,#$02,LACD8               ; crank pulse seen since the last coil scheduling
         ldx     #$018F
         brclr   <Counter_MainLoop,#$20,LACCD
         inx
@@ -191,7 +191,7 @@ LAD17:
         deca
         staa    <KnockRetardSum_AllCyls
 LAD27:
-        brset   <BitFlags71,#$80,LAD7E
+        brset   <BitFlags71,#$80,LAD7E               ; engine not running (stopped or cranking)
         ldaa    <CoolantTemp
         cmpa    >ARMINT_AdaptiveRetardMinimumTemp    ; ARMINT (AdaptiveRetardMinimumTemp)
         bls     LAD6D
@@ -267,7 +267,7 @@ CalculateAverageKnockVolts_SM:
         ldaa    <ChargeTemp
         cmpa    >KNAIAT_MinChargeTempForAverageKnockVoltCalc ; KNAIAT (MinChargeTempForAverageKnockVoltCalc)
         bcc     LAE0C
-        brset   <BitFlags71,#$02,LAE0C
+        brset   <BitFlags71,#$02,LAE0C               ; crank pulse seen since the last coil scheduling
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    >KNAERT_MinEngRunTImeForAverageKnockVoltCalc ; KNAERT (MinEngRunTImeForAverageKnockVoltCalc)
         bls     LAE0C
@@ -301,7 +301,7 @@ LADCE:
 
 LADDB:
         ldy     <AverageKnockVolts
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <KnockVolts
         ldab    >KNADFT_DefaultKnockVoltsAverage     ; KNADFT (DefaultKnockVoltsAverage)
@@ -336,6 +336,9 @@ LAE0F:
 ;---------------------------------------------------------------------------------------------------
 ; DecrementAdaptiveRetardFactor  ($AE81)
 ;
+; AdaptiveRetardIndex -= ARSUBC, not below zero (the adaptive knock retard decays). Runs in
+; SubLoopH. [reviewed]
+;
 ; Called from: SubLoopH
 ;---------------------------------------------------------------------------------------------------
 DecrementAdaptiveRetardFactor:
@@ -357,10 +360,10 @@ LAE19:
 ; partially]
 ;
 ; Starts an A/D conversion on channel 3, waits a few cycles and stores ADR1 in KnockVolts (or zero
-; when knock sensing is disabled by BitFlags71 bit 7). The value feeds CalculateKnockRetard_MM.
+; while the engine is not running, BitFlags71 bit 7). The value feeds CalculateKnockRetard_MM.
 ;---------------------------------------------------------------------------------------------------
 Isr_TOC4_KnockSample:
-        brclr   <BitFlags71,#$80,LAE24
+        brclr   <BitFlags71,#$80,LAE24               ; engine not running (stopped or cranking)
         clra
         bra     LAE31
 
@@ -578,6 +581,12 @@ LAFAA:
 
 ;---------------------------------------------------------------------------------------------------
 ; LookupValueFor0476_SM  ($B01C)
+;
+; Threshold Var_0476 for the per-event RPM and MAP change checks in CrankMapRpmUpdate. [reviewed]
+;
+; In a light-load window (speed below LCC6F, rpm between LCC6C and LCC6D, MAP below LCC6E, coolant
+; above LCC72) it is the constant LCC71; otherwise the 3D table TABLEcc18 with rpm and MAP
+; coordinates from TABLEcc5f and TABLEcc4c. Runs in SubLoopB.
 ;
 ; Called from: SubLoopB
 ;---------------------------------------------------------------------------------------------------

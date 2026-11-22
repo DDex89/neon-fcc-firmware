@@ -521,8 +521,8 @@ Naming conventions: a descriptive name means the meaning is known. `Owner_xxxx` 
 | `$0217` | `Var_0217` | 2 | 2 | CODEe74f_MM | CODEe74f_MM |
 | `$0218` | `Var_0218` | 3 | 2 | CODE600e_SM, CODE7242_SM, CheckStuffAndSetStatusFlags_SM | CODE7242_SM, StoreMAPVoltsAndCalcMAPValue |
 | `$0219` | `ObdMapValue` | 2 | 1 | CaptureFreezeFrame, ObdPid0B_Map | TurnAlternatorOff |
-| `$021A` | `CoolantTempVolts` | 2 | 2 | CaptureFreezeFrame, ObdPid05_Coolant | CheckAndFilterCoolantTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
-| `$021B` | `ChargeTempVolts` | 1 | 2 | ObdPid0F_IntakeAirTemp | CheckAndFilterChargeTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
+| `$021A` | `CoolantTempUnfiltered` | 2 | 2 | CaptureFreezeFrame, ObdPid05_Coolant | CheckAndFilterCoolantTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
+| `$021B` | `ChargeTempUnfiltered` | 1 | 2 | ObdPid0F_IntakeAirTemp | CheckAndFilterChargeTempSensor_SM, StoreMAPVoltsAndCalcMAPValue |
 | `$021C` | `DrbRamBuffer` | 0 | 1 |  | DRB_UseRAM2ForSpecialProgramRoutine |
 | `$021E` | `DrbRamProgramEntry` | 1 | 0 | DRB_UseRAM2ForSpecialProgramRoutine |  |
 
@@ -682,3 +682,52 @@ Naming conventions: a descriptive name means the meaning is known. `Owner_xxxx` 
 | `$04C3` | `DebugTemp3` | 1 | 2 | AltSerialComsRoutine | AltSerialComsRoutine |
 | `$04C4` | `DebugTemp4Counter` | 0 | 0 |  |  |
 | `$083E` | `Unref_083E` | 0 | 0 |  |  |
+
+## Flag bits
+
+Bits whose meaning is decoded, from `annotations/ram_bits.json`. The generated source repeats them as comments on `bset`, `bclr`, `brset` and `brclr` instructions.
+
+### `$003A` `OutputDriverBits`
+
+| Bit | Meaning |
+|---|---|
+| 7 | speed control solenoid |
+| 6 | speed control solenoid |
+| 5 | purge on/off output (secondary air with that option) |
+| 4 | fuel pump relay |
+| 3 | radiator fan relay |
+| 2 | ASD relay |
+| 1 | EGR solenoid |
+| 0 | A/C clutch relay |
+
+### `$0065` `BitFlags65`
+
+| Bit | Meaning |
+|---|---|
+| 7 | throttle open (off idle) |
+| 6 | MINTHR raised during this throttle opening |
+| 5 | closed-loop timer CLTIME expired |
+| 4 | closed loop (O2 feedback in use) |
+| 3 | MINTHR self-calibration step done |
+| 2 | O2 rich/lean state, flips on each O2 switch |
+| 1 | part-throttle enrichment active |
+| 0 | wide-open throttle |
+
+### `$0071` `BitFlags71`
+
+| Bit | Meaning |
+|---|---|
+| 7 | engine not running (stopped or cranking) |
+| 4 | start-to-run transition pending |
+| 1 | crank pulse seen since the last coil scheduling |
+
+### `$00EE` `OutputBits2`
+
+| Bit | Meaning |
+|---|---|
+| 7 | purge duty forced (DRB override target 1) |
+| 6 | check-engine lamp |
+| 5 | TCC / PTU solenoid |
+| 4 | charge lamp |
+| 3 | O2 line load switch (heater test) |
+| 0 | key-off power hold (O2 heater test) |

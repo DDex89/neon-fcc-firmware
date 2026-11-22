@@ -61,11 +61,11 @@ LFC9B:
 ; TPSandMAP_OK  ($FC9E)
 ;---------------------------------------------------------------------------------------------------
 TPSandMAP_OK:
-        brset   <BitFlags71,#$80,JumpTo_VarRevLimit_Return
+        brset   <BitFlags71,#$80,JumpTo_VarRevLimit_Return ; engine not running (stopped or cranking)
         ldaa    <EngineRpm_HB
         cmpa    >VarRevLimitRPMRef
         bls     LFC9B
-        brset   <BitFlags65,#$80,LFCB9
+        brset   <BitFlags65,#$80,LFCB9               ; throttle open (off idle)
         ldaa    <MapValue
         cmpa    >VarRevLimitMAPRef
         bls     LFCB9
@@ -112,7 +112,7 @@ LFCF1:
         bcc     LFD01
         ldaa    #$FF
 LFD01:
-        brset   <OutputDriverBits,#$01,LFD0C
+        brset   <OutputDriverBits,#$01,LFD0C         ; A/C clutch relay
         adda    >LCE73
         bcc     LFD0C
         ldaa    #$FF
@@ -124,7 +124,7 @@ LFD0C:
 LFD17:
         cmpa    <MapValue
         bcs     LFD39
-        brset   <BitFlags65,#$80,LFD34
+        brset   <BitFlags65,#$80,LFD34               ; throttle open (off idle)
         ldaa    <Temp0
         cmpa    >LCE77
         bcc     LFD34
@@ -161,7 +161,7 @@ LFD52:
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 LFD67:
         brclr   <BitFlags36,#$80,VarRevLimit_Return
-        brset   <BitFlags65,#$80,VarRevLimit_Return
+        brset   <BitFlags65,#$80,VarRevLimit_Return  ; throttle open (off idle)
         ldaa    <EngineRpm_HB
         cmpa    >LCE7A
         bcc     VarRevLimit_Return
@@ -234,73 +234,12 @@ TurnOffVariableRevLimit2:
 VarRevLimit_Return:
         rts
 
-        dcb.b   291,$FF
+        dcb.b   457,$FF
+        dc.b    $22
 
-;---------------------------------------------------------------------------------------------------
-; LFDDA  ($FEFD)
-;---------------------------------------------------------------------------------------------------
-LFDDA:
-        stx     >ResetVector+1
-LFF00:
-        stx     >ResetVector+1
-LFF03:
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >ResetVector+1
-        stx     >$2243
-        clr     $70,x
-        dc.b    $72,$2E,$20,$31,$39,$39,$34,$20
-        dc.b    $43,$68,$72,$79,$73,$6C,$65,$72
-        dc.b    $20,$43,$6F,$72,$70,$2E,$22,$B8
-        dc.b    $02
+ChryslerCopyrightNotice:
+        dc.b    $43,$6F,$70,$72,$2E,$20,$31,$39
+        dc.b    $39,$34,$20,$43,$68,$72,$79,$73
+        dc.b    $6C,$65,$72,$20,$43,$6F,$72,$70
+        dc.b    $2E,$22,$B8,$02
         dcb.b   22,$FF

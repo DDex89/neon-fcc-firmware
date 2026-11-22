@@ -33,13 +33,13 @@ CalculateSparkAdvance_MM:
         deca
         staa    >AdvanceDownCounter_A
 LA75A:
-        brclr   <BitFlags65,#$80,CalculateIdleAdvance
+        brclr   <BitFlags65,#$80,CalculateIdleAdvance ; throttle open (off idle)
         ldaa    <MapValue
         ldx     #MAPMOD_ModifiedMAPFor3DTable_nonfuelspark ; MAPMOD (ModifiedMAPFor3DTable_nonfuelspark)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldab    <CoolantTemp
         ldx     #BASADV_BaseAdvanceFromMAPandCoolant3D ; BASADV (BaseAdvanceFromMAPandCoolant3D)
-        jsr     >Lookup3DTableRoutine                ; 3D table lookup (bilinear interpolation), variant 1.
+        jsr     >Lookup3DTableRoutine                ; 3D table lookup with bilinear interpolation, variant with the column axis stored in the ta
         staa    <Temp0
         ldaa    <MapValue
         ldx     #BASMAP_BaseAdvanceProductFromMAP    ; BASMAP: Product is added to the coolant temp base advance.
@@ -172,7 +172,7 @@ LA831:
         ldaa    #$80
 LA833:
         staa    <Temp0
-        brclr   <BitFlags65,#$10,SparkAdvance_BadO2
+        brclr   <BitFlags65,#$10,SparkAdvance_BadO2  ; closed loop (O2 feedback in use)
         brset   <BitFlags66,#$40,SparkAdvance_BadO2
         ldaa    <Timer_O2CNTR_CountdownFromAbove196FtoEnableClosedLoop
         bne     SparkAdvance_BadO2
@@ -287,7 +287,7 @@ LookupNormalAdvance:
         ldx     #WOTMRP_AdvanceFromMAPAndRPMWarmFull ; WOTMRP (AdvanceFromMAPAndRPMWarmFull)
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
         staa    >MaxAdvanceLookup
-        brset   <BitFlags65,#$01,LA91B
+        brset   <BitFlags65,#$01,LA91B               ; wide-open throttle
         ldab    <RPMRescaledfor3D
         ldaa    <MAPRescaledfor3D
         ldx     #HOTMRP_AdvanceFromMAPAndRPMWarmIdlePart ; HOTMRP (AdvanceFromMAPAndRPMWarmIdlePart)
@@ -493,7 +493,7 @@ LAA13:
 CheckConditionsForDeltaRPMRetard:
         staa    <Temp0
         clr     >Counter_DeltaEngineRPM_1
-        brset   <BitFlags71,#$02,LAA3A
+        brset   <BitFlags71,#$02,LAA3A               ; crank pulse seen since the last coil scheduling
         ldab    <VehicleSpeed_HB
         cmpb    >MSPDRE_MinimumMPHForDeltaRPMEvaluation ; MSPDRE (MinimumMPHForDeltaRPMEvaluation)
         bls     LAA3A
@@ -662,7 +662,7 @@ LAB5E:
 StoreKnockVoltsAvgCounter:
         stab    <Counter_KnockVoltsAvg
         addb    <Temp0
-        brset   <BitFlags65,#$80,CheckAndSetMinSparkAdvance
+        brset   <BitFlags65,#$80,CheckAndSetMinSparkAdvance ; throttle open (off idle)
         ldaa    <VehicleSpeed_HB
         bne     CheckAndSetMinSparkAdvance
         ldaa    <CoolantTemp
@@ -696,10 +696,12 @@ LAB90:
 ;---------------------------------------------------------------------------------------------------
 ; IncrementDeltaRPMCounter_SM  ($AB93)
 ;
+; Counts Counter_DeltaEngineRPM_1 up (saturating) while the throttle is closed. [reviewed]
+;
 ; Called from: SubLoopB
 ;---------------------------------------------------------------------------------------------------
 IncrementDeltaRPMCounter_SM:
-        brset   <BitFlags65,#$80,LABA0
+        brset   <BitFlags65,#$80,LABA0               ; throttle open (off idle)
         ldaa    >Counter_DeltaEngineRPM_1
         inca
         beq     LABA0
@@ -710,6 +712,12 @@ LABA0:
 
 ;---------------------------------------------------------------------------------------------------
 ; HandleSparkScatter  ($ABA1)
+;
+; Entry of the idle spark scatter (spark used to hold idle speed). [reviewed]
+;
+; Skipped while the engine is not running or the throttle is open. In the basic-timing DRB mode it
+; uses the constant SPKSET. Otherwise, once the AIS feedback delay is over and BitFlags66 bit 6 is
+; set, it calculates the scatter unless IPL1 bits 7 or 5 are set.
 ;
 ; Called from: CrankInterrupt_FallingEdge
 ;---------------------------------------------------------------------------------------------------

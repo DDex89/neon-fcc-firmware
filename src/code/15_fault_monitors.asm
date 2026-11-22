@@ -521,7 +521,7 @@ L5A86:
         ldab    <KeyOnOrEngineRunningTime
         cmpb    #$0A
         bcs     L5AB9
-        brset   <BitFlags71,#$80,L5AB9
+        brset   <BitFlags71,#$80,L5AB9               ; engine not running (stopped or cranking)
         ldx     #$0400
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$40
@@ -539,7 +539,7 @@ L5AAF:
         bra     L5AB9
 
 L5AB5:
-        brclr   <OutputDriverBits,#$08,L5AFA
+        brclr   <OutputDriverBits,#$08,L5AFA         ; radiator fan relay
 
 ;---------------------------------------------------------------------------------------------------
 ; L5AB9  ($5AB9)
@@ -894,7 +894,7 @@ L5CA3:
 ;---------------------------------------------------------------------------------------------------
 CheckForBadMAP:
         psha
-        brset   <BitFlags71,#$80,L5CBE
+        brset   <BitFlags71,#$80,L5CBE               ; engine not running (stopped or cranking)
         ldaa    >BadMAPCOunter
         cmpa    >BadMAPCounterThreshold              ; BATVLT (BatteryVoltsTable)
         bcc     L5CBE
@@ -916,7 +916,7 @@ L5CBF:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 IncrementBadMAPCounter_MM:
-        brset   <BitFlags71,#$80,L5CD8
+        brset   <BitFlags71,#$80,L5CD8               ; engine not running (stopped or cranking)
         ldaa    <Counter_MainLoop
         anda    #$0F
         cmpa    #$0F
@@ -943,7 +943,7 @@ CheckForErrorsAndSetCodes_MM:
         ldaa    <Counter_MainLoop
         bita    #$1F
         bne     L5D0D
-        brset   <BitFlags71,#$80,L5D0D
+        brset   <BitFlags71,#$80,L5D0D               ; engine not running (stopped or cranking)
         ldaa    <BatteryVolts
         suba    <TargetBatteryVolts
         bcs     L5D05
@@ -1007,7 +1007,7 @@ L5D44:
 ;---------------------------------------------------------------------------------------------------
 CheckIfCheckEngineLightShouldBeOn_MM:
         ldab    #$40
-        brclr   <BitFlags71,#$80,L5D65
+        brclr   <BitFlags71,#$80,L5D65               ; engine not running (stopped or cranking)
         ldaa    <DRBPointer1
         cmpa    #$0A
         bne     L5D54
@@ -1035,11 +1035,11 @@ L5D65:
         ldy     #$0438
         brset   $00,y,#$80,TurnCheckEngineLightOn
 TurnCheckEngineLightOff:
-        bclr    <OutputBits2,#$40
+        bclr    <OutputBits2,#$40                    ; check-engine lamp
         rts
 
 TurnCheckEngineLightOn:
-        bset    <OutputBits2,#$40
+        bset    <OutputBits2,#$40                    ; check-engine lamp
 L5D86:
         rts
 
@@ -1050,14 +1050,15 @@ L5D86:
 ; Charge-warning lamp control when CONFIG2 bit 5 is clear (OutputBits2 bit 4). [reviewed]
 ;
 ; Despite the original name this drives the charge lamp, not the MIL. The lamp output follows
-; KeyOnOrEngineRunningTime, BitFlags71 bit 7 and the charging fault flags (IPL2 bit 7,
-; SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
+; KeyOnOrEngineRunningTime, BitFlags71 bit 7 (engine not running) and the charging fault flags
+; (IPL2 bit 7, SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from
+; MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 CheckIfCheckEngineLightShouldBeOn_A_MM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L5DB6
-        brclr   <BitFlags71,#$80,L5D98
+        brclr   <BitFlags71,#$80,L5D98               ; engine not running (stopped or cranking)
         ldaa    <KeyOnOrEngineRunningTime
         bne     L5DB3
         bra     L5DAF
@@ -1075,11 +1076,11 @@ CheckBatVoltsFlag:
         bra     L5DB3
 
 L5DAF:
-        bclr    <OutputBits2,#$10
+        bclr    <OutputBits2,#$10                    ; charge lamp
         rts
 
 L5DB3:
-        bset    <OutputBits2,#$10
+        bset    <OutputBits2,#$10                    ; charge lamp
 L5DB6:
         rts
 
@@ -1108,19 +1109,19 @@ CheckIfCheckEngineLightShouldBeOn_B_MM:
         bcs     L5DE9
 L5DD0:
         bclr    <LinkReg48Data,#$10
-        bset    <OutputBits2,#$10
+        bset    <OutputBits2,#$10                    ; charge lamp
         bset    <BitFlags6D,#$02
 L5DD9:
         brset   <IPL2,#$80,L5DEC
         ldx     #$04B6
         brset   $00,x,#$01,L5DEC
-        bset    <OutputBits2,#$10
+        bset    <OutputBits2,#$10                    ; charge lamp
         bra     L5DEF
 
 L5DE9:
         bset    <LinkReg48Data,#$10
 L5DEC:
-        bclr    <OutputBits2,#$10
+        bclr    <OutputBits2,#$10                    ; charge lamp
 L5DEF:
         rts
 
@@ -1188,7 +1189,7 @@ L5E43:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 DetectAlternatorFault_MM:
-        brset   <BitFlags71,#$80,L5E8C
+        brset   <BitFlags71,#$80,L5E8C               ; engine not running (stopped or cranking)
         brset   <b59_IPL2,#$08,L5E8C
         ldaa    <CoolantTemp
         cmpa    >ERRTMP_CoolantTempLimitforErrorCodeSetting ; ERRTMP (CoolantTempLimitforErrorCodeSetting)
@@ -1203,7 +1204,7 @@ L5E5E:
         bcs     L5E8C
         bitb    #$1F
         bne     L5E8C
-        brclr   <BitFlags65,#$80,L5E8C
+        brclr   <BitFlags65,#$80,L5E8C               ; throttle open (off idle)
         ldaa    <MapValue
         ldx     #TABLEcd9a                           ; DEFCHG (DefaultChargeTemp_Limpin)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -1259,7 +1260,7 @@ L5EB5:
         abx
         ldy     $00,x
         ldab    #$89
-        brset   <BitFlags71,#$80,L5ED2
+        brset   <BitFlags71,#$80,L5ED2               ; engine not running (stopped or cranking)
         ldab    #$20
 L5ED2:
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1291,15 +1292,17 @@ L5F01:
 ;---------------------------------------------------------------------------------------------------
 ; VerifyOperationOfAmbientTempSensor_MM  ($5F02)
 ;
-; Plausibility check of the ambient / battery temperature sensor (fault code 23). [reviewed]
+; Plausibility check of the air temperature sensors at key-on (fault code 23, descriptor
+; ErrBytes_CODE23_b). [reviewed]
 ;
-; Runs when BitFlags71 bit 7 is set and none of the related IPL fault bits is set. When
-; AmbientAirTemp is below $58 and close to CoolantTemp (within LE019) but differs from ChargeTemp
-; by more than LE019, it reports ErrBytes_CODE23_b. Not called in B4CC; B559, B4F3 and B4C2 call
-; it from MainSubLoop.
+; Runs only while the engine is not running (BitFlags71 bit 7 set) and none of the related IPL
+; fault bits is set. When AmbientAirTemp is at the bottom of its range (at most $58 = −40 °C, the
+; minimum of the TMPAMB table) and CoolantTemp is within LE019 (16 °C in the images seen) of it,
+; but ChargeTemp differs from it by more than LE019, it reports the fault and sets IPL1 bit 0. Not
+; called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfAmbientTempSensor_MM:
-        brclr   <BitFlags71,#$80,L5F3A
+        brclr   <BitFlags71,#$80,L5F3A               ; engine not running (stopped or cranking)
         brset   <b58_IPL1,#$01,L5F3A
         brset   <b59_IPL2,#$02,L5F3A
         brset   <b58_IPL1,#$02,L5F3A
@@ -1342,7 +1345,7 @@ VerifyOperationOfMapSensor_MM:
         ldaa    <VehicleSpeedScaled
         cmpa    #$02
         bcc     L5F86
-        brset   <BitFlags65,#$80,L5F86
+        brset   <BitFlags65,#$80,L5F86               ; throttle open (off idle)
         ldd     <EngineRpm_HB
         subd    <TargetIdleSpeedHB
         bcc     L5F5C
@@ -1351,7 +1354,7 @@ VerifyOperationOfMapSensor_MM:
 L5F5C:
         cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPVACD (AllowMapToTestGoodThisNearBaro)
         bcc     L5F86
-        brset   <BitFlags71,#$80,L5F86
+        brset   <BitFlags71,#$80,L5F86               ; engine not running (stopped or cranking)
         ldaa    <BaroPressure
         tab
         suba    <MapValue
@@ -1484,7 +1487,7 @@ L6007:
 CODE600e_SM:
         ldx     #$014D
         brclr   $00,x,#$04,L601E
-        brset   <BitFlags71,#$80,L6059
+        brset   <BitFlags71,#$80,L6059               ; engine not running (stopped or cranking)
         ldaa    >Var_0218
         bne     L607A
 L601E:
@@ -1537,7 +1540,7 @@ L607A:
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 CheckStuffAndSetStatusFlags_SM:
-        brset   <BitFlags71,#$80,L60D9
+        brset   <BitFlags71,#$80,L60D9               ; engine not running (stopped or cranking)
         ldaa    >Var_0218
         bne     L60D9
         ldaa    <AsdVolts_000B
@@ -1592,7 +1595,7 @@ L60D9:
 ;---------------------------------------------------------------------------------------------------
 CheckAnalog0170Limits_SM:
         brset   <IPL2,#$40,L6121
-        brset   <BitFlags71,#$80,L6121
+        brset   <BitFlags71,#$80,L6121               ; engine not running (stopped or cranking)
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L60F8
@@ -1631,7 +1634,7 @@ L6121:
 ;---------------------------------------------------------------------------------------------------
 CheckAnalog0170Limits2_SM:
         brset   <IPL2,#$20,L6161
-        brset   <BitFlags71,#$80,L6161
+        brset   <BitFlags71,#$80,L6161               ; engine not running (stopped or cranking)
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L6140
@@ -1691,13 +1694,15 @@ CalculateMaxRPMxMaxMAPFraction_MM:
 ;---------------------------------------------------------------------------------------------------
 ; CheckErrorMaskingAndSetCodes_MM  ($6180)
 ;
-; Filters cruise distance pulse width and TPS (FaultMask_01D2/01D6) and runs a speed-related
-; check. [from name]
+; Torque converter clutch system monitor (code 37, P0740, descriptor $D983). [reviewed]
 ;
-; The first part (read so far) applies first-order filters with LCDB5/LCDB6, then, for the
-; configuration with CONFIG bit 5 set, skips the check while faults 11, 15, 24, 37 or 54 are
-; maturing. The rest involves vehicle speed, battery voltage and the TCC output. Not called in
-; B4CC; B559 calls it from SubLoopA.
+; Filters ScaledDistPWForCruiseControl (FaultMask_01D2) and TPS (FaultMask_01D6) with LCDB5 /
+; LCDB6. It only runs for the configuration with CONFIG bit 5 set, with no fault 11, 15, 24, 37 or
+; 54 maturing, no related IPL fault bits and battery voltage above LCDBD. While the TCC solenoid
+; is on (OutputBits2 bit 5) and the car is above LCDB9, it watches the filtered value against the
+; throttle (above MINTHR + LCDB3): when the value keeps changing by LCDB4 or more over LCDB1
+; passes, LCDBC times, it reports the fault and sets IPL1 bit 4. Not called in B4CC; B559, B4F3
+; and B4C2 call it from SubLoopA.
 ;---------------------------------------------------------------------------------------------------
 CheckErrorMaskingAndSetCodes_MM:
         ldaa    >LCDB5                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
@@ -1708,7 +1713,7 @@ CheckErrorMaskingAndSetCodes_MM:
 
 L618B:
         ldy     >FaultMask_01D2
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    >ScaledDistPWForCruiseControl
         ldab    >LCDB5                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
@@ -1727,7 +1732,7 @@ L61A5:
 
 L61B2:
         ldy     >FaultMask_01D6
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <TpsVolts
         ldab    >LCDB6                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
@@ -1796,7 +1801,7 @@ L61FA:
         cmpa    >LCDBD                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bls     L6270
         ldx     #$04B6
-        brclr   <OutputBits2,#$20,L62A9
+        brclr   <OutputBits2,#$20,L62A9              ; TCC / PTU solenoid
         bset    $00,x,#$04
         ldaa    <VehicleSpeedScaled
         cmpa    >LCDB9                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
@@ -1929,7 +1934,7 @@ L634E:
 Set_ErrorBits_16_MM:
         ldx     #$049E
         brset   $00,x,#$40,L6384
-        brset   <BitFlags71,#$80,L6384
+        brset   <BitFlags71,#$80,L6384               ; engine not running (stopped or cranking)
         brset   <b58_IPL1,#$02,L6384
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    >LC475                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
@@ -1961,9 +1966,9 @@ IncrementOrClearDiagFaultCounter_SM:
         brset   <b58_IPL1,#$20,L63CC
         brset   <b58_IPL1,#$80,L63CC
         brset   <b58_IPL1,#$40,L640C
-        brset   <BitFlags71,#$80,L640C
-        brset   <BitFlags71,#$02,L640C
-        brset   <BitFlags65,#$80,L640C
+        brset   <BitFlags71,#$80,L640C               ; engine not running (stopped or cranking)
+        brset   <BitFlags71,#$02,L640C               ; crank pulse seen since the last coil scheduling
+        brset   <BitFlags65,#$80,L640C               ; throttle open (off idle)
         ldaa    >SystemStatusFlag_4b6
         bita    #$80
         bne     L640C
@@ -2164,7 +2169,7 @@ L64E9:
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 CODE64ea_SM:
-        brset   <BitFlags71,#$80,L6554
+        brset   <BitFlags71,#$80,L6554               ; engine not running (stopped or cranking)
         sei
         ldy     #$0400
         brclr   $00,y,#$04,L64FE
@@ -2294,7 +2299,7 @@ CheckSpeedAndSomething_SM:
         bita    #$02
         bne     L65FA
         brclr   <BitFlags_AIS,#$40,L65FA
-        brset   <BitFlags71,#$80,L65FA
+        brset   <BitFlags71,#$80,L65FA               ; engine not running (stopped or cranking)
         ldd     >VehicleSpeed_HB
         cpd     #$0E00
         bcs     L65FA
@@ -2315,7 +2320,7 @@ L65FA:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfThermostat_MM:
-        brset   <BitFlags71,#$80,L6631
+        brset   <BitFlags71,#$80,L6631               ; engine not running (stopped or cranking)
         brset   <b58_IPL1,#$02,L6631
         ldaa    >Timer_ThermostatDiagnostics
         beq     L6631
@@ -2367,7 +2372,7 @@ VerifyOperationOfASDRelayAndO2Sensor_MM:
         ldy     #ErrBytes_CODE42_a
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 L6654:
-        brset   <BitFlags71,#$80,L669D
+        brset   <BitFlags71,#$80,L669D               ; engine not running (stopped or cranking)
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    #$2C
         bcs     L669D
@@ -2410,7 +2415,7 @@ L669D:
         staa    >FuelLookupValue3D
 L66A8:
         staa    <Timer_O2MiddleDiagnostics
-        bclr    <OutputBits2,#$01
+        bclr    <OutputBits2,#$01                    ; key-off power hold (O2 heater test)
         jmp     >L672A
 
 L66B0:
@@ -2432,7 +2437,7 @@ L66B9:
         clra
         staa    <Timer_O2MiddleDiagnostics
         staa    >FuelLookupValue3D
-        bset    <OutputBits2,#$01
+        bset    <OutputBits2,#$01                    ; key-off power hold (O2 heater test)
         bra     L672A
 
 L66D9:
@@ -2447,7 +2452,7 @@ L66E2:
 L66E3:
         staa    <Timer_O2MiddleDiagnostics
 L66E5:
-        bclr    <OutputBits2,#$01
+        bclr    <OutputBits2,#$01                    ; key-off power hold (O2 heater test)
         ldaa    >FuelLookupValue3D
         cmpa    >O2DIAG_CounterLimitForO2SensorDiag  ; O2DIAG (CounterLimitForO2SensorDiag)
         bcc     L66F5

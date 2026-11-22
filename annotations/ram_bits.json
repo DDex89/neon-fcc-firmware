@@ -1,0 +1,111 @@
+{
+ "_comment": "Meaning of individual bits of RAM flag bytes, keyed by B4CC RAM address and bit number: [English, Russian]. The English phrase is used in generated comments; both go to docs/*/ram_map.md.",
+ "003A": {
+  "0": [
+   "A/C clutch relay",
+   "реле муфты компрессора кондиционера"
+  ],
+  "1": [
+   "EGR solenoid",
+   "клапан EGR"
+  ],
+  "2": [
+   "ASD relay",
+   "реле ASD"
+  ],
+  "3": [
+   "radiator fan relay",
+   "реле вентилятора радиатора"
+  ],
+  "4": [
+   "fuel pump relay",
+   "реле топливного насоса"
+  ],
+  "5": [
+   "purge on/off output (secondary air with that option)",
+   "выход вкл/выкл продувки (с опцией — вторичный воздух)"
+  ],
+  "6": [
+   "speed control solenoid",
+   "клапан круиз-контроля"
+  ],
+  "7": [
+   "speed control solenoid",
+   "клапан круиз-контроля"
+  ]
+ },
+ "0065": {
+  "0": [
+   "wide-open throttle",
+   "дроссель открыт полностью"
+  ],
+  "1": [
+   "part-throttle enrichment active",
+   "обогащение при частичном дросселе включено"
+  ],
+  "2": [
+   "O2 rich/lean state, flips on each O2 switch",
+   "состояние O2 богато/бедно, меняется при каждом переключении O2"
+  ],
+  "3": [
+   "MINTHR self-calibration step done",
+   "шаг самокалибровки MINTHR выполнен"
+  ],
+  "4": [
+   "closed loop (O2 feedback in use)",
+   "замкнутый контур (обратная связь по O2)"
+  ],
+  "5": [
+   "closed-loop timer CLTIME expired",
+   "таймер замкнутого контура CLTIME истёк"
+  ],
+  "6": [
+   "MINTHR raised during this throttle opening",
+   "MINTHR поднят за это открытие дросселя"
+  ],
+  "7": [
+   "throttle open (off idle)",
+   "дроссель открыт (не холостой ход)"
+  ]
+ },
+ "0071": {
+  "1": [
+   "crank pulse seen since the last coil scheduling",
+   "импульс коленвала после последнего расчёта катушек"
+  ],
+  "4": [
+   "start-to-run transition pending",
+   "ожидается переход от пуска к работе"
+  ],
+  "7": [
+   "engine not running (stopped or cranking)",
+   "двигатель не работает (стоит или прокручивается стартером)"
+  ]
+ },
+ "00EE": {
+  "0": [
+   "key-off power hold (O2 heater test)",
+   "удержание питания после выключения зажигания (тест подогрева O2)"
+  ],
+  "3": [
+   "O2 line load switch (heater test)",
+   "ключ нагрузки на линиях O2 (тест подогрева)"
+  ],
+  "4": [
+   "charge lamp",
+   "лампа зарядки"
+  ],
+  "5": [
+   "TCC / PTU solenoid",
+   "клапан TCC / PTU"
+  ],
+  "6": [
+   "check-engine lamp",
+   "лампа Check Engine"
+  ],
+  "7": [
+   "purge duty forced (DRB override target 1)",
+   "скважность продувки задана принудительно (цель 1 DRB)"
+  ]
+ }
+}

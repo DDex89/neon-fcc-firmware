@@ -318,7 +318,7 @@ L46B3:
 
 L46B4:
         brset   <CCDFlags5,#$10,L4702
-        brset   <BitFlags71,#$80,L4702
+        brset   <BitFlags71,#$80,L4702               ; engine not running (stopped or cranking)
         ldaa    <BitFlags72
         bita    #$03
         bne     L4702
@@ -443,7 +443,7 @@ CcdRx_8:
 ;---------------------------------------------------------------------------------------------------
 Set_ErrorBits_3_MM:
         brclr   <BitFlags_AIS,#$08,L4766
-        brset   <BitFlags71,#$80,L4766
+        brset   <BitFlags71,#$80,L4766               ; engine not running (stopped or cranking)
         ldaa    >Var_01EF
         inca
         bne     L473E
@@ -680,7 +680,7 @@ CCD_SwitchState:
         ldab    >CruiseControlSwitchStateAnalog
         cmpb    #$FD
         bcc     L485D
-        brclr   <BitFlags71,#$80,L485D
+        brclr   <BitFlags71,#$80,L485D               ; engine not running (stopped or cranking)
         ldab    <KeyOnOrEngineRunningTime
         bne     L485D
         bra     L485B
@@ -697,10 +697,10 @@ L4863:
         brclr   <SwitchInputs,#$40,L4869
         oraa    #$04
 L4869:
-        brclr   <OutputDriverBits,#$01,L486F
+        brclr   <OutputDriverBits,#$01,L486F         ; A/C clutch relay
         oraa    #$08
 L486F:
-        brset   <OutputBits2,#$40,L4875
+        brset   <OutputBits2,#$40,L4875              ; check-engine lamp
         oraa    #$20
 L4875:
         brclr   <BitFlags6C,#$20,L48AC

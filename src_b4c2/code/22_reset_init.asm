@@ -89,12 +89,12 @@ L8E50:
         staa    $09,x                                ; DDRD: Port D data direction
         ldaa    $29,x                                ; SPSR: SPI status
         stab    $28,x                                ; SPCR: SPI control
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldaa    #$C8
 L8E7B:
         deca
         bne     L8E7B
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         bclr    <BitFlags_AIS,#$2C
         ldd     <Temp3
         std     <BYTE03
@@ -178,7 +178,7 @@ L8F1D:
         staa    <MapVolts
         staa    >MAPTemp_A
         staa    >MAPTemp_B
-        jsr     >ConvertMAPVoltsToValue              ; Converts the MAP sensor voltage to the internal MAP value.
+        jsr     >ConvertMAPVoltsToValue              ; MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF.
         staa    <MapValue
         staa    <MapPrevious
         ldaa    #$F0
@@ -199,7 +199,7 @@ StoreMAPVoltsAndCalcMAPValue:
         staa    <MapVolts
         staa    >MAPTemp_A
         staa    >MAPTemp_B
-        jsr     >ConvertMAPVoltsToValue              ; Converts the MAP sensor voltage to the internal MAP value.
+        jsr     >ConvertMAPVoltsToValue              ; MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF.
         staa    <MapValue
         staa    <MapPrevious
         staa    >MAPTemp44c
@@ -213,7 +213,7 @@ L8F73:
         ldaa    <MapValue
 L8F75:
         staa    <BaroPressure
-        jsr     >SaveBaroPressure
+        jsr     >SaveBaroPressure                    ; Stores B in BaroPressure if it is within BAROLO..BAROHI.
         ldx     #REGS
         ldd     $0E,x                                ; TCNT: Free-running timer counter (16 bit)
         std     $1E,x                                ; TOC5: Output compare 5 (16 bit)
@@ -226,7 +226,7 @@ L8F75:
         stab    $2B,x                                ; BAUD: SCI baud rate
         clra
         staa    $2C,x                                ; SCCR1: SCI control 1
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldd     $31,x                                ; ADR1: A/D result 1
         cmpa    #$40
         bcc     L8FA4
@@ -295,7 +295,7 @@ L9019:
         bne     L9019
         ldab    #$14
         stab    $30,x
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldaa    #$B7
         staa    <OutputBits2
         ldaa    #$03
@@ -312,7 +312,7 @@ L9019:
         bset    $03,y,#$04
         cmpa    $29,x                                ; SPSR: SPI status
         ldaa    $2A,x                                ; SPDR: SPI data
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldd     $31,x                                ; ADR1: A/D result 1
         std     >LastCoolantTempVolts
         bset    $00,y,#$01
@@ -325,7 +325,7 @@ L9065:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <CoolantTemp
         staa    >StartCoolantTemp
-        staa    >CoolantTempVolts
+        staa    >CoolantTempUnfiltered
         ldaa    >LastChargeTempVolts
         ldx     #TMPTL1_TempForColdScaleA2D          ; TMPTL1 (TempForColdScaleFromA2D)
         ldab    >PORTA
@@ -335,7 +335,7 @@ L9065:
 L9080:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <ChargeTemp
-        staa    >ChargeTempVolts
+        staa    >ChargeTempUnfiltered
         ldx     #REGS
         ldd     $31,x                                ; ADR1: A/D result 1
         std     >AnalogMux01_AN4
@@ -350,7 +350,7 @@ L90A3:
         dex
         bne     L90A3
 L90AB:
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldx     #REGS
         ldy     #$0400
         ldd     $31,x                                ; ADR1: A/D result 1
@@ -371,7 +371,7 @@ L90D5:
         ldab    >AmbientAirTempVolts
         ldx     #REGS
         ldy     #$0400
-        jsr     >CheckAndFilterAmbientTempSensor_SM
+        jsr     >CheckAndFilterAmbientTempSensor_SM  ; A/D of multiplexer input 11: the ambient / battery temperature sensor.
         ldaa    >BatteryTempVolts
         ldx     #TMPAMB_TempForScaleAmbientA2D       ; TMPAMB (TempForScaleAmbientA2D)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -442,7 +442,7 @@ L9175:
         ldaa    #$7F
 L917E:
         staa    <AISACCompensation
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldaa    >LBD76                               ; RETSPD: Retard from Speed.
         staa    >Crank_0447
         ldx     #PRSHOT_KeyOnPrimePW                 ; PRSHOT: Prime Fuel Shot before cranking
@@ -474,7 +474,7 @@ L91BD:
         ldaa    #$3E
         staa    >DistFETimeModified_A
         staa    >DistFETimeModified_B
-        jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
+        jsr     >ResetCOPTimer                       ; Kicks both watchdogs.
         ldx     #REGS
         ldab    #$0C
         brset   $25,x,#$80,L91DD                     ; TFLG2: Timer interrupt flags 2

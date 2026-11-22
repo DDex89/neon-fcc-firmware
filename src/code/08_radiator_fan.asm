@@ -23,7 +23,7 @@ ControlFan_MM:
         cmpa    #$14
         beq     L2A24
         ldab    >CounterX
-        brclr   <BitFlags71,#$80,L2A00
+        brclr   <BitFlags71,#$80,L2A00               ; engine not running (stopped or cranking)
         andb    #$F0
         orab    #$01
 L2A00:
@@ -696,7 +696,7 @@ L2E07:
 ; Called from: L2A96, StoreMAPVoltsAndCalcMAPValue
 ;---------------------------------------------------------------------------------------------------
 CODE2e08:
-        bset    <OutputDriverBits,#$08
+        bset    <OutputDriverBits,#$08               ; radiator fan relay
         bra     L2E10
 
 
@@ -706,7 +706,7 @@ CODE2e08:
 ; Called from: CODE2bca
 ;---------------------------------------------------------------------------------------------------
 TurnOnCEL_C:
-        bclr    <OutputDriverBits,#$08
+        bclr    <OutputDriverBits,#$08               ; radiator fan relay
 L2E10:
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
@@ -717,7 +717,7 @@ L2E10:
 L2E1C:
         bitb    #$40
         beq     L2E23
-        bset    <OutputBits2,#$10
+        bset    <OutputBits2,#$10                    ; charge lamp
 L2E23:
         rts
 
@@ -728,7 +728,7 @@ L2E23:
 ; Called from: CODE2cbb
 ;---------------------------------------------------------------------------------------------------
 TurnOffCEL_C:
-        bclr    <OutputDriverBits,#$08
+        bclr    <OutputDriverBits,#$08               ; radiator fan relay
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     L2E33
@@ -738,7 +738,7 @@ TurnOffCEL_C:
 L2E33:
         bitb    #$40
         beq     L2E3A
-        bclr    <OutputBits2,#$10
+        bclr    <OutputBits2,#$10                    ; charge lamp
 L2E3A:
         rts
 
@@ -749,11 +749,11 @@ L2E3A:
 ; Called from: CODE2d51
 ;---------------------------------------------------------------------------------------------------
 TurnOffCEL_D:
-        bset    <OutputDriverBits,#$08
+        bset    <OutputDriverBits,#$08               ; radiator fan relay
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$40
         beq     L2E48
-        bclr    <OutputBits2,#$10
+        bclr    <OutputBits2,#$10                    ; charge lamp
 L2E48:
         rts
 

@@ -384,7 +384,7 @@ SendDiagnosticDataToSCI:
         bhi     L511F
         cmpb    #$10
         bne     L5126
-        brset   <BitFlags65,#$80,L511F
+        brset   <BitFlags65,#$80,L511F               ; throttle open (off idle)
         brset   <BitFlags_AIS,#$08,L511F
         bset    <BitFlags6b,#$10
         bra     L5126
@@ -877,7 +877,7 @@ L5364:
 
 L536A:
         ldaa    #$02
-        brset   <BitFlags65,#$80,L5364
+        brset   <BitFlags65,#$80,L5364               ; throttle open (off idle)
         ldaa    #$03
         brset   <BitFlags_AIS,#$08,L5364
         bset    <BitFlags6b,#$20
@@ -1089,7 +1089,7 @@ L5470:
         ldx     #$0129
         bclr    $02,x,#$C2
         bclr    $03,x,#$FF
-        bset    <OutputBits2,#$10
+        bset    <OutputBits2,#$10                    ; charge lamp
         rts
 
 
@@ -1315,7 +1315,7 @@ ATM_ACClutchRelay:
         ldab    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bitb    #$80
         beq     L55DF
-        bclr    <OutputDriverBits,#$08
+        bclr    <OutputDriverBits,#$08               ; radiator fan relay
 L55DF:
         ldaa    <OutputDriverBits
         oraa    #$01
@@ -1421,7 +1421,7 @@ L5651:
 ;---------------------------------------------------------------------------------------------------
 L5653:
         ldx     #$0400
-        bclr    <OutputDriverBits,#$04
+        bclr    <OutputDriverBits,#$04               ; ASD relay
         sei
         brclr   <Counter_MainLoop,#$80,L5666
         bset    $00,x,#$04
@@ -1540,5 +1540,5 @@ L56D9:
         ldd     #$01F4
         std     $00,x
 L56E3:
-        bclr    <OutputDriverBits,#$04
+        bclr    <OutputDriverBits,#$04               ; ASD relay
         rts

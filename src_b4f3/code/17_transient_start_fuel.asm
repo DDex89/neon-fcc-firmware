@@ -47,7 +47,7 @@ L6D93:
         ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bita    #$02
         beq     TransFuel_CalculateIncreasingMAPTransientFuel
-        brset   <BitFlags65,#$80,TransFuel_CalculateIncreasingMAPTransientFuel
+        brset   <BitFlags65,#$80,TransFuel_CalculateIncreasingMAPTransientFuel ; throttle open (off idle)
         jmp     >TransFuel_IncludeTPSTransients
 
 
@@ -80,7 +80,7 @@ TransFuel_CalculateDecreasingMAPTransientFuel:
         ldx     #LMAPTC_TimeConstant                 ; LMAPTC: lean out time constant based on MAP
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Factor_LeanoutOrEnrichTime_MAP
-        brset   <BitFlags65,#$01,L6E2C
+        brset   <BitFlags65,#$01,L6E2C               ; wide-open throttle
         ldaa    <EngineRpm_HB
         cmpa    >LOTRPM_MinRpmForMapLeanout          ; LOTRPM: No map leanout if below this RPM
         bcs     L6E2C
@@ -133,7 +133,7 @@ L6E30:
 
 L6E40:
         ldy     <MapPrevious
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <MapValue
         ldab    <Factor_LeanoutOrEnrichTime_MAP
@@ -260,7 +260,7 @@ L6EF5:
 
 L6F05:
         ldy     <TpsAverageValue_HB
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <TpsVolts
         ldab    <Factor_LeanoutOrEnrichTime_TPS
@@ -273,11 +273,11 @@ L6F1B:
         std     <TpsAverageValue_HB
         cli
 L6F1E:
-        brset   <BitFlags71,#$80,L6F7B
+        brset   <BitFlags71,#$80,L6F7B               ; engine not running (stopped or cranking)
         ldd     <Temp2
 L6F24:
         std     <Pulsewidth_PartThrottleEnrichment_HB
-        brset   <BitFlags65,#$80,L6F7B
+        brset   <BitFlags65,#$80,L6F7B               ; throttle open (off idle)
         ldaa    >SwitchPortAccessReg1
         bita    #$40
         bne     L6F7B
@@ -345,7 +345,7 @@ L6F7E:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 CalculateInjectorPulsewidthForStarting_MM:
-        brset   <BitFlags71,#$80,L6F89
+        brset   <BitFlags71,#$80,L6F89               ; engine not running (stopped or cranking)
         ldaa    <CoolantTemp
         staa    >CoolantTempCopy1
         rts
@@ -365,7 +365,7 @@ L6F9D:
 
 L6FA0:
         jsr     >AllowForHeatSoakAfterStall          ; Raises the effective coolant temperature after a short stall (RUNTMP vs time stopped, limi
-        brset   <BitFlags65,#$80,L6FAF
+        brset   <BitFlags65,#$80,L6FAF               ; throttle open (off idle)
         cmpa    >STRLMT_ColdestTempAllowedAtClosedThrottle ; STRLMT: Coldest temperature accepted as input to STRTFL table - anything below
         bcc     L6FAF
         ldaa    >STRLMT_ColdestTempAllowedAtClosedThrottle ; STRLMT: Coldest temperature accepted as input to STRTFL table - anything below
@@ -375,7 +375,7 @@ L6FAF:
         mul
         std     <Temp0
         ldx     #STFLID_StartFuelIdleFactor_fromRPM  ; STFLID (StartFuelIdleFactor_fromRPM)
-        brset   <BitFlags65,#$80,L6FC2
+        brset   <BitFlags65,#$80,L6FC2               ; throttle open (off idle)
         ldx     #STFLOI_StartFuelOffIdleFactor_fromRPM ; STFLOI (StartFuelOffIdleFactor_fromRPM)
 L6FC2:
         ldd     <EngineRpm_HB
@@ -390,7 +390,7 @@ L6FCD:
 L6FCF:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldy     <Temp0
-        jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
+        jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         sty     <Temp0
         ldaa    <Counter_EPP_MaxFF
         ldx     #EPPMUL_FuelStartFuelPerEPP          ; EPPMUL: Start fuel uSec = [ STRTFL * STRTFL * (1 - STFBAR - STFTMP) * EPPMUL +
@@ -408,7 +408,7 @@ L6FCF:
         ldaa    #$FF
         addd    #$0101
         ldy     <Temp0
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
         std     <Temp0
 L7003:
         ldaa    <BaroPressure
@@ -427,7 +427,7 @@ L7003:
         ldaa    #$FF
         addd    #$0101
         ldy     <Temp0
-        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors.
+        jsr     >ScaleYbyD_resultD                   ; D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF.
         bra     L702D
 
 L702B:

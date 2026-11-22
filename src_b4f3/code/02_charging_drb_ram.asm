@@ -27,7 +27,7 @@ L132E:
         jmp     >L13B2
 
 L1331:
-        brset   <BitFlags71,#$80,L1368
+        brset   <BitFlags71,#$80,L1368               ; engine not running (stopped or cranking)
         ldab    #$0E
         brset   <BitFlags72,#$40,L133D
         ldab    #$15

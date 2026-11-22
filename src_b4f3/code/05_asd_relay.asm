@@ -12,8 +12,13 @@
 ;---------------------------------------------------------------------------------------------------
 ; ControlAsdRelay_MM  ($1A1F)
 ;
-; Auto shutdown (ASD) relay: powers fuel pump, injectors and coils while the engine turns. [from
-; name]
+; ASD and fuel pump relays (OutputDriverBits bits 2 and 4, switched together). [reviewed]
+;
+; Also serves the DRB ATM tests $18 and $0A first. The relays are on while cam pulses arrive (the
+; half-period counter below a limit of 8, or 23 / 5 depending on battery voltage and state), the
+; key-on or running time is below $2D ($5B with coolant below $8F = 15 °C, the fuel pump prime)
+; and CrankActivityTimer is at most $D2. Sets BitFlags67 bit 7 once the engine has run for a
+; while.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -96,13 +101,13 @@ L1A95:
         cmpa    #$D2
         bhi     L1AA9
 L1AA4:
-        bset    <OutputDriverBits,#$14
+        bset    <OutputDriverBits,#$14               ; fuel pump relay; ASD relay
         bra     L1AAC
 
 L1AA9:
-        bclr    <OutputDriverBits,#$14
+        bclr    <OutputDriverBits,#$14               ; fuel pump relay; ASD relay
 L1AAC:
-        brset   <BitFlags71,#$80,L1AB9
+        brset   <BitFlags71,#$80,L1AB9               ; engine not running (stopped or cranking)
         ldab    <KeyOnOrEngineRunningTime
         cmpb    #$04
         bcs     L1AB9

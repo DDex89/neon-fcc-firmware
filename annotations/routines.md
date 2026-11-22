@@ -110,7 +110,7 @@ next cylinder are scheduled from these handlers.
 Output compare 4 interrupt: samples the knock sensor at the end of the knock window. [reviewed - partially]
 
 Starts an A/D conversion on channel 3, waits a few cycles and stores ADR1 in KnockVolts (or zero
-when knock sensing is disabled by BitFlags71 bit 7). The value feeds CalculateKnockRetard_MM.
+while the engine is not running, BitFlags71 bit 7). The value feeds CalculateKnockRetard_MM.
 
 ## AC21 Interrupt_DwellTimerA
 Output compare 3 (PA5) interrupt: ignition coil channel A. [reviewed - partially]
@@ -123,7 +123,12 @@ sets the time. The events are armed from ScheduleIgnitionCoils in the crank even
 Output compare 5 (PA3) interrupt: ignition coil channel B (see Interrupt_DwellTimerA). [reviewed - partially]
 
 ## AFFA Interrupt_SpeedometerSignal
-Input capture 2 interrupt: vehicle speed sensor pulse; measures the period between pulses. [from name]
+Input capture 2: vehicle speed sensor pulse. [reviewed]
+
+Counts pulses in Counter_SpeedSensorInterrupt (two counts per pulse when CONFIG2 bit 5 is set),
+measures the time between pulses with the timer overflow count, steps VehicleSpeed by $5C and
+updates VehicleSpeedScaled (0.5 mph per count, $FF above $1FD0). It also filters out pulses that
+come too soon for the current speed (BitFlags73).
 
 ## 9280 MainProgramLoop
 Main program loop, paced to one pass every $1500 timer ticks (10.75 ms). [reviewed]
@@ -144,28 +149,44 @@ calculates cranking fuel and continues with further always-run tasks (see the ca
 source).
 
 ## 93A1 SubLoopA
-Sub-loop A of the round-robin scheduler (one of eight jobs spread over main-loop passes). [from name]
+Sub-loop A of the round-robin scheduler, requested every 21.5 ms (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, PrepareCCDDataForXmit_MM_1, CODEe74f_MM, Set_ErrorBits_20_MM, DecrementCounter048D_SM (B559, B4F3, B4C2 add CheckErrorMaskingAndSetCodes_MM).
 
 ## 93B1 SubLoopB
-Sub-loop B of the round-robin scheduler. [from name]
+Sub-loop B of the round-robin scheduler, requested every 43 ms (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, IncrementDeltaRPMCounter_SM, LookupValueFor0476_SM, CODE8059_MM, CalculateAverageKnockVolts_SM.
 
 ## 93C1 SubLoopC
-Sub-loop C of the round-robin scheduler. [from name]
+Sub-loop C of the round-robin scheduler, requested every 86 ms (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, CalculateMaxRPMxMaxMAPFraction_MM, CODE600e_SM, coolant and charge temperature A/D and limp-in, Set_ErrorBits_16_MM, IncrementOrClearDiagFaultCounter_SM, and Set_ErrorBits_3_MM when CONFIG2 bit 5 is set (B559, B4F3, B4C2 add the MAP and knock signal checks).
 
 ## 93E4 SubLoopD
-Sub-loop D of the round-robin scheduler. [from name]
+Sub-loop D of the round-robin scheduler, requested every 172 ms (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, Load05Into0167_SM, IncrementCounter0483_MM, IncrementBatteryVoltsOKCounter_MM.
 
 ## 93F1 SubLoopE
-Sub-loop E of the round-robin scheduler. [from name]
+Sub-loop E of the round-robin scheduler, requested every 344 ms (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer and LACBD.
 
 ## 93F8 TempSensorSubLoop_F
-Sub-loop F: coolant, charge-air and ambient temperature sensor sampling and filtering. [from name]
+Sub-loop F of the round-robin scheduler, requested every 0.69 s (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, the coolant, charge and ambient temperature filters and checks, and fifteen status checks.
 
 ## 9429 SubLoopG
-Sub-loop G of the round-robin scheduler. [from name]
+Sub-loop G of the round-robin scheduler, requested every 1.38 s (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, the purge on/off logic at $B290, two counters and the ASD voltage processing CODE7242_SM.
 
 ## 9439 SubLoopH
-Sub-loop H of the round-robin scheduler. [from name]
+Sub-loop H of the round-robin scheduler, requested every 2.75 s (at most one sub-loop per main-loop pass). [reviewed]
+
+Calls ResetCOPTimer, DecrementAdaptiveRetardFactor and four counters.
 
 ## 7B7A ScheduleIgnitionCoils
 Arms the coil timers: writes TOC3/TOC5, sets the TCTL1 pin actions, enables OC3I/OC5I in TMSK1 and uses CFORC to force a pin state. [reviewed - partially]
@@ -429,10 +450,14 @@ Setting the thresholds to $FD/$FE keeps EGR permanently off (as Mopar did in 500
 Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outside. [reviewed]
 
 ## 9C6A ControlPurgeSolenoid_MM
-Evaporative canister purge solenoid control. [from name]
+Canister purge duty: on/off times for the companion chip register frame $58. [reviewed]
 
-Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In B4CC nothing reaches this
-routine, so the purge solenoid is only driven by the DRB actuator tests. [reviewed]
+Works out EvapPurgeDuty from the purge tables and writes LinkReg58Data / LinkReg58DataLo, the two
+times sent to the companion chip with register header $58 (period $C3, or $62 when BitFlagsE3 bit 1
+is set). OutputBits2 bit 7 (DRB override target 1) forces fixed values. Not called in B4CC; B559,
+B4F3 and B4C2 call it from MainSubLoop. In B4CC the two times keep their reset value. The separate
+on/off logic at $B290 (OutputDriverBits bit 5, coolant / MAP / rpm windows $CAB6-$CAC5) runs in every
+code base; which of the two switches the purge solenoid at pin 16 is not confirmed.
 
 ## 9F68 DetermineIndividualInjectorTrims_MM
 Individual cylinder fuel trims (CL1PTR..CLTRP4). [from name]
@@ -449,7 +474,12 @@ Radiator fan relay control from coolant temperature, vehicle speed and A/C state
 A/C compressor clutch relay control, including cut-out at wide open throttle. [from name]
 
 ## 1A1F ControlAsdRelay_MM
-Auto shutdown (ASD) relay: powers fuel pump, injectors and coils while the engine turns. [from name]
+ASD and fuel pump relays (OutputDriverBits bits 2 and 4, switched together). [reviewed]
+
+Also serves the DRB ATM tests $18 and $0A first. The relays are on while cam pulses arrive (the
+half-period counter below a limit of 8, or 23 / 5 depending on battery voltage and state), the key-on
+or running time is below $2D ($5B with coolant below $8F = 15 °C, the fuel pump prime) and
+CrankActivityTimer is at most $D2. Sets BitFlags67 bit 7 once the engine has run for a while.
 
 ## 131E ControlAlternator
 Alternator field control (the controller regulates charging voltage directly). [from name]
@@ -465,7 +495,11 @@ returns y_i + (x - x_i) x slope / 256 in A (and B). Slope is a 16-bit value in 1
 2D lookup for tables with 5-byte records (16-bit outputs). [from name]
 
 ## B3CA Lookup3DTableRoutine
-3D table lookup (bilinear interpolation), variant 1. [from name]
+3D table lookup with bilinear interpolation, variant with the column axis stored in the table. [reviewed]
+
+Picks InterpSigned or InterpUnsigned from the table's sign byte (+2), searches B along the axis bytes
+that follow the header, interpolates between the two columns and then along the rows by A. Used by
+the cold-load fuel tables (CLDLDP/CLDLDI with CoolantTemp in B) and one spark table.
 
 ## B437 Lookup3DTableRoutine_2
 3D table lookup with bilinear interpolation. [reviewed]
@@ -476,37 +510,67 @@ then rows x cols bytes. The coordinates are spread over (rows-1) and (cols-1) in
 neighbouring cells are interpolated with InterpSigned or InterpUnsigned. Result in A.
 
 ## B4A8 InterpSigned
-Signed interpolation step used by the 3D lookups. [from name]
+Interpolation step for signed cells: A = cell + (difference x fraction / 256). [reviewed]
+
+On entry X points at the first cell, A holds the difference to the next cell and B the fraction
+(0-255). The sign of the difference comes from the preceding compare (N xor V); the product is
+rounded.
 
 ## B4AC InterpUnsigned
-Unsigned interpolation step used by the 3D lookups. [from name]
+Interpolation step for unsigned cells: A = cell + (difference x fraction / 256). [reviewed]
+
+Same as InterpSigned, with the sign of the difference taken from the carry of the preceding
+subtraction.
 
 ## B4BB RescaleEngineRPM_MM
-Converts engine RPM to the 3D-table column coordinate through RPMSCL (RPMRescaledfor3D). [from name]
+Converts engine RPM to the 3D-table column coordinate RPMRescaledfor3D. [reviewed]
+
+Rounds EngineRpm to 32 rpm per count (EngineRpm_HB plus the carry of the low byte) and passes it
+through the RPMSCL curve. The last routine of code part 1 in B4CC: the 307 bytes after it, up to
+$B5FF, are $FF.
 
 ## FACF ScaleYbyA
-D = Y x A / 256 (unsigned fractional multiply). [from name]
+Y = Y x A / 256, rounded (16 x 8 bit fractional multiply). [reviewed]
 
 ## FC0E ScaleYbyD_resultD
-D = Y x D / 256 style 16-bit fractional multiply used to chain fuel factors. [from name]
+D = Y x D / 256 (16 x 16 bit fractional multiply), saturating at $FFFF. [reviewed]
+
+Used to chain the 16-bit fuel factors.
 
 ## FADF ScaleXbyB_addingA_intoD
-Fractional multiply-accumulate helper used by the fuel modifier code. [from name]
+D = W x B / 256 where W is the 16-bit word at X; with A non-zero, D = W + W x B / 256 instead. [reviewed]
+
+The sum saturates at $FFFF. Used to apply fuel modifiers as a fraction or as an added fraction.
 
 ## FBD5 ResetCOPTimer
-Kicks the COP watchdog (writes $55, $AA to COPRST). [from name]
+Kicks both watchdogs. [reviewed]
+
+Pulls IODev_0409 bit 4 low for a short delay (the external heartbeat), writes $55, $AA to COPRST
+(the 68HC11 COP) and sets bit 4 again. Every sub-loop starts with it.
 
 ## E229 A2DAndStoreBatteryVolts_MM
-Battery voltage A/D conversion and storage. [from name]
+Battery voltage A/D. [reviewed]
+
+Starts a multi-channel conversion of AN0-AN3 (ADCTL = $10), waits about 14 loops and stores ADR2
+(AN1) in BatteryVolts and ADR3 (AN2) in the byte after it. Interrupts are off meanwhile.
 
 ## E8DF ConvertMAPVoltsToValue
-Converts the MAP sensor voltage to the internal MAP value. [from name]
+MAP transfer function: A = (A x $F4 + $15DC) / 256, saturating at $FF. [reviewed]
+
+That is MAP value = 0.953 x MAP volts count + 21.9. Used for MapValue and for the baro reading.
 
 ## 8F58 StoreMAPVoltsAndCalcMAPValue
 MAP sensor sampling (synchronised with engine position) and conversion. [from name]
 
 ## E85D HandleBaroReadRequirement_MM
-Barometric pressure update: reads MAP as baro at key-on and at wide open throttle, low RPM. [from name]
+Barometric pressure: key-on reading and slow tracking while running. [reviewed]
+
+With the engine not running and no key-on reading yet (BitFlags67 bit 6 clear) it waits for
+MinTimerBaroRead_C, checks that the MAP voltage is steady (MAPOffsetForBaroRead, MAPTemp_A/B),
+converts it and stores it through SaveBaroPressure, then sets BitFlags67 bit 6. While running it
+steps BaroPressure by one count: up when MapValue + BARCMP(rpm) is above it (after MinTimerBaroRead_A),
+down when it is not and the throttle is at least MaxTPSForBaroRead above MINTHR (after
+MinTimerBaroRead_B). Timer_BaroReadInterval paces the steps.
 
 ## E4F7 CheckThrottleRoutine_MM
 Throttle position processing: minimum-throttle learning (MINTHR), idle / WOT detection, TPS faults. [from name]
@@ -567,7 +631,7 @@ docs/en/diagnostics.md.
 ## EC86 CaptureFreezeFrame
 Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than the stored one. [reviewed]
 
-Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempVolts, the O2 feedback
+Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempUnfiltered, the O2 feedback
 counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, EngineRpm_HB and
 VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
 
@@ -833,7 +897,7 @@ Service 1 PID $03: FuelSystemStatus. [reviewed]
 Service 1 PID $04: MaxRPMxMaxMAPFraction. [reviewed]
 
 ## 223E ObdPid05_Coolant
-Service 1 PID $05: coolant temperature (CoolantTempVolts - $58). [reviewed]
+Service 1 PID $05: coolant temperature (CoolantTempUnfiltered - $58). [reviewed]
 
 ## 224F ObdPid06_ShortTermTrim
 Service 1 PID $06: short-term fuel trim from the O2 feedback counter. [reviewed]
@@ -854,7 +918,7 @@ Service 1 PID $0D: vehicle speed. [reviewed]
 Service 1 PID $0E: spark advance (AdvanceTemporary + $80). [reviewed]
 
 ## 22B5 ObdPid0F_IntakeAirTemp
-Service 1 PID $0F: charge air temperature (ChargeTempVolts - $58). [reviewed]
+Service 1 PID $0F: charge air temperature (ChargeTempUnfiltered - $58). [reviewed]
 
 ## 22C6 ObdPid11_Throttle
 Service 1 PID $11: LastTpsVolts. [reviewed]
@@ -963,7 +1027,7 @@ heater monitors are enabled, but only the dormant scheduler would turn its resul
 Charge-warning lamp control when CONFIG2 bit 5 is clear (OutputBits2 bit 4). [reviewed]
 
 Despite the original name this drives the charge lamp, not the MIL. The lamp output follows
-KeyOnOrEngineRunningTime, BitFlags71 bit 7 and the charging fault flags (IPL2 bit 7,
+KeyOnOrEngineRunningTime, BitFlags71 bit 7 (engine not running) and the charging fault flags (IPL2 bit 7,
 SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 
 ## 5DB7 CheckIfCheckEngineLightShouldBeOn_B_MM
@@ -983,11 +1047,13 @@ record is found. It compares the record with $1C9C, $2757 and $3938, probably th
 calls it from MainSubLoop.
 
 ## 5F02 VerifyOperationOfAmbientTempSensor_MM
-Plausibility check of the ambient / battery temperature sensor (fault code 23). [reviewed]
+Plausibility check of the air temperature sensors at key-on (fault code 23, descriptor ErrBytes_CODE23_b). [reviewed]
 
-Runs when BitFlags71 bit 7 is set and none of the related IPL fault bits is set. When AmbientAirTemp is below $58 and close
-to CoolantTemp (within LE019) but differs from ChargeTemp by more than LE019, it reports
-ErrBytes_CODE23_b. Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
+Runs only while the engine is not running (BitFlags71 bit 7 set) and none of the related IPL fault bits
+is set. When AmbientAirTemp is at the bottom of its range (at most $58 = −40 °C, the minimum of the
+TMPAMB table) and CoolantTemp is within LE019 (16 °C in the images seen) of it, but ChargeTemp differs
+from it by more than LE019, it reports the fault and sets IPL1 bit 0. Not called in B4CC; B559, B4F3
+and B4C2 call it from MainSubLoop.
 
 ## 32B0 DecrementDSO2SensorDiagnosticCounter_MM
 Downstream O2 sensor diagnostic counter (rich-signal timing). [reviewed]
@@ -1005,12 +1071,14 @@ sensor is clearly rich (above O2HIGH) or lean (below O2LOW). If the downstream s
 for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 
 ## 6180 CheckErrorMaskingAndSetCodes_MM
-Filters cruise distance pulse width and TPS (FaultMask_01D2/01D6) and runs a speed-related check. [from name]
+Torque converter clutch system monitor (code 37, P0740, descriptor $D983). [reviewed]
 
-The first part (read so far) applies first-order filters with LCDB5/LCDB6, then, for the
-configuration with CONFIG bit 5 set, skips the check while faults 11, 15, 24, 37 or 54 are maturing.
-The rest involves vehicle speed, battery voltage and the TCC output. Not called in B4CC; B559 calls
-it from SubLoopA.
+Filters ScaledDistPWForCruiseControl (FaultMask_01D2) and TPS (FaultMask_01D6) with LCDB5 / LCDB6. It
+only runs for the configuration with CONFIG bit 5 set, with no fault 11, 15, 24, 37 or 54 maturing, no
+related IPL fault bits and battery voltage above LCDBD. While the TCC solenoid is on (OutputBits2 bit 5)
+and the car is above LCDB9, it watches the filtered value against the throttle (above MINTHR + LCDB3):
+when the value keeps changing by LCDB4 or more over LCDB1 passes, LCDBC times, it reports the fault
+and sets IPL1 bit 4. Not called in B4CC; B559, B4F3 and B4C2 call it from SubLoopA.
 
 ## 6411 FurtherMAPAndBaroDiagnostics2_SM
 MAP sensor rationality check against TPS (fault code 24, the ErrBytes_CODE24_b descriptor). [reviewed]
@@ -1026,3 +1094,142 @@ Knock sensor signal check (fault code 16). [reviewed]
 With the engine running and IPL1 bit 2 set, counts DiagCounter_KnockSensorActive while KnockVolts is
 outside the LE020 window and reports code 16 when it reaches LE022; a voltage inside the window
 clears the counter. Not called in B4CC; B559, B4F3 and B4C2 call it from SubLoopC.
+
+## E8D2 SaveBaroPressure
+Stores B in BaroPressure if it is within BAROLO..BAROHI. [reviewed]
+
+## 4BAB ModifyO2FeedbackCountVarToMaintainStoich_MM
+Selects the closed-loop ramp step for the current O2 side. [reviewed]
+
+Only in closed loop (BitFlags65 bit 4) and without BitFlags66 bit 4. The step comes from a pair of
+constants (rich or lean side by BitFlags65 bit 2): the catalyst monitor ($CCBC), the O2 response
+monitor (LCB8A) and the secondary air monitor (LCCE4) use their own pairs while they run, otherwise
+the normal ramp values are used.
+
+## 4E03 ClearO2SensorFeedbackCounterSigned_MM
+Resets the closed-loop feedback counter in a defined condition. [reviewed]
+
+Clears Counter_O2SensorFeedbackCount_Signed when it is below LC46E, Temp1_X is above LC46F, MAP is
+within LC470 of baro, coolant is above LC471, the car is slower than LC472 (VehicleSpeed_HB), the
+engine has run longer than LC473 and BitFlags37 bit 7 is set.
+
+## 4E3C HandleAmTimer_MM
+Key-on set-up of the closed-loop timers. [reviewed]
+
+While the engine is not running it loads the AM timer from AMTPSW(coolant) and the closed-loop
+timer CLTIME from coolant temperature, clears BitFlags65 bit 5 and sets FuelSystemStatus to 1 (open
+loop).
+
+## 7242 CODE7242_SM
+ASD supply voltage processing. [reviewed]
+
+Converts AsdOutputVolts and BatteryVolts through TABLEce82 and TABLEce95, combines them and filters
+the result into AsdVolts_000B with weight LCE94 (with a start-up delay Var_0218). Sets
+SystemStatusFlag_4b6 bit 5 above LCEA3 and clears it below LCEA4. Runs in SubLoopG.
+
+## 784D DealWithSpecialIdle_SetBasicTiming_MM
+Open-loop enrichment for the DRB set-up modes at closed throttle. [reviewed]
+
+Uses RICHSA while basic timing is being set (IPL1 bit 1 or BitFlags6b bit 5) and RIDLST while the
+minimum throttle opening is being set (BitFlags6b bit 4), otherwise none; also loads the O2 inhibit
+timer O2ITIM.
+
+## AB93 IncrementDeltaRPMCounter_SM
+Counts Counter_DeltaEngineRPM_1 up (saturating) while the throttle is closed. [reviewed]
+
+## ABA1 HandleSparkScatter
+Entry of the idle spark scatter (spark used to hold idle speed). [reviewed]
+
+Skipped while the engine is not running or the throttle is open. In the basic-timing DRB mode it
+uses the constant SPKSET. Otherwise, once the AIS feedback delay is over and BitFlags66 bit 6 is
+set, it calculates the scatter unless IPL1 bits 7 or 5 are set.
+
+## AE10 DecrementAdaptiveRetardFactor
+AdaptiveRetardIndex -= ARSUBC, not below zero (the adaptive knock retard decays). Runs in SubLoopH. [reviewed]
+
+## AFAB LookupValueFor0476_SM
+Threshold Var_0476 for the per-event RPM and MAP change checks in CrankMapRpmUpdate. [reviewed]
+
+In a light-load window (speed below LCC6F, rpm between LCC6C and LCC6D, MAP below LCC6E, coolant
+above LCC72) it is the constant LCC71; otherwise the 3D table TABLEcc18 with rpm and MAP coordinates
+from TABLEcc5f and TABLEcc4c. Runs in SubLoopB.
+
+## E23C A2DAndStoreCoolantAndChargeTempVolts_SM
+A/D of the coolant and charge temperature sensors. [reviewed]
+
+Selects multiplexer input 00 ($0400 bits 0-1), converts AN4-AN7 (ADCTL = $14) and stores ADR1/ADR2
+(AN4 coolant, AN5 charge temperature) in LastCoolantTempVolts and the byte after it.
+
+## E258 A2DAndStoreTPS_and_CruiseVolts_MM
+A/D of TPS and the cruise switches, plus multiplexer input 01. [reviewed]
+
+Selects multiplexer input 01 and converts AN4-AN7: ADR1/ADR2 go to AnalogMux01_AN4 (AN5 with this
+selection is the downstream O2 sensor), ADR3/ADR4 to LastTpsVolts (AN6 TPS, AN7 cruise switch
+ladder).
+
+## E27C A2DAndStoreAmbientTempVolts_SM
+A/D of multiplexer input 10: the ASD output voltage. [reviewed]
+
+Despite the original name it stores ADR1 (AN4 with selection 10, the ASD output voltage) in
+AsdOutputVolts and ADR2 in the byte after it.
+
+## E29C CheckAndFilterAmbientTempSensor_SM
+A/D of multiplexer input 11: the ambient / battery temperature sensor. [reviewed]
+
+Stores ADR1/ADR2 in AnalogMux11_AN4 and the byte after it. The conversion to AmbientAirTemp and
+BatteryTemp (table TMPAMB) is done in SomethingWithAmbientSensor_SM.
+
+## E37E UseDefaultCoolantTempLimpIn_MM
+Coolant sensor out-of-range fault and limp-in value (code 22). [reviewed]
+
+An A/D value above TMPHIG or below TMPLOW reports the matching descriptor ($D5DB / $D5D3). On a new
+fault it switches the sensor to the hot pull-up range ($0400 bit 7 clear), sets IPL1 bit 1, leaves
+closed loop and clears the closed-loop and thermostat timers. While the fault is set CoolantTemp is
+DEFTMP; back in range the fault clears through ResetErrorCodeIfTimerExpired.
+
+## E3C3 CheckAndFilterCoolantTempSensor_SM
+Coolant temperature: conversion, pull-up range switching and filter. [reviewed]
+
+Converts LastCoolantTempVolts with TMPTL1 (cold range, $0400 bit 7 set) or TMPTL2 (hot range) into
+CoolantTempUnfiltered. The range switches after four passes in a row beyond the limit (A/D below $40
+in the cold range, above $DC in the hot range; BitFlags68 bits 6-7 count). CoolantTemp then follows
+by one count per pass: down at once, up only when the new value is at least 3 counts higher.
+
+## E435 UseDefaultChargeTempLimpIn_MM
+Charge (intake air) temperature sensor out-of-range fault and limp-in value (code 23). [reviewed]
+
+Above CHGHIG or below CHGLOW reports ErrBytes_CODE23 / _a; on a new fault it clears PORTA bit 6 (the
+hot pull-up range) and sets IPL1 bit 0. While faulted ChargeTemp is CoolantTemp, or DEFCHG when the
+coolant sensor has failed too.
+
+## E477 CheckAndFilterChargeTempSensor_SM
+Charge temperature: conversion, pull-up range switching and filter. [reviewed]
+
+Same as the coolant routine with the same TMPTL1 / TMPTL2 tables, but the range is switched with
+PORTA bit 6 (an output-compare pin used as a plain output) and counted in BitFlags6a bits 6-7. Stores
+ChargeTempUnfiltered and steps ChargeTemp towards it.
+
+## F88C IncrementLoopCounters_MM
+Main-loop counters, sub-loop requests and stall detection. [reviewed]
+
+Counts CrankActivityTimer down and Counter_MainLoop up. Each bit of Counter_MainLoop that changes
+from 0 to 1 sets the same bit in SubLoopRequests, so sub-loop n is requested every 2^(n+1) passes
+(A every 21.5 ms ... H every 2.75 s). On each wrap of Counter_MainLoop (2.75 s) it counts
+KeyOnOrEngineRunningTime and, while the engine runs, EngineRunningTimeMaxFF (both saturating). When
+two or more timer overflows pass between cam pulses the engine has stopped: it sets BitFlags71 bits
+7, 4 and 1, leaves closed loop (BitFlags65 bits 4-5) and saves EngineRunningTimeBeforeStall.
+
+## FB10 GetControlFeedback_DetermineIfShutdownRequired_MM
+Key-off shutdown sequence. [reviewed]
+
+While SwitchPortAccessReg1 bit 6 is clear it only resets CountdownTimerFromKeyOn. Once it is set the
+countdown runs (from $17, or $09 when the engine is turning); at zero it runs ShutDownSubroutineA
+(the key-off tests), the ROM checksum, waits for $0400 bit 6, sets the coil outputs to a safe state,
+releases the power hold and then only kicks the COP until the supply drops.
+
+## 8D0A L8D0A
+Points X at the injector clear mask for cylinder number B (1-4) in InjCylinderClearMasks. [reviewed]
+
+The table at $8D04 holds the bytes FE FD FB F7 FE FD: the callers AND InjCylinderMask with the byte
+to drop one cylinder from the mask. (Earlier versions of these annotations read the table as code
+pointers, which made the $FF filler at $FEFD look like code.)
