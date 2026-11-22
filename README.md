@@ -62,6 +62,8 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
   start-up, main loop, table formats, checksum
 - [Engine control algorithms](docs/en/engine_control.md): fuel, spark, knock, idle, closed loop,
   limiters, emissions
+- [Input / output map](docs/en/io_map.md): port pins, A/D channels, the I/O device at $0400, the SPI
+  output driver
 - [Calibration table reference](docs/en/calibration_tables.md) (generated)
 - [Differences between the two calibrations](docs/en/calibration_variants.md) (generated)
 
@@ -70,7 +72,7 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - Byte-identical rebuild of both variants, checked in CI.
 - 19,757 instructions identified; 181 of them in blocks that static analysis cannot reach (indirect
   jumps or dead code), marked as such.
-- 613 routine headers with call graph; 90 routines described by hand, 51 of them checked (fully or partly) against the
+- 613 routine headers with call graph; 91 routines described by hand, 52 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
 - 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
 - Many RAM variable names are still tentative or generic (`L0123`).

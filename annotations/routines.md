@@ -506,5 +506,13 @@ DRB II / SCI diagnostic protocol: fault codes, live data, memory read-out, speci
 ## 542C EraseErrorCodes
 Clears all stored fault codes. [from name]
 
+## 5A29 SendOutputDriverByte
+Sends the relay/solenoid command byte to the SPI output driver and reads back its status. [reviewed]
+
+Pulls $0403 bit 2 (chip select) low, writes PIA2_Buffer to SPDR, waits for the transfer, releases the
+chip select and stores the returned byte in CCDFlagsX (the driver's fault status). PIA2_Buffer bits:
+0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed control solenoids (see
+docs/en/io_map.md).
+
 ## 5B0A ThrowNonCriticalError
 Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour). [from name]

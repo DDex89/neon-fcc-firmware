@@ -196,12 +196,12 @@ L5871:
         dc.w    ErrBytes_CODE31
 L5881:
         dc.w    CODE59c2
-        dc.w    L5A29
-        dc.w    L5A29
-        dc.w    L5A29
-        dc.w    L5A29
-        dc.w    L5A29
-        dc.w    L5A29
+        dc.w    SendOutputDriverByte
+        dc.w    SendOutputDriverByte
+        dc.w    SendOutputDriverByte
+        dc.w    SendOutputDriverByte
+        dc.w    SendOutputDriverByte
+        dc.w    SendOutputDriverByte
         dc.w    CODE59b9
 L5891:
         dc.w    ErrBytes_CODE25
@@ -363,7 +363,7 @@ L597E:
         jmp     $00,x
 
 L59B7:
-        bra     L5A29
+        bra     SendOutputDriverByte
 
 
 ;---------------------------------------------------------------------------------------------------
@@ -371,9 +371,9 @@ L59B7:
 ;---------------------------------------------------------------------------------------------------
 CODE59b9:
         anda    #$80
-        beq     L5A29
+        beq     SendOutputDriverByte
         jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
-        bra     L5A29
+        bra     SendOutputDriverByte
 
 
 ;---------------------------------------------------------------------------------------------------
@@ -382,7 +382,7 @@ CODE59b9:
 CODE59c2:
         anda    #$0F
         bne     L59CD
-        brclr   <BitFlags69,#$02,L5A29
+        brclr   <BitFlags69,#$02,SendOutputDriverByte
         bset    <BitFlags69,#$10
 L59CD:
         jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
@@ -390,7 +390,7 @@ L59CD:
         bset    <b5a_IPL3,#$10
         bclr    <BitFlags69,#$10
 L59D8:
-        bra     L5A29
+        bra     SendOutputDriverByte
 
 
 ;---------------------------------------------------------------------------------------------------
@@ -451,9 +451,17 @@ L5A28:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L5A29  ($5A29)
+; SendOutputDriverByte  ($5A29)
+;
+; Sends the relay/solenoid command byte to the SPI output driver and reads back its status.
+; [reviewed]
+;
+; Pulls $0403 bit 2 (chip select) low, writes PIA2_Buffer to SPDR, waits for the transfer,
+; releases the chip select and stores the returned byte in CCDFlagsX (the driver's fault status).
+; PIA2_Buffer bits: 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed control
+; solenoids (see docs/en/io_map.md).
 ;---------------------------------------------------------------------------------------------------
-L5A29:
+SendOutputDriverByte:
         sei
         ldx     #REGS
         ldy     #$0400

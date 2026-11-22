@@ -42,6 +42,8 @@ size of the `.bin` dumps.
 | `$B813-$B816` | CCD bus configuration |
 | `$B817-$B819` | Masks of the faults that light the check-engine lamp |
 
+See also the [input / output map](io_map.md).
+
 ## Timers and interrupts
 
 The timer runs at E-clock / 4. With the usual 8 MHz crystal (2 MHz E-clock) one TCNT tick is
