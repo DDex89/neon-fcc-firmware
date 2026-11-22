@@ -42,7 +42,8 @@ size of the `.bin` dumps.
 | `$B813-$B816` | CCD bus configuration |
 | `$B817-$B819` | Masks of the faults that light the check-engine lamp |
 
-See also the [input / output map](io_map.md).
+See also the [input / output map](io_map.md), the [connector pinout](pcm_connector.md) and
+[diagnostics](diagnostics.md).
 
 ## Timers and interrupts
 
@@ -148,7 +149,9 @@ not by the map itself. Changing `RPMSCL` moves every map that uses it.
 
 `CaculateChecksum` ($56E7) adds every byte of $1200-$B5FF and $B800-$FFFF (8-bit sum, skipping the
 EEPROM window). The result must equal the byte at **$B805**, the last byte of the part number. On a
-mismatch fault code 53 (internal controller failure) is stored, but the engine keeps running.
+mismatch the routine reports fault code 53 (internal controller failure). In both images in this
+repository that fault descriptor is disabled (flag bit 7 clear, see [fault_codes.md](fault_codes.md)), so
+nothing is stored and the engine runs normally. Other calibrations may enable it.
 
 Anyone who changes the calibration should fix the sum with a spare byte. Factory images keep $FF50
 at $FF for this. Some images edited with MP Tune that were examined for this project do not pass

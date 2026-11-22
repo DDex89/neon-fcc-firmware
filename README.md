@@ -35,6 +35,7 @@ tools/
   build.py                assemble + verify against the original hashes
   gen_source.py           regenerate src/ from ROM dumps + annotations
   gen_cal_docs.py         regenerate the calibration reference
+  gen_fault_docs.py       regenerate the fault code reference
   fccdis.py               code/data separation (recursive descent disassembler core)
   import_lloyd.py         one-time import of Robert Lloyd's annotations
 docs/en, docs/ru          documentation (English / Russian)
@@ -64,6 +65,9 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
   limiters, emissions
 - [Input / output map](docs/en/io_map.md): port pins, A/D channels, the I/O device at $0400, the SPI
   output driver
+- [PCM connector pinout](docs/en/pcm_connector.md)
+- [Diagnostics and communication](docs/en/diagnostics.md): DRB commands, actuator tests, ISO 9141, lamps
+- [Fault codes](docs/en/fault_codes.md) (generated): all 160 fault descriptors with flash and OBD-II codes
 - [Calibration table reference](docs/en/calibration_tables.md) (generated)
 - [Differences between the two calibrations](docs/en/calibration_variants.md) (generated)
 
@@ -72,7 +76,7 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - Byte-identical rebuild of both variants, checked in CI.
 - 19,757 instructions identified; 181 of them in blocks that static analysis cannot reach (indirect
   jumps or dead code), marked as such.
-- 613 routine headers with call graph; 91 routines described by hand, 52 of them checked (fully or partly) against the
+- 613 routine headers with call graph; 93 routines described by hand, 57 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
 - 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
 - Many RAM variable names are still tentative or generic (`L0123`).

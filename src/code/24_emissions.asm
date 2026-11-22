@@ -45,7 +45,7 @@ L9BC5:
         cmpb    >LCCCA
         bcs     L9BC2
         ldy     #ErrBytes_CODE21_f
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L9C04
 L9C04:
         bset    <L006E,#$80
@@ -83,7 +83,7 @@ L9C19:
         cmpb    >LCCCA
         bcs     L9C69
         ldy     #ErrBytes_CODE21_f
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L9C60
 L9C60:
         bset    <L006E,#$80
@@ -101,10 +101,10 @@ L9C69:
 ; Evaporative canister purge solenoid control. [from name]
 ;---------------------------------------------------------------------------------------------------
 ControlPurgeSolenoid_MM:
-        ldaa    >L0481
+        ldaa    >DrbOverrideTarget
         cmpa    #$01
         bne     L9C9A
-        ldaa    >$0482
+        ldaa    >DrbOverrideState
         cmpa    #$02
         bne     L9C87
         bset    <StartupSwitchMirror2,#$80

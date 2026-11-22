@@ -21,11 +21,11 @@
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 ExhGasRecirc_MM:
-        ldaa    >L0481
+        ldaa    >DrbOverrideTarget
         cmpa    #$04
 LB1CC:
         bne     LB1DF
-        ldaa    >$0482
+        ldaa    >DrbOverrideState
         cmpa    #$02
         bne     LB1D8
         jmp     >LB28C
@@ -135,10 +135,10 @@ LB28F:
 ; Called from: SubLoopG
 ;---------------------------------------------------------------------------------------------------
 LB290:
-        ldaa    >L0481
+        ldaa    >DrbOverrideTarget
         cmpa    #$03
         bne     LB2AD
-        ldaa    >$0482
+        ldaa    >DrbOverrideState
         cmpa    #$02
         bne     LB2A3
         bset    <PIA2_Buffer,#$20

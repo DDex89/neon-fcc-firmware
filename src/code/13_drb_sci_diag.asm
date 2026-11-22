@@ -146,8 +146,13 @@ RealTimeDataTable:
 ;---------------------------------------------------------------------------------------------------
 ; DRBIISerialCommunications_MM  ($4FDB)
 ;
-; DRB II / SCI diagnostic protocol: fault codes, live data, memory read-out, special modes. [from
-; name]
+; Receives DRB / SCI command bytes (7812.5 baud, BAUD = $22) and echoes each byte back. [reviewed]
+;
+; A command byte $10-$25 is stored in DRBPointer1; DRBSerialToggles (indexed by command - $13)
+; says whether one or two parameter bytes follow (bit 5 / bits 4-5), which are stored in
+; DRBPointer2 and DRBPointer3. DRBIIOuput_MM then runs the handler. The routine also runs the
+; alternate serial and byte-mode download handlers first, and does nothing while a high-speed or
+; download mode is active (DRBSerialMode bits 6-7).
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -235,6 +240,11 @@ L5060:
 
 ;---------------------------------------------------------------------------------------------------
 ; DRBIIOuput_MM  ($5061)
+;
+; Dispatches the received DRB command: handler = DRBFunctionTable[command - $10]. [reviewed]
+;
+; Waits until all parameter bytes have arrived (DRBSerialMode bits 4-5 clear). The command list is
+; in docs/en/diagnostics.md.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -1025,7 +1035,7 @@ EraseErrorCodes:
         staa    >L011C
         staa    >ISO_ErrBitStatus
         staa    >L0149
-        staa    >L010D
+        staa    >ObdDtcCount
         staa    <L0035
         staa    >ISO_ErrorBitRegisterStored4
         staa    >L0128
@@ -1091,27 +1101,27 @@ L54E4:
         clr     >L0483
         ldaa    <DRBPointer2
         bne     L54F7
-        clr     >L0481
-        clr     >$0482
+        clr     >DrbOverrideTarget
+        clr     >DrbOverrideState
         jmp     >L525F
 
 L54F7:
         cmpa    #$04
         bls     L5506
 L54FB:
-        clr     >L0481
-        clr     >$0482
+        clr     >DrbOverrideTarget
+        clr     >DrbOverrideState
         ldaa    #$FF
         jmp     >SerialOutput1a
 
 L5506:
         cmpa    #$02
         beq     L54FB
-        staa    >L0481
+        staa    >DrbOverrideTarget
         ldaa    <DRBPointer3
         cmpa    #$02
         bhi     L54FB
-        staa    >$0482
+        staa    >DrbOverrideState
         jmp     >SerialOutput1a
 
 
@@ -1129,8 +1139,8 @@ IncrementCounter0483_MM:
         bra     L552C
 
 L5526:
-        clr     >L0481
-        clr     >$0482
+        clr     >DrbOverrideTarget
+        clr     >DrbOverrideState
 L552C:
         rts
 
@@ -1138,7 +1148,13 @@ L552C:
 ;---------------------------------------------------------------------------------------------------
 ; ActuatorTestMode_MM  ($552D)
 ;
-; DRB actuator tests: drives relays, injectors, coils, AIS and solenoids on request. [from name]
+; Runs the DRB actuator test selected by ATMOffset (set by DRB command $13). [reviewed]
+;
+; Called every main loop. Loads A = PIA2_Buffer and B = StartupSwitchMirror2, then jumps through
+; ATMFunctionTable with test number n using entry n-1 (the table base is loaded as $4EB9). Each
+; test toggles one output with Counter_MainLoop as the clock, so the output pulses at a few hertz.
+; The test ends when KeyOnOrEngineRunningTime reaches $99. Test numbers and outputs:
+; docs/en/diagnostics.md.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

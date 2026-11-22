@@ -153,7 +153,7 @@ LFD52:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    >VariableRevLimit
         ldy     #ErrBytes_CODE14_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 LFD67:
         brclr   <L0036,#$80,VarRevLimit_Return
         brset   <BitFlags65,#$80,VarRevLimit_Return

@@ -1299,7 +1299,7 @@ L81AF:
 L81B4:
         brset   <b5a_IPL3,#$01,L81C4
         ldy     #ErrBytes_CODE11_b
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L81C4
         bset    <b5a_IPL3,#$01
 L81C4:
@@ -1319,7 +1319,7 @@ L81D6:
         bclr    <L00F3,#$80
         brset   <b59_IPL2,#$40,L81ED
         ldy     #ErrBytes_CODE_D9CB
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L81ED
         bset    <b59_IPL2,#$40
 L81ED:
@@ -1333,7 +1333,7 @@ L81ED:
         stab    <L00F3
         brset   <b5a_IPL3,#$08,L8228
         ldy     #ErrBytes_CODE54
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L8228
         bset    <b5a_IPL3,#$08
         bra     L8228
@@ -1346,7 +1346,7 @@ L820E:
         stab    <L00F3
         brset   <b5a_IPL3,#$04,L8228
         ldy     #ErrBytes_CODE11
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L8228
         bset    <b5a_IPL3,#$04
 L8228:

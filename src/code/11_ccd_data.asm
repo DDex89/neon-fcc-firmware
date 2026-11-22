@@ -433,7 +433,7 @@ L4748:
         bcs     L4766
         brset   <b5a_IPL3,#$80,L4766
         ldy     #ErrBytes_CODE66_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L4766
         bset    <b5a_IPL3,#$80
         ldaa    #$80

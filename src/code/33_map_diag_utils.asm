@@ -285,7 +285,7 @@ LEAF0:
         ldx     $06,y
         ldaa    $00,x
         pshy
-        jsr     >LEC86
+        jsr     >CaptureFreezeFrame                  ; Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than
         puly
         cpy     #$E9B7
         bne     LEB11
@@ -337,7 +337,7 @@ LEB71:
         ldx     $06,y
         ldaa    $00,x
         pshy
-        jsr     >LEC86
+        jsr     >CaptureFreezeFrame                  ; Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than
         puly
         pshy
         ldy     $06,y
@@ -347,7 +347,7 @@ LEB71:
         bne     LEB90
         jsr     >LEC3B
 LEB90:
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         puly
         ldx     $06,y
         ldaa    $00,x
@@ -499,11 +499,18 @@ LEC82:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LEC86  ($EC86)
+; CaptureFreezeFrame  ($EC86)
+;
+; Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than the
+; stored one. [reviewed]
+;
+; Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempVolts, the O2 feedback
+; counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, EngineRpm_HB and
+; VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
 ;
 ; Called from: LEABA, ThrowNonCriticalError
 ;---------------------------------------------------------------------------------------------------
-LEC86:
+CaptureFreezeFrame:
         ldx     #$011E
         cmpb    >ISO_ErrBitStatus
         bls     LECBB

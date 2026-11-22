@@ -17,7 +17,9 @@
 ; The sum skips the $B600-$B7FF window of the internal EEPROM. $B805 is the last byte of the part
 ; number in the calibration header, so the checksum is adjusted with a spare byte (usually $FF50)
 ; whenever the calibration is modified. A mismatch is reported through ThrowNonCriticalError with
-; the fault descriptor at $D4F3 (code 53, internal controller failure); the engine keeps running.
+; the fault descriptor at $D4F3 (code 53, internal controller failure). In 5269718 and 5007033
+; that descriptor is disabled (flag bit 7 clear), so nothing is stored; the engine runs normally
+; either way.
 ;
 ; Called from: GetControlFeedback_DetermineIfShutdownRequired_MM
 ;---------------------------------------------------------------------------------------------------
@@ -65,6 +67,6 @@ L5734:
         cmpa    >PARTNO0_                            ; PARTNO0: Part Number prefix. The 1st 4 digits of the Mopar PN for this ECU.
         beq     L5740
         ldy     #ErrBytes_CODE53
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 L5740:
         rts

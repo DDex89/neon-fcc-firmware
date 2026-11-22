@@ -138,7 +138,7 @@ SomethingWithAmbientSensor_SM:
 LE2CD:
         brset   <b59_IPL2,#$02,LE2E0
         ldy     #ErrBytes_CODE44
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     LE2E0
         bset    <b59_IPL2,#$02
         bset    <IPL2,#$80
@@ -159,7 +159,7 @@ LE2F6:
         staa    >BitFlags049E
         brset   <b59_IPL2,#$02,LE311
         ldy     #ErrBytes_CODE44
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     LE311
         bset    <b59_IPL2,#$02
         bset    <IPL2,#$80
@@ -244,7 +244,7 @@ LE390:
         bcc     LE3B4
 LE395:
         brset   <b58_IPL1,#$02,LE3BD
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     LE3C2
         ldy     #$0400
         bclr    $00,y,#$80
@@ -351,7 +351,7 @@ LE447:
         bcc     LE460
 LE44C:
         brset   <b58_IPL1,#$01,LE469
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     LE476
         ldx     #REGS
         bclr    $00,x,#$40                           ; PORTA: Port A data (timer pins: IC1-IC3, OC2-OC5, PAI)

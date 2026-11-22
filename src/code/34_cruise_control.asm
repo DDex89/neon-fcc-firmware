@@ -305,7 +305,7 @@ LF1ED:
         brset   <CruiseStatus_1,#$80,LF228
         ldab    #$09
         ldy     #ErrBytes_CODE34
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         ldd     #$0F08
         ldx     #$0054
         cmpa    $00,x
@@ -331,7 +331,7 @@ LF234:
         pshb
         ldab    #$10
         ldy     #ErrBytes_CODE34
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         pulb
         bcs     LF246
         tstb

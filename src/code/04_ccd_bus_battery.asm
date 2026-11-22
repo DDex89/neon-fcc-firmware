@@ -350,7 +350,7 @@ L19DE:
         bcs     L19FB
         bclr    <BitFlags72,#$10
         ldy     #ErrBytes_CODE47
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L19F8
         bset    <IPL1,#$20
         bset    <IPL2,#$80

@@ -46,7 +46,7 @@ CheckThrottleRoutine_MM:
 CheckThrottle_BadTpsSignal:
         brset   <b58_IPL1,#$40,CheckThrottle_ErrorAlreadyFlagged
         brclr   <Counter_MainLoop,#$01,LE583
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     LE583
         bset    <b58_IPL1,#$40
 

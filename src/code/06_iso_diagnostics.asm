@@ -650,7 +650,7 @@ L1EAB:
         ldx     #$0492
         cpx     >L0487
         bne     L1EA7
-        ldaa    >L010D
+        ldaa    >ObdDtcCount
         beq     L1EA7
         bra     L1EA9
 
@@ -759,7 +759,7 @@ L1F62:
         std     >L0492
         std     >TempStack
         std     >L0496
-        ldaa    >L010D
+        ldaa    >ObdDtcCount
         ldab    >L049A
         bne     L1F91
         tab
@@ -1111,7 +1111,7 @@ L21E6:
 ; ISODiagnosticComs_20  ($21F4)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_20:
-        ldaa    >L010D
+        ldaa    >ObdDtcCount
         bne     L21FD
         ldaa    #$00
         bra     L2206

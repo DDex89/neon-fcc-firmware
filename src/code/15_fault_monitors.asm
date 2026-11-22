@@ -372,7 +372,7 @@ L59B7:
 CODE59b9:
         anda    #$80
         beq     SendOutputDriverByte
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bra     SendOutputDriverByte
 
 
@@ -385,7 +385,7 @@ CODE59c2:
         brclr   <BitFlags69,#$02,SendOutputDriverByte
         bset    <BitFlags69,#$10
 L59CD:
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L59D8
         bset    <b5a_IPL3,#$10
         bclr    <BitFlags69,#$10
@@ -402,7 +402,7 @@ CODE59da:
         beq     L597E
         anda    #$10
         beq     L597E
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bra     L597E
 
 
@@ -413,7 +413,7 @@ CODE59ea:
         brset   <b58_IPL1,#$10,L59FA
         anda    #$20
         beq     L597E
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L59FA
         bset    <b58_IPL1,#$10
 L59FA:
@@ -426,7 +426,7 @@ L59FA:
 CODE59fd:
         anda    #$80
         beq     L5A09
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5A09
         bset    <b59_IPL2,#$20
 L5A09:
@@ -440,7 +440,7 @@ CODE5a0c:
         brclr   <L00EB,#$04,L5A28
         bclr    <L00EB,#$04
         ldy     #ErrBytes_CODE53_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5A28
         bset    <b59_IPL2,#$04
         ldx     #$0400
@@ -546,7 +546,7 @@ L5AB9:
 L5ABA:
         anda    #$02
         beq     L5AB9
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5AC6
         bset    <b59_IPL2,#$80
 L5AC6:
@@ -577,7 +577,7 @@ CODE5acf:
 CODE5ad6:
         anda    #$20
         beq     L5AB9
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5AE2
         bset    <b5a_IPL3,#$20
 L5AE2:
@@ -597,7 +597,7 @@ CODE5ae4:
         bra     L5AF5
 
 L5AF5:
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bra     L5AB9
 
 L5AFA:
@@ -622,7 +622,17 @@ L5B05:
 ;---------------------------------------------------------------------------------------------------
 ; ThrowNonCriticalError  ($5B0A)
 ;
-; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour). [from name]
+; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has matured.
+; [reviewed]
+;
+; Descriptor (8 bytes at $D4E3 + index*8): index, maturing count, flash code, flags, bit mask,
+; bitmap offset, OBD-II code (BCD). Flags: bit7 enabled (when clear the routine returns at once
+; with carry clear), bit6 emission related, bit5 lamp request ($0070 bit7), bit4 always count,
+; bit3 store at once, bits 0-2 freeze frame priority. Faults that need maturing use one of two
+; slots at $0054/$0055 with counters at $0056/$0057. A stored fault sets its bit at $0135 +
+; offset, enters the list of the last eight faults at $001B-$0022 and, if emission related,
+; increments ObdDtcCount on first setting and captures a freeze frame (CaptureFreezeFrame).
+; Returns carry set when the fault was stored. See docs/en/fault_codes.md.
 ;
 ; Called from: CODE1998, CODE59b9, CODE59c2, CODE59da, CODE59ea, CODE59fd, CODE5a0c, CODE5ad6 ... (45 total)
 ;---------------------------------------------------------------------------------------------------
@@ -702,12 +712,12 @@ L5B83:
         bita    $00,x
         bne     L5BA7
         brclr   $03,y,#$40,L5BA7
-        ldab    >L010D
+        ldab    >ObdDtcCount
         incb
         bcc     L5BA4
         ldab    #$FF
 L5BA4:
-        stab    >L010D
+        stab    >ObdDtcCount
 L5BA7:
         oraa    $00,x
         staa    $00,x
@@ -724,7 +734,7 @@ L5BB3:
         ldaa    $00,y
         ldab    $03,y
         andb    #$07
-        jsr     >LEC86
+        jsr     >CaptureFreezeFrame                  ; Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than
         ldx     #$011A
         bset    $00,x,#$80
 L5BDB:
@@ -819,7 +829,7 @@ L5C3A:
         brclr   $03,y,#$10,L5C5E
         bset    <Temp4,#$80
 L5C5E:
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         brclr   <Temp4,#$80,L5C77
         bcc     L5C77
         ldx     #$57F6
@@ -933,7 +943,7 @@ CheckForErrorsAndSetCodes_MM:
         bcs     L5D05
         brset   <IPL1,#$80,L5D0D
         ldy     #ErrBytes_CODE46
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5D0D
         bset    <IPL1,#$80
         bset    <IPL2,#$80
@@ -1181,7 +1191,7 @@ L5E5E:
         cpd     #$002A
         bcc     L5E8C
         ldy     #ErrBytes_CODE15
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5E8C
         bset    <b59_IPL2,#$08
 L5E8C:
@@ -1230,7 +1240,7 @@ L5EB5:
         brset   <BitFlasg71,#$80,L5ED2
         ldab    #$20
 L5ED2:
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5EDA
         bset    <b59_IPL2,#$10
 L5EDA:
@@ -1248,7 +1258,7 @@ L5EE3:
         beq     L5F01
         brset   <IPL1,#$40,L5F01
         ldy     #ErrBytes_CODE41
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5F01
         bset    <IPL1,#$40
         bset    <IPL2,#$80
@@ -1281,7 +1291,7 @@ L5F29:
         cmpa    >LE019                               ; BATVLT (BatteryVoltsTable)
         bls     L5F3A
         ldy     #ErrBytes_CODE23_b
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5F3A
         bset    <b58_IPL1,#$01
 L5F3A:
@@ -1326,7 +1336,7 @@ L5F76:
         bcc     L5F86
 L5F7A:
         ldy     #ErrBytes_CODE13_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5F86
         bset    <b58_IPL1,#$80
 L5F86:
@@ -1350,7 +1360,7 @@ L5FAC:
         ldy     #ErrBytes_CODE14
 L5FB0:
         brset   <b58_IPL1,#$20,L5FBC
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5FBC
         bset    <b58_IPL1,#$20
 L5FBC:
@@ -1527,7 +1537,7 @@ L60A8:
         bita    #$08
         bne     L60C7
         ldy     #ErrBytes_CODE_D99B
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L60D9
         ldaa    >SystemStatusFlag_4b6
         oraa    #$08
@@ -1572,7 +1582,7 @@ L60F8:
         bcs     L6121
 L6105:
         ldy     #ErrBytes_CODE_D98B
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L6121
         bset    <IPL2,#$40
         ldaa    >SystemStatusFlag_4b6
@@ -1611,7 +1621,7 @@ L6140:
         bhi     L6161
 L614D:
         ldy     #ErrBytes_CODE_D993
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L6161
         bset    <IPL2,#$20
         ldaa    >SystemStatusFlag_4b6
@@ -1856,7 +1866,7 @@ L6325:
         cmpa    >LCDBC                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcs     L6340
         ldy     #ErrBytes_CODE
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L634E
         bset    <b58_IPL1,#$10
         bra     L634E
@@ -1891,7 +1901,7 @@ Set_ErrorBits_16_MM:
         cmpa    >LC474                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
         bcc     L637E
         ldy     #ErrBytes_CODE17_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bset    <b5a_IPL3,#$40
         ldx     #$049E
         bset    $00,x,#$40
@@ -1967,7 +1977,7 @@ L63F0:
         cmpa    >LE002
         bcs     L6410
         ldy     #ErrBytes_CODE25_b
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bset    <b5a_IPL3,#$10
 L640C:
         clra
@@ -2039,7 +2049,7 @@ L6470:
 L6482:
         brset   <b58_IPL1,#$40,L64B8
         ldy     #ErrBytes_CODE24_b
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L64B8
         bset    <b58_IPL1,#$40
         ldaa    >BitFlags049E
@@ -2087,7 +2097,7 @@ L64CF:
 
 L64DD:
         ldy     #ErrBytes_CODE16
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bra     L64E9
 
 L64E6:
@@ -2145,7 +2155,7 @@ L6530:
 L653E:
         brset   <IPL1,#$40,L6554
         ldy     #ErrBytes_CODE41
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L6554
         bset    <IPL1,#$40
         bset    <IPL2,#$80
@@ -2167,7 +2177,7 @@ Set_ErrorBits_20_MM:
         bcc     L6575
         brclr   <IPL1,#$08,L6578
         ldy     #ErrBytes_CODE37_d
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L6578
         bset    <b5a_IPL3,#$02
 L6575:
@@ -2212,7 +2222,7 @@ IncrementOrClearNormalOpCounter_SM:
         cmpa    >LCDAD+1                             ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bne     L65CC
         ldy     #ErrBytes_CODE37_d
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L65CC
 L65C6:
         bset    <b5a_IPL3,#$02
@@ -2238,7 +2248,7 @@ CheckSpeedAndSomething_SM:
         bcs     L65FA
         brclr   <BitFlags68,#$04,L65FA
         ldy     #ErrBytes_CODE65_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L65FA
         ldaa    >BitFlags049E
         oraa    #$02
@@ -2274,7 +2284,7 @@ VerifyOperationOfThermostat_MM:
         bcs     L662E
 L6626:
         ldy     #ErrBytes_CODE17
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 L662D:
         clra
 L662E:
@@ -2303,7 +2313,7 @@ VerifyOperationOfASDRelayAndO2Sensor_MM:
         bita    #$10
         bne     L6654
         ldy     #ErrBytes_CODE42_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 L6654:
         brset   <BitFlasg71,#$80,L669D
         ldaa    <KeyOnOrEngineRunningTime
@@ -2323,7 +2333,7 @@ L6654:
         cmpa    #$16
         bcs     L668A
         ldy     #ErrBytes_CODE21
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bset    <BitFlags73,#$04
         bra     L6693
 
@@ -2402,7 +2412,7 @@ L66F5:
         cmpa    >O2MIDX_HighLimitForInMiddleDeterminationX ; O2MIDX (HighLimitForInMiddleDeterminationX)
         bls     L6712
         ldy     #ErrBytes_CODE21_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L672A
         bset    <BitFlags73,#$04
 L6712:
@@ -2411,7 +2421,7 @@ L6712:
         cmpa    >LCCCF
         bls     L672A
         ldy     #ErrBytes_CODE21_m
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L672A
         bset    <BitFlags67,#$08
 L672A:

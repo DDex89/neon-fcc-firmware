@@ -251,7 +251,7 @@ L0106                                        equ $0106
 L0108                                        equ $0108
 L010A                                        equ $010A
 L010C                                        equ $010C
-L010D                                        equ $010D
+ObdDtcCount                                  equ $010D
 L010E                                        equ $010E
 L010F                                        equ $010F
 L0111                                        equ $0111
@@ -288,6 +288,7 @@ L0131                                        equ $0131
 L0132                                        equ $0132
 L0133                                        equ $0133
 L0134                                        equ $0134
+FaultBitmap                                  equ $0135
 L0149                                        equ $0149
 CoolantTempCopy1                             equ $014A
 L014B                                        equ $014B
@@ -513,7 +514,8 @@ L0479                                        equ $0479
 L047D                                        equ $047D
 CounterOperatingNormal                       equ $047E
 L0480                                        equ $0480
-L0481                                        equ $0481
+DrbOverrideTarget                            equ $0481
+DrbOverrideState                             equ $0482
 L0483                                        equ $0483
 L0484                                        equ $0484
 L0485                                        equ $0485

@@ -87,6 +87,7 @@ Recommended workflow:
 # edit annotations/routines.md (for example, describe a routine)
 python tools/gen_source.py --roms roms
 python tools/gen_cal_docs.py --roms roms
+python tools/gen_fault_docs.py --roms roms
 python tools/build.py           # must still say OK for every variant
 ```
 

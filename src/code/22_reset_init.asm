@@ -184,7 +184,7 @@ L8F1D:
         ldaa    #$F0
         staa    <BaroPressure
         ldy     #ErrBytes_CODE13_a
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L8F6A
         bset    <BitFlags67,#$20
         bra     L8F6A

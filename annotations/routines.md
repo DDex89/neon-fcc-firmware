@@ -375,7 +375,8 @@ ROM self test: 8-bit sum of $1200-$B5FF and $B800-$FFFF must equal the byte at $
 The sum skips the $B600-$B7FF window of the internal EEPROM. $B805 is the last byte of the part
 number in the calibration header, so the checksum is adjusted with a spare byte (usually $FF50)
 whenever the calibration is modified. A mismatch is reported through ThrowNonCriticalError with the
-fault descriptor at $D4F3 (code 53, internal controller failure); the engine keeps running.
+fault descriptor at $D4F3 (code 53, internal controller failure). In 5269718 and 5007033 that descriptor is disabled
+(flag bit 7 clear), so nothing is stored; the engine runs normally either way.
 
 ## 5FEF CountRamValuesFrom05to38
 16-bit sum of RAM $0005-$0036 and $0100-$014D, used to validate RAM on a warm start. [reviewed]
@@ -498,10 +499,21 @@ Throttle position processing: minimum-throttle learning (MINTHR), idle / WOT det
 Variable rev limiter (rev limit that depends on vehicle speed / TPS / MAP state). [from name]
 
 ## 552D ActuatorTestMode_MM
-DRB actuator tests: drives relays, injectors, coils, AIS and solenoids on request. [from name]
+Runs the DRB actuator test selected by ATMOffset (set by DRB command $13). [reviewed]
+
+Called every main loop. Loads A = PIA2_Buffer and B = StartupSwitchMirror2, then jumps through
+ATMFunctionTable with test number n using entry n-1 (the table base is loaded as $4EB9). Each test
+toggles one output with Counter_MainLoop as the clock, so the output pulses at a few hertz. The test
+ends when KeyOnOrEngineRunningTime reaches $99. Test numbers and outputs: docs/en/diagnostics.md.
 
 ## 4FDB DRBIISerialCommunications_MM
-DRB II / SCI diagnostic protocol: fault codes, live data, memory read-out, special modes. [from name]
+Receives DRB / SCI command bytes (7812.5 baud, BAUD = $22) and echoes each byte back. [reviewed]
+
+A command byte $10-$25 is stored in DRBPointer1; DRBSerialToggles (indexed by command - $13) says
+whether one or two parameter bytes follow (bit 5 / bits 4-5), which are stored in DRBPointer2 and
+DRBPointer3. DRBIIOuput_MM then runs the handler. The routine also runs the alternate serial and
+byte-mode download handlers first, and does nothing while a high-speed or download mode is active
+(DRBSerialMode bits 6-7).
 
 ## 542C EraseErrorCodes
 Clears all stored fault codes. [from name]
@@ -515,4 +527,27 @@ chip select and stores the returned byte in CCDFlagsX (the driver's fault status
 docs/en/io_map.md).
 
 ## 5B0A ThrowNonCriticalError
-Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour). [from name]
+Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has matured. [reviewed]
+
+Descriptor (8 bytes at $D4E3 + index*8): index, maturing count, flash code, flags, bit mask, bitmap
+offset, OBD-II code (BCD). Flags: bit7 enabled (when clear the routine returns at once with carry
+clear), bit6 emission related, bit5 lamp request ($0070 bit7), bit4 always count, bit3 store at
+once, bits 0-2 freeze frame priority. Faults that need maturing use one of two slots at $0054/$0055
+with counters at $0056/$0057. A stored fault sets its bit at $0135 + offset, enters the list of the
+last eight faults at $001B-$0022 and, if emission related, increments ObdDtcCount on first setting
+and captures a freeze frame (CaptureFreezeFrame). Returns carry set when the fault was stored. See
+docs/en/fault_codes.md.
+
+## 5061 DRBIIOuput_MM
+Dispatches the received DRB command: handler = DRBFunctionTable[command - $10]. [reviewed]
+
+Waits until all parameter bytes have arrived (DRBSerialMode bits 4-5 clear). The command list is in
+docs/en/diagnostics.md.
+
+## EC86 CaptureFreezeFrame
+Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is higher than the stored one. [reviewed]
+
+Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempVolts, the O2 feedback
+counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, EngineRpm_HB and
+VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
+

@@ -104,7 +104,7 @@ L70A3:
 ;---------------------------------------------------------------------------------------------------
 Cutout_SetOBCodeAndShutdown:
         ldy     #ErrBytes_CODE45
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bra     L708E
 
 L70BF:

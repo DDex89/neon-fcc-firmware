@@ -154,9 +154,9 @@ MainSubLoop:
         jsr     >ProcessErrorBits_WorkWithData_MM
         jsr     >UpdateErrorTimersAndPossiblyClearErrors_MM
         jsr     >CheckIfCheckEngineLightShouldBeOn_MM
-        jsr     >DRBIISerialCommunications_MM        ; DRB II / SCI diagnostic protocol: fault codes, live data, memory read-out, special modes.
-        jsr     >ActuatorTestMode_MM                 ; DRB actuator tests: drives relays, injectors, coils, AIS and solenoids on request.
-        jsr     >DRBIIOuput_MM
+        jsr     >DRBIISerialCommunications_MM        ; Receives DRB / SCI command bytes (7812.5 baud, BAUD = $22) and echoes each byte back.
+        jsr     >ActuatorTestMode_MM                 ; Runs the DRB actuator test selected by ATMOffset (set by DRB command $13).
+        jsr     >DRBIIOuput_MM                       ; Dispatches the received DRB command: handler = DRBFunctionTable[command - $10].
         jsr     >PrepareCCDDataForXmit_MM_2
         jsr     >ErrorCodeProcessingSomething_MM
         jsr     >IncrementLoopCounters_MM

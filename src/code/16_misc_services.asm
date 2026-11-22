@@ -330,7 +330,7 @@ L6941:
         ldx     <Temp0
         bne     L695C
         ldy     #ErrBytes_CODE62
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L6958
 L6955:
         bclr    <BitFlags73,#$02
@@ -431,7 +431,7 @@ L69C2:
 L69E1:
         brset   <b59_IPL2,#$04,L6A0D
         ldy     #ErrBytes_CODE63
-        jsr     >ThrowNonCriticalError               ; Records a fault from the descriptor at 0,Y (code number, counters, lamp behaviour).
+        jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L69F3
         bset    <b59_IPL2,#$04
         bra     L6A0D
@@ -473,10 +473,10 @@ L6A21:
 ; ExhGasRecircXX_MM  ($6A22)
 ;---------------------------------------------------------------------------------------------------
 ExhGasRecircXX_MM:
-        ldaa    >L0481
+        ldaa    >DrbOverrideTarget
         cmpa    #$04
         bne     L6A3A
-        ldaa    >$0482
+        ldaa    >DrbOverrideState
         cmpa    #$02
         bne     L6A33
         jmp     >L6AF1
