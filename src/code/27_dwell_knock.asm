@@ -138,12 +138,14 @@ LACD8:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateKnockRetard_MM  ($ACD9)
 ;
-; Knock control: compares the sampled knock signal with the average and adjusts retard. [from
-; name]
+; Knock detection: compares the knock sample with the background average (main loop). [reviewed -
+; data flow]
 ;
-; Knock is declared when the sample exceeds the running average by DLTKNK (vs RPM). Retard grows
-; by the KNKLIM/INCSRT rules up to MAXRTD/RETMAX (vs MAP) and recovers slowly. The adaptive retard
-; (ARMAP, ARRPM) learns a long-term retard; ARMPIC = $FF disables it.
+; Knock is declared when KnockVolts exceeds the running average (CalculateAverageKnockVolts_SM) by
+; DLTKNK (vs RPM, MAP above KNKMAP and RPM above KNKRPM). The total retard is limited by RETMAX
+; (vs MAP). The per-cylinder retard itself is updated in the crank interrupt
+; (CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT: rate RTRDRT, recovery INCSRT, limit MAXRTD per cylinder)
+; and its sum also drives the knock enrichment of the fuel (KNNRCH).
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

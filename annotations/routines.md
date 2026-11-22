@@ -318,35 +318,53 @@ Selects the adaptive memory cell for the current operating point. [reviewed]
 When the cell changes, L0037 bit 7 is set so the controller restarts its averaging.
 
 ## A74B CalculateSparkAdvance_MM
-Spark advance calculation. [reviewed]
+Spark advance calculation (main loop). [reviewed]
 
-Every fourth main-loop pass it counts down AdvanceDownCounter_A. Then, depending on BitFlags65 bit 7:
-- set: base advance from BASADV (coolant temperature x MAPMOD 3D table) plus the products
-  BASMAP x BASRPM and BASMAP x BASCHG (charge-air temperature), saturated to a signed byte, and
-  continues at LookupNormalAdvance;
-- clear: warm advance from HOTMRP (RPM x MAP, 3D) with idle corrections IDLIAT/ILDMAP
-  (CalculateIdleAdvance).
-The result is then limited and corrected for knock, TPS, delta-RPM and speed retard
-(CheckForOtherRetardFactors) and stored by STORE_SPARK_ADV.
+Every fourth main-loop pass it counts down AdvanceDownCounter_A. Then BitFlags65 bit 7 (throttle
+open / off idle - the same flag that selects the idle O2 cell) chooses the path:
+- **off idle:** a temperature/charge correction is built first: BASADV (coolant temperature x
+  MAPMOD) plus BASMAP x BASRPM plus BASMAP x BASCHG (charge-air temperature), saturated to a signed
+  byte in Temp0. LookupNormalAdvance then adds the main map value;
+- **idle (closed throttle):** CalculateIdleAdvance.
+Both paths end in STORE_SPARK_ADV, which stores CalculatedSparkAdvance.
 
 ## A7AC CalculateIdleAdvance
-Warm-engine advance from HOTMRP (RPM x MAP) with charge-air and MAP corrections. [reviewed]
+Closed-throttle (idle) spark advance. [reviewed - data flow]
 
-Despite the historical name this path is used for all warm part-throttle and idle operation; the
-full-throttle table WOTMRP is selected later in LookupNormalAdvance.
+HOTMRP (RPM x MAP) plus the charge-air / MAP correction IDLIAT x ILDMAP, the coolant corrections
+IDLADV / IDLAD2, and a closed-loop trim from the O2 feedback counter (ADO2C1 / ADO2C2, limits
+ADO2CL / ADO2CH). The fast idle-speed spark corrections (HandleSparkScatter) are applied separately
+in the crank interrupt.
 
 ## A8C8 LookupNormalAdvance
-Applies the WOT advance table (WOTMRP) when the throttle is open and finishes the advance value. [from name]
+Off-idle advance: main map, vacuum adder, adaptive retard and the retard functions. [reviewed]
+
+1. MaxAdvanceLookup = WOTMRP(RPM, MAPWOT(MAP)).
+2. Wide open throttle (BitFlags65 bit 0): advance = WOTMRP + Temp0.
+   Part throttle: advance = HOTMRP + ADOTFN(off-throttle enrichment timer) + Temp0; when MAP is at
+   or above the RPMMAP switch point, MaxAdvanceLookup is lowered to this value if it is smaller.
+3. ADVNGM adds advance from manifold vacuum relative to baro (when BitFlags66 bit 0 is set).
+4. Adaptive retard: (ARRPM + ARMAP) scaled by AdaptiveRetardIndex -> AdaptiveRetardValue_A.
+5. Falls into CheckForOtherRetardFactors: TPS retard (TPSRT1 without / TPSRT2 with adaptive retard,
+   inside the MAPLMx / RPMRTx / TPSLMx windows), retard from vehicle speed (RETSPD) and the
+   delta-RPM (surge) retard, then the minimum-advance clamp (CheckAndSetMinSparkAdvance).
+Each addition saturates to a signed byte ($7F / $80).
 
 ## ACD9 CalculateKnockRetard_MM
-Knock control: compares the sampled knock signal with the average and adjusts retard. [from name]
+Knock detection: compares the knock sample with the background average (main loop). [reviewed - data flow]
 
-Knock is declared when the sample exceeds the running average by DLTKNK (vs RPM). Retard grows by
-the KNKLIM/INCSRT rules up to MAXRTD/RETMAX (vs MAP) and recovers slowly. The adaptive retard
-(ARMAP, ARRPM) learns a long-term retard; ARMPIC = $FF disables it.
+Knock is declared when KnockVolts exceeds the running average (CalculateAverageKnockVolts_SM) by
+DLTKNK (vs RPM, MAP above KNKMAP and RPM above KNKRPM). The total retard is limited by RETMAX (vs
+MAP). The per-cylinder retard itself is updated in the crank interrupt
+(CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT: rate RTRDRT, recovery INCSRT, limit MAXRTD per cylinder) and
+its sum also drives the knock enrichment of the fuel (KNNRCH).
 
 ## 8926 CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT
-Per-cylinder knock retard bookkeeping used when scheduling each spark event. [from name]
+Per-cylinder knock retard update in the crank interrupt (part of the phase-3 code path). [reviewed - data flow]
+
+Increases the retard of the cylinder that knocked at RTRDRT, lets it recover otherwise (INCSRT,
+INNBNK / INNBSK factors) and limits it per cylinder with MAXRTD (vs MAP). This code shares the
+crank-synchronous path with the running fuel calculation.
 
 ## AD7F CalculateAverageKnockVolts_SM
 Running average of the knock sensor background level (window: KNAMAP, KNARPM, KNACLT ...). [from name]
@@ -373,10 +391,17 @@ docs/en/closed_loop.md.
 Adaptive (learned) fuel correction: updates the current RPM/MAP cell (AutoCalCell0-12). [from name]
 
 ## 32E1 CalculateTargetIdleSpeed_MM
-Target idle speed from coolant temperature, gear (P/N or drive) and A/C load (AISPN, AISCLD ...). [from name]
+Target idle speed. [reviewed - data flow]
+
+AISPN (park/neutral or manual) or AISCLD (drive, automatic only) vs coolant temperature, with time-
+and load-dependent adders (decel airflow curve TIMED2 and further small tables), giving TargetIdleSpeedHB.
 
 ## 3514 ControlAIS_MM
-Idle air control: positions the AIS stepper motor to hold the target idle speed. [from name]
+Idle air control dispatcher: positions the AIS stepper towards the target idle speed. [reviewed - data flow]
+
+Uses the RPM thresholds RPMTHS and the barometric compensation BARAIS, keeps the current AIS state
+in the low nibble of AISSubIndex and calls the matching routine from AISSubroutineTable (AIS_Sub1 ..
+AIS_Sub9). Which state is which (start-up, decel, closed-loop feedback ...) is not mapped yet.
 
 ## 1563 AisDriveRoutine
 Low-level AIS stepper motor phase sequencing. [from name]

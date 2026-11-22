@@ -2290,7 +2290,12 @@ L891A:
 ;---------------------------------------------------------------------------------------------------
 ; CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT  ($8926)
 ;
-; Per-cylinder knock retard bookkeeping used when scheduling each spark event. [from name]
+; Per-cylinder knock retard update in the crank interrupt (part of the phase-3 code path).
+; [reviewed - data flow]
+;
+; Increases the retard of the cylinder that knocked at RTRDRT, lets it recover otherwise (INCSRT,
+; INNBNK / INNBSK factors) and limits it per cylinder with MAXRTD (vs MAP). This code shares the
+; crank-synchronous path with the running fuel calculation.
 ;---------------------------------------------------------------------------------------------------
 CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT:
         bset    <L005B,#$01

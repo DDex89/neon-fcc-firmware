@@ -12,16 +12,15 @@
 ;---------------------------------------------------------------------------------------------------
 ; CalculateSparkAdvance_MM  ($A74B)
 ;
-; Spark advance calculation. [reviewed]
+; Spark advance calculation (main loop). [reviewed]
 ;
-; Every fourth main-loop pass it counts down AdvanceDownCounter_A. Then, depending on BitFlags65
-; bit 7:
-; - set: base advance from BASADV (coolant temperature x MAPMOD 3D table) plus the products BASMAP
-;   x BASRPM and BASMAP x BASCHG (charge-air temperature), saturated to a signed byte, and
-;   continues at LookupNormalAdvance;
-; - clear: warm advance from HOTMRP (RPM x MAP, 3D) with idle corrections IDLIAT/ILDMAP
-;   (CalculateIdleAdvance). The result is then limited and corrected for knock, TPS, delta-RPM and
-;   speed retard (CheckForOtherRetardFactors) and stored by STORE_SPARK_ADV.
+; Every fourth main-loop pass it counts down AdvanceDownCounter_A. Then BitFlags65 bit 7 (throttle
+; open / off idle - the same flag that selects the idle O2 cell) chooses the path:
+; - **off idle:** a temperature/charge correction is built first: BASADV (coolant temperature x
+;   MAPMOD) plus BASMAP x BASRPM plus BASMAP x BASCHG (charge-air temperature), saturated to a
+;   signed byte in Temp0. LookupNormalAdvance then adds the main map value;
+; - **idle (closed throttle):** CalculateIdleAdvance. Both paths end in STORE_SPARK_ADV, which
+;   stores CalculatedSparkAdvance.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -83,10 +82,12 @@ LA7A7:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateIdleAdvance  ($A7AC)
 ;
-; Warm-engine advance from HOTMRP (RPM x MAP) with charge-air and MAP corrections. [reviewed]
+; Closed-throttle (idle) spark advance. [reviewed - data flow]
 ;
-; Despite the historical name this path is used for all warm part-throttle and idle operation; the
-; full-throttle table WOTMRP is selected later in LookupNormalAdvance.
+; HOTMRP (RPM x MAP) plus the charge-air / MAP correction IDLIAT x ILDMAP, the coolant corrections
+; IDLADV / IDLAD2, and a closed-loop trim from the O2 feedback counter (ADO2C1 / ADO2C2, limits
+; ADO2CL / ADO2CH). The fast idle-speed spark corrections (HandleSparkScatter) are applied
+; separately in the crank interrupt.
 ;---------------------------------------------------------------------------------------------------
 CalculateIdleAdvance:
         ldab    <RPMRescaledfor3D
@@ -264,8 +265,18 @@ LA8C5:
 ;---------------------------------------------------------------------------------------------------
 ; LookupNormalAdvance  ($A8C8)
 ;
-; Applies the WOT advance table (WOTMRP) when the throttle is open and finishes the advance value.
-; [from name]
+; Off-idle advance: main map, vacuum adder, adaptive retard and the retard functions. [reviewed]
+;
+; 1. MaxAdvanceLookup = WOTMRP(RPM, MAPWOT(MAP)).
+; 2. Wide open throttle (BitFlags65 bit 0): advance = WOTMRP + Temp0. Part throttle: advance =
+;    HOTMRP + ADOTFN(off-throttle enrichment timer) + Temp0; when MAP is at or above the RPMMAP
+;    switch point, MaxAdvanceLookup is lowered to this value if it is smaller.
+; 3. ADVNGM adds advance from manifold vacuum relative to baro (when BitFlags66 bit 0 is set).
+; 4. Adaptive retard: (ARRPM + ARMAP) scaled by AdaptiveRetardIndex -> AdaptiveRetardValue_A.
+; 5. Falls into CheckForOtherRetardFactors: TPS retard (TPSRT1 without / TPSRT2 with adaptive
+;    retard, inside the MAPLMx / RPMRTx / TPSLMx windows), retard from vehicle speed (RETSPD) and
+;    the delta-RPM (surge) retard, then the minimum-advance clamp (CheckAndSetMinSparkAdvance).
+;    Each addition saturates to a signed byte ($7F / $80).
 ;---------------------------------------------------------------------------------------------------
 LookupNormalAdvance:
         bclr    <BitFlags_AIS,#$04

@@ -12,8 +12,11 @@
 ;---------------------------------------------------------------------------------------------------
 ; CalculateTargetIdleSpeed_MM  ($32E1)
 ;
-; Target idle speed from coolant temperature, gear (P/N or drive) and A/C load (AISPN, AISCLD
-; ...). [from name]
+; Target idle speed. [reviewed - data flow]
+;
+; AISPN (park/neutral or manual) or AISCLD (drive, automatic only) vs coolant temperature, with
+; time- and load-dependent adders (decel airflow curve TIMED2 and further small tables), giving
+; TargetIdleSpeedHB.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -325,7 +328,13 @@ L3513:
 ;---------------------------------------------------------------------------------------------------
 ; ControlAIS_MM  ($3514)
 ;
-; Idle air control: positions the AIS stepper motor to hold the target idle speed. [from name]
+; Idle air control dispatcher: positions the AIS stepper towards the target idle speed. [reviewed
+; - data flow]
+;
+; Uses the RPM thresholds RPMTHS and the barometric compensation BARAIS, keeps the current AIS
+; state in the low nibble of AISSubIndex and calls the matching routine from AISSubroutineTable
+; (AIS_Sub1 .. AIS_Sub9). Which state is which (start-up, decel, closed-loop feedback ...) is not
+; mapped yet.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

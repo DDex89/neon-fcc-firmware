@@ -119,10 +119,10 @@ MainSubLoop:
         jsr     >ControlCruiseServo1_MM
         jsr     >ControlAirConditioning_MM           ; A/C compressor clutch relay control, including cut-out at wide open throttle.
         jsr     >ControlFan_MM                       ; Radiator fan relay control from coolant temperature, vehicle speed and A/C state.
-        jsr     >CalculateTargetIdleSpeed_MM         ; Target idle speed from coolant temperature, gear (P/N or drive) and A/C load (AISPN, AISCL
-        jsr     >ControlAIS_MM                       ; Idle air control: positions the AIS stepper motor to hold the target idle speed.
+        jsr     >CalculateTargetIdleSpeed_MM         ; Target idle speed.
+        jsr     >ControlAIS_MM                       ; Idle air control dispatcher: positions the AIS stepper towards the target idle speed.
         jsr     >ControlAsdRelay_MM                  ; Auto shutdown (ASD) relay: powers fuel pump, injectors and coils while the engine turns.
-        jsr     >CalculateSparkAdvance_MM            ; Spark advance calculation.
+        jsr     >CalculateSparkAdvance_MM            ; Spark advance calculation (main loop).
         jsr     >CalculatePartThrottleEnrichmentAndLatency_MM ; Throttle enrichment factor (part throttle / WOT) and injector latency.
         jsr     >HandleAmTimer_MM
         jsr     >HandleO2Processing_MM               ; Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller.
@@ -135,7 +135,7 @@ MainSubLoop:
         jsr     >ControlEngineCutout_MM              ; Fuel cut-off decisions: rev limiter, speed limiter, overboost/MAP and limp-mode limits.
         jsr     >CalculatePartThrottleTransientFuel  ; Transient fuel: accelerator-pump style enrichment and deceleration lean-out.
         jsr     >CalculateSumOfAllFuelModifiers_MM   ; Product of all slow fuel corrections, stored in SumOfFuelModifiers.
-        jsr     >CalculateKnockRetard_MM             ; Knock control: compares the sampled knock signal with the average and adjusts retard.
+        jsr     >CalculateKnockRetard_MM             ; Knock detection: compares the knock sample with the background average (main loop).
         jsr     >GetControlFeedback_DetermineIfShutdownRequired_MM
         jsr     >CheckForErrorsAndSetCodes_MM
         jsr     >VerifyOperationOfBatteryVoltage_MM

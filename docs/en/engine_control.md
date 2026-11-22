@@ -175,33 +175,54 @@ pulse decaying at the `SFDCAY` rate, then switches to running fuel only.
 - `MAPLIM`, `MAPDEC`, `RPMLIM`, `PWMIN` define where cells are not updated (open loop at high load);
   `O2LIMH`/`O2LIML` and `AMLIMH`/`AMLIML` limit the correction.
 
-## Spark (`CalculateSparkAdvance_MM`)
+## Spark (`CalculateSparkAdvance_MM`, main loop)
 
-Two paths, selected by a status flag (`BitFlags65` bit 7):
+`BitFlags65` bit 7 (throttle open, the same flag that selects the idle O2 cell) chooses the path.
 
-- **Cold / base path:** `BASADV` (coolant temperature x MAP) plus the corrections
-  `BASMAP x BASRPM` and `BASMAP x BASCHG` (charge-air temperature).
-- **Warm path** (`CalculateIdleAdvance`, despite the name): `HOTMRP` (RPM x MAP), with idle
-  corrections `IDLIAT` / `ILDMAP`. At wide open throttle `WOTMRP` is used (`LookupNormalAdvance`).
+**Off idle** (`LookupNormalAdvance`):
 
-Then the retards and limits are applied:
+```
+correction = BASADV(coolant, MAPMOD) + BASMAP x BASRPM + BASMAP x BASCHG     (charge-air)
+main       = WOTMRP(rpm, MAPWOT)                         at wide open throttle (BitFlags65 bit 0)
+           = HOTMRP(rpm, MAPHI) + ADOTFN(off-throttle timer)    at part throttle
+advance    = main + correction + ADVNGM(vacuum vs baro)
+           - adaptive retard (ARRPM + ARMAP) x AdaptiveRetardIndex
+           - TPS retard (TPSRT1 / TPSRT2) - speed retard (RETSPD) - delta-RPM retard
+           limited by MaxAdvanceLookup and by the minimum-advance clamp
+```
 
-- **Knock retard** (`CalculateKnockRetard_MM`): the knock sensor is sampled at the end of a window
-  timed by OC4 (`Isr_TOC4_KnockSample`). A sample above the running background average by
-  `DLTKNK` (vs RPM) counts as knock. Retard builds up per cylinder, limited by `KNKLIM`, `MAXRTD`
-  and `RETMAX` (vs MAP), and recovers at `INCSRT`.
-- **Adaptive retard** `ARMAP` / `ARRPM`: long-term learned retard. `ARMPIC = $FF` disables it.
-- **TPS retard** `TPSRT1`/`TPSRT2`, **delta-RPM retard** (anti-surge), **retard from speed** `RETSPD`.
-- **Idle spark scatter** (`HandleSparkScatter`): idle speed is held mainly by small, fast spark
-  changes (`SPKADD`, `SPKRET` vs RPM error); the AIS motor makes the slower corrections.
+`MaxAdvanceLookup` is the WOT map value; at part throttle with MAP at or above the `RPMMAP` switch
+point it is lowered to the part-throttle value. Every step saturates to a signed byte.
+
+**Idle** (`CalculateIdleAdvance`): `HOTMRP` + charge-air / MAP correction `IDLIAT x ILDMAP` + coolant
+corrections `IDLADV` / `IDLAD2` + a closed-loop trim from the O2 feedback counter (`ADO2C1`,
+`ADO2C2`, limits `ADO2CL`, `ADO2CH`).
+
+**Idle spark scatter** (`HandleSparkScatter`, in the crank interrupt): idle speed is held mainly by
+small, fast spark changes (`SPKADD`/`SPKAD2` when RPM is below target, `SPKRET`/`SPKRT2` above,
+vs the RPM error); the AIS motor makes the slower corrections.
+
+**Knock:**
+- The sensor is sampled at the end of the window timed by OC4 (`Isr_TOC4_KnockSample`).
+- `CalculateKnockRetard_MM` (main loop) declares knock when the sample exceeds the background average
+  (`CalculateAverageKnockVolts_SM`) by `DLTKNK` (vs RPM), above `KNKMAP` and `KNKRPM`; total retard
+  is limited by `RETMAX` (vs MAP).
+- The per-cylinder retard is updated in the crank interrupt
+  (`CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT`): rate `RTRDRT`, recovery `INCSRT`, limit `MAXRTD` (vs MAP).
+- The long-term **adaptive retard** (`ARMAP`, `ARRPM`) is learned from repeated knock; `ARMPIC = $FF`
+  disables it. The total knock retard also enriches the fuel (`KNNRCH`, `MAXKNR`).
 
 Advance values are signed bytes in 0.5 degree steps (`raw / 2` = degrees BTDC).
 
-## Idle (`ControlAIS_MM`, `CalculateTargetIdleSpeed_MM`) *(from names)*
+## Idle (`CalculateTargetIdleSpeed_MM`, `ControlAIS_MM`)
 
-- Target idle speed vs coolant temperature: `AISPN` (park / neutral or manual) and `AISCLD` (drive).
-- The AIS stepper is positioned from start-up (`AISTRT`), cold (`CLDPOS`), throttle (`THRPOS`), RPM
-  and speed tables, with A/C and decel corrections ("dashpot" behaviour on closing the throttle).
+- Target idle speed vs coolant temperature: `AISPN` (park / neutral or manual) and `AISCLD` (drive,
+  automatic), plus time- and load-dependent adders (for example the decel curve `TIMED2`).
+- `ControlAIS_MM` keeps an AIS state in `AISSubIndex` and runs one of nine state routines
+  (`AIS_Sub1`..`AIS_Sub9`) each pass, with RPM thresholds `RPMTHS` and barometric compensation
+  `BARAIS`. Positions come from the start-up (`AISTRT`), cold (`CLDPOS`), throttle (`THRPOS`), RPM and
+  speed tables. Mapping each state to its job is still open.
+- AIS steps are compensated in the fuel (see transient fuel) and idle speed is trimmed by spark scatter.
 
 ## Limiters (`ControlEngineCutout_MM`, `CalculateVariableRevLimit_MM`)
 
