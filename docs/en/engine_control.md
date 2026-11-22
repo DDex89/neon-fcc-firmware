@@ -52,9 +52,15 @@ checked against the code.
     Doing the MAP sample and the knock window in phase 3 (the last slot, closest to TDC) fits this
     picture. `Isr_PAI_CamPhase` reads the crank level at each cam edge: some cam edges fall inside a
     wide crank pulse (level high), others in a gap (level low), which identifies the cylinder.
-  - Still to confirm: the signal polarity at the HC11 pins (the input buffer may invert it) and the
-    exact slot angles relative to TDC, which need a timing reference (for example the coil or #1
-    injector signal on a third channel).
+  - **Angles** (Chrysler service manual, "Crankshaft and Camshaft Sequence Chart", 2.0 SOHC 420A/420H):
+    the four slots of each group are at **69, 49, 29 and 9 degrees BTDC**; the wide 60 degree
+    reference window comes before the groups of cylinders 1 and 4 (every 360 degrees); the cam windows
+    are 105 / 75 / 75 / 105 cam degrees (210 / 150 / 150 / 210 crank degrees). The firing order is
+    1-3-4-2. All of this agrees with the scope measurements above.
+  - With phase 0 = first slot of the group (the edge after the long gap), the phases are
+    **0 = 69, 1 = 49, 2 = 29, 3 = 9 degrees BTDC**. Phase 3, where MAP is sampled and the knock window
+    is armed, is the 9 degree BTDC slot. Still to confirm: the signal polarity at the HC11 pins (the
+    input buffer may invert it, which would make IC1 see the other edge of each slot).
 
 ## Input coordinates
 

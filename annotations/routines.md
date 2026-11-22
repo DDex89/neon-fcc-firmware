@@ -173,23 +173,24 @@ Arms the coil timers: writes TOC3/TOC5, sets the TCTL1 pin actions, enables OC3I
 ## 7AC8 CrankInterrupt_FallingEdge
 Crank event handler, falling edge: period bookkeeping, rev limit, MAP checks, spark scatter, injector hand-off. [reviewed - data flow]
 
-Called from Isr_TIC1_CrankEvent when the event phase (SyncFlags75 low bits) is 0. Updates the
+Called from Isr_TIC1_CrankEvent when the event phase (SyncFlags75 low bits) is 0 - most likely the
+69 degree BTDC slot, the first of the group. Updates the
 overflow counts and the pulse-width / period measurements (TimerOverflowsBetweenCamPulses,
 DistributorFallingEdgePulsewidth_HB), checks the normal rev limiter (REVLMT6), runs the MAP sensor
 plausibility checks (MPDELT, MPDELA, MPRPML/MPRPMH, MPDAGL/MPDAGH), applies idle spark scatter
 (HandleSparkScatter) and writes the injector pulse-width registers for the cylinders due next.
 
 ## 7DD3 CrankInterrupt_HandleCamSensorRisingEdgeA
-Crank event handler for event phase 1: injector scheduling for the next cylinder group. [reviewed - data flow]
+Crank event handler for event phase 1 (49 degree BTDC slot, probable): injector scheduling for the next cylinder group. [reviewed - data flow]
 
 Despite the historical name it runs from the crank event interrupt. It selects the cylinders in
 InjCylinderMask, scales the pulse width and writes the injector registers and $0410.
 
 ## 8275 CrankInterrupt_HandleCamSensorRisingEdgeB
-Crank event handler for event phase 2: injector scheduling, adaptive retard index and running-time counters. [reviewed - data flow]
+Crank event handler for event phase 2 (29 degree BTDC slot, probable): injector scheduling, adaptive retard index and running-time counters. [reviewed - data flow]
 
 ## 83E4 CrankInterrupt_CalculateFuel
-Crank event handler for event phase 3: the main crank-synchronous calculation. [reviewed - partially]
+Crank event handler for event phase 3 (9 degree BTDC slot, probable): the main crank-synchronous calculation. [reviewed - partially]
 
 - Engine speed from the measured period (EngineRpm_HB, EngineRpmDouble_HB, AverageRPMIncremental).
 - Starts an A/D scan of channels 0-3 (ADCTL = $10) so MAP is sampled at a fixed crank angle.
