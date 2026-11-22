@@ -71,6 +71,7 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - [Companion chip link and CCD bus](docs/en/ccd_and_link.md): SPI frames, CCD messages sent and received
 - [Fault codes](docs/en/fault_codes.md) (generated): all 160 fault descriptors with flash and OBD-II codes
 - [RAM map](docs/en/ram_map.md) (generated): every RAM and I/O address with its readers and writers
+- [Code bases](docs/en/code_bases.md): which program version each known part number uses
 - [Calibration table reference](docs/en/calibration_tables.md) (generated)
 - [Differences between the two calibrations](docs/en/calibration_variants.md) (generated)
 
