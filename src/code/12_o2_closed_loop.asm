@@ -78,7 +78,7 @@ L493D:
 ; O2_ValidSignal_OutsideMiddleRange  ($4949)
 ;---------------------------------------------------------------------------------------------------
 O2_ValidSignal_OutsideMiddleRange:
-        brset   <StartupSwitchMirror2,#$01,O2_StopUsingFeedback
+        brset   <OutputBits2,#$01,O2_StopUsingFeedback
         bset    <BitFlags65,#$10
         clrb
         bra     L4970
@@ -184,16 +184,16 @@ L49F2:
         deca
 L49F3:
         staa    <Temp0
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     L4A11
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         bita    #$04
         bne     L4A11
-        ldaa    >L0116
+        ldaa    >ObdMonStatus_EvapPurge
         bita    #$04
         bne     L4A11
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         bita    #$04
         beq     L4A14
 L4A11:
@@ -363,7 +363,7 @@ L4B60:
         bra     L4B81
 
 L4B64:
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         bita    #$04
         beq     WorkWithPrimaryRamp
         brclr   <IPL2,#$10,WorkWithPrimaryRamp
@@ -452,7 +452,7 @@ L4BE7:
         bra     L4C09
 
 L4BEC:
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         bita    #$04
         beq     WorkWithSecondaryRamp
         brclr   <IPL2,#$10,WorkWithSecondaryRamp
@@ -536,7 +536,7 @@ L4C45:
         bra     L4C66
 
 L4C51:
-        ldab    >L0112
+        ldab    >ObdMonStatus_SecondaryAir
         bitb    #$04
         beq     L4C66
         tab
@@ -700,7 +700,7 @@ L4D2D:
 L4D2F:
         cli
         ldaa    $00,x
-        ldab    >L0112
+        ldab    >ObdMonStatus_SecondaryAir
         bitb    #$04
         beq     L4D3B
         ldaa    <Cyl2_InjPWTrim
@@ -739,7 +739,7 @@ L4D75:
         pulb
 L4D76:
         staa    <ValueFromAdaptiveMemory
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         bita    #$04
         beq     L4D83
         ldaa    <Cyl2_InjPWTrim
@@ -883,7 +883,7 @@ L4E3B:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 HandleAmTimer_MM:
-        brclr   <BitFlasg71,#$80,AMTimer_EngineRunning
+        brclr   <BitFlags71,#$80,AMTimer_EngineRunning
         ldaa    <CoolantTemp
         ldx     #AMTPSW_TempPointToEnableSelectedAMTimer ; AMTPSW: AM temp inhibit time from coolant temp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).

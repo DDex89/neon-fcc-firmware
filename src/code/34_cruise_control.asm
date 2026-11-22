@@ -1219,11 +1219,11 @@ LF7EB:
 
 LF7F0:
         brset   <CruiseStatus_1,#$80,LF7F9
-        bclr    <StartupSwitchMirror2,#$20
+        bclr    <OutputBits2,#$20
         bra     LF7FC
 
 LF7F9:
-        bset    <StartupSwitchMirror2,#$20
+        bset    <OutputBits2,#$20
 LF7FC:
         brset   <CruiseStatus_1,#$80,LF811
         ldab    <CruiseControlVar3
@@ -1235,12 +1235,12 @@ LF7FC:
         beq     LF811
         stab    <Counter_Cruise_3
 LF811:
-        bset    <PIA2_Buffer,#$C0
+        bset    <OutputDriverBits,#$C0
         bra     LF839
 
 LF816:
-        bset    <PIA2_Buffer,#$80
-        bclr    <PIA2_Buffer,#$40
+        bset    <OutputDriverBits,#$80
+        bclr    <OutputDriverBits,#$40
         bra     LF839
 
 LF81E:
@@ -1260,7 +1260,7 @@ LF82A:
         bra     LF816
 
 LF836:
-        bclr    <PIA2_Buffer,#$C0
+        bclr    <OutputDriverBits,#$C0
 LF839:
         ldab    <CruiseControlVar3
         beq     LF849

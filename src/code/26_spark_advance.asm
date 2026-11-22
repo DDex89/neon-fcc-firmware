@@ -493,7 +493,7 @@ LAA13:
 CheckConditionsForDeltaRPMRetard:
         staa    <Temp0
         clr     >Counter_DeltaEngineRPM_1
-        brset   <BitFlasg71,#$02,LAA3A
+        brset   <BitFlags71,#$02,LAA3A
         ldab    <VehicleSpeed_HB
         cmpb    >MSPDRE_MinimumMPHForDeltaRPMEvaluation ; MSPDRE (MinimumMPHForDeltaRPMEvaluation)
         bls     LAA3A
@@ -714,7 +714,7 @@ LABA0:
 ; Called from: CrankInterrupt_FallingEdge
 ;---------------------------------------------------------------------------------------------------
 HandleSparkScatter:
-        ldaa    <BitFlasg71
+        ldaa    <BitFlags71
         oraa    <BitFlags65
         bmi     LABBE
         brset   <BitFlags6b,#$20,LABAF

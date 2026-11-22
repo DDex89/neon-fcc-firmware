@@ -238,11 +238,11 @@ L68B9:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L68BD  ($68BD)
+; Dead_68BD  ($68BD)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; Lone RTS; nothing references it (dead). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-L68BD:
+Dead_68BD:
         rts
 
 
@@ -255,7 +255,7 @@ EmmissionMaintenanceRemider1_MM:
         ldd     >EEPROM3
         subd    #$5AA5
 L68C9:
-        brclr   <BitFlasg71,#$80,L68CF
+        brclr   <BitFlags71,#$80,L68CF
         ldaa    <KeyOnOrEngineRunningTime
 L68CF:
         bne     L68D1
@@ -470,9 +470,14 @@ L6A21:
 
 
 ;---------------------------------------------------------------------------------------------------
-; ExhGasRecircXX_MM  ($6A22)
+; MonitorEgrFlow  ($6A22)
+;
+; OBD-II monitor: EGR flow (P0401). Status byte ObdMonStatus_Egr. [reviewed - table entry]
+;
+; Entry 6 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-ExhGasRecircXX_MM:
+MonitorEgrFlow:
         ldaa    >DrbOverrideTarget
         cmpa    #$04
         bne     L6A3A
@@ -487,7 +492,7 @@ L6A33:
         jmp     >L6AF1
 
 L6A3A:
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         bita    #$80
         beq     L6A83
         bita    #$40
@@ -495,7 +500,7 @@ L6A3A:
         jmp     >L6BB2
 
 L6A48:
-        ldaa    >L011A
+        ldaa    >ObdStatusFlags
         bita    #$01
         bne     L6A83
         ldaa    <KeyOnOrEngineRunningTime
@@ -531,7 +536,7 @@ L6A86:
         cmpa    >LCB45                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcs     L6AF1
         ldx     >L0178
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     L6ADE
         cpx     >EGR14_ExhGasRecircConstFromTPSVoltsLoLimit14 ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
@@ -584,7 +589,7 @@ L6AE2:
 ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outside.
 ; [reviewed]
 ;
-; Called from: CODE6b1d, ExhGasRecircXX_MM
+; Called from: CODE6b1d, MonitorEgrFlow
 ;---------------------------------------------------------------------------------------------------
 EGR_CheckHiLoLimits:
         cmpa    $00,x
@@ -599,9 +604,9 @@ L6AF1:
         ldd     #$0000
         std     >L0178
         bclr    <EGRVar2,#$10
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         anda    #$FB
-        staa    >L0115
+        staa    >ObdMonStatus_Egr
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         staa    >EGR_Temp_1
 L6B07:
@@ -613,9 +618,9 @@ L6B07:
 ;---------------------------------------------------------------------------------------------------
 EGR_ResetEGRVars:
         ldx     #$0000
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         oraa    #$04
-        staa    >L0115
+        staa    >ObdMonStatus_Egr
         ldaa    >EGR_Temp_1
         staa    >EGR_Temp_2
         bra     L6B22
@@ -680,11 +685,11 @@ L6B6B:
         bcs     L6BC2
         ldaa    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
         staa    >L045A
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         anda    #$FB
         anda    #$7F
         oraa    #$40
-        staa    >L0115
+        staa    >ObdMonStatus_Egr
         bra     L6BC2
 
 
@@ -694,7 +699,7 @@ L6B6B:
 CODE6b91:
         ldd     #$0000
         std     >L0178
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         ldab    >$04AF
         incb
         stab    >$04AF
@@ -707,14 +712,14 @@ CODE6b91:
         beq     L6BBB
 L6BB2:
         oraa    #$01
-        ldab    >L011A
+        ldab    >ObdStatusFlags
         bitb    #$02
         bne     L6BBD
 L6BBB:
         anda    #$7F
 L6BBD:
         anda    #$FB
-        staa    >L0115
+        staa    >ObdMonStatus_Egr
 L6BC2:
         rts
 

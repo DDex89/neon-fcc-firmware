@@ -36,7 +36,7 @@ LB1D8:
         jmp     >LB270
 
 LB1DF:
-        ldaa    >L0115
+        ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     LB215
         ldaa    >L01AA
@@ -73,7 +73,7 @@ LB218:
         bitb    #$03
         bne     LB256
         ldab    <BaroPressure
-        brset   <PIA2_Buffer,#$02,LB227
+        brset   <OutputDriverBits,#$02,LB227
         subb    >EGR26_ExhGasRecircConstFromBaro2    ; EGR26 (ExhGasRecircConstFromBaro2)
 LB227:
         subb    >EGR25_ExhGasRecircConstFromBaro1    ; EGR25 (ExhGasRecircConstFromBaro1)
@@ -82,7 +82,7 @@ LB227:
         brclr   <BitFlags65,#$80,LB256
         ldaa    >EGR21_ExhGasRecircConstFromRPM1     ; EGR21 (ExhGasRecircConstFromRPM1)
         ldab    >EGR23_ExhGasRecircConstFromMAP1     ; EGR23 (ExhGasRecircConstFromMAP1)
-        brset   <PIA2_Buffer,#$02,LB24C
+        brset   <OutputDriverBits,#$02,LB24C
         adda    >EGR22_ExhGasRecircConstFromRPM2     ; EGR22 (ExhGasRecircConstFromRPM2)
         addb    >EGR24_ExhGasRecircConstFromMAP2     ; EGR24 (ExhGasRecircConstFromMAP2)
         cmpa    <EngineRpm_HB
@@ -100,7 +100,7 @@ LB24C:
 
 LB256:
         bset    <EGRVar2,#$10
-        brclr   <PIA2_Buffer,#$02,LB261
+        brclr   <OutputDriverBits,#$02,LB261
         clra
         staa    >L045F
 LB261:
@@ -110,11 +110,11 @@ LB261:
         bcs     LB270
         bclr    <BitFlags66,#$01
 LB270:
-        bclr    <PIA2_Buffer,#$02
+        bclr    <OutputDriverBits,#$02
         bra     LB28F
 
 LB275:
-        brset   <PIA2_Buffer,#$02,LB27D
+        brset   <OutputDriverBits,#$02,LB27D
         clra
         staa    >L045F
 LB27D:
@@ -124,7 +124,7 @@ LB27D:
         bcs     LB28C
         bset    <BitFlags66,#$01
 LB28C:
-        bset    <PIA2_Buffer,#$02
+        bset    <OutputDriverBits,#$02
 LB28F:
         rts
 
@@ -141,18 +141,18 @@ LB290:
         ldaa    >DrbOverrideState
         cmpa    #$02
         bne     LB2A3
-        bset    <PIA2_Buffer,#$20
+        bset    <OutputDriverBits,#$20
         bra     LB2AA
 
 LB2A3:
         cmpa    #$01
         bne     LB2AD
-        bclr    <PIA2_Buffer,#$20
+        bclr    <OutputDriverBits,#$20
 LB2AA:
         jmp     >LB3C9
 
 LB2AD:
-        brclr   <BitFlasg71,#$80,LB2BA
+        brclr   <BitFlags71,#$80,LB2BA
         clr     >$01E8
         clr     >L01E9
 LB2B7:
@@ -302,13 +302,13 @@ LB3A8:
         ldaa    >LCABC+1                             ; CRMASK (CruiseMask)
         staa    >L01E7
 LB3BE:
-        bclr    <PIA2_Buffer,#$20
+        bclr    <OutputDriverBits,#$20
         bra     LB3C9
 
 LB3C3:
         clr     >L01E7
 LB3C6:
-        bset    <PIA2_Buffer,#$20
+        bset    <OutputDriverBits,#$20
 LB3C9:
         rts
 

@@ -35,7 +35,7 @@ calls `DRBFunctionTable[command - $10]`.
 | `$16` | `SendConstValues` | Constant / EEPROM values; parameter `$80` checks `PPROG` | [inferred] |
 | `$17` | `ClearErrorCodes` | Clears the stored faults and the freeze frame | [code] |
 | `$18`, `$19`, `$24` | `DRB_Return` | No function | [code] |
-| `$1A` | `SwitchTest` | Sends one of six input or output bytes: switch inputs, `PIA2_Buffer`, `$00EE`, … | [code] |
+| `$1A` | `SwitchTest` | Sends one of six input or output bytes: switch inputs, `OutputDriverBits`, `$00EE`, … | [code] |
 | `$1B` | `InitByteModeDownload` | Enters byte-mode code download | [code] |
 | `$1C` | `DRB_ResetEMR` | Stores an address for a later write (answers `$E2`); the original name says emission maintenance reminder reset | [inferred] |
 | `$1D`, `$1E` | `DRB_UseRAM…SpecialProgramRoutine` | Writes a byte into RAM at an offset from `$0000` or `$0438` (answers `$E5`) | [code] |
@@ -67,8 +67,34 @@ are listed in the [input / output map](io_map.md).
 | `$14` | All solenoids and relays together | [code] |
 | `$15` | Purge solenoid | [inferred] |
 | `$1A`, `$1B` | Speed control solenoids, one at a time | [code] |
-| `$1C` | Clears `PIA2_Buffer` bit 4 (fuel pump relay) | [inferred] |
+| `$1C` | Clears `OutputDriverBits` bit 4 (fuel pump relay) | [inferred] |
 | other | No output | [code] |
+
+## OBD-II monitors
+
+The code contains a complete set of OBD-II monitors driven from a table, `ObdMonitorTable` at $E939: ten
+records of 14 bytes. Each record holds the monitor routine, its status byte in RAM, a scheduling mask, the
+fault descriptor it reports and three calibration pointers for its enable conditions. `ObdMonitorScheduler`
+($E9C5) walks the table, checks the enable conditions and calls each monitor whose status byte allows it.
+`ObdMonitorInit` ($E8EA) prepares the status bytes; it is called (from `StoreMAPVoltsAndCalcMAPValue`). [code]
+
+**Nothing calls `ObdMonitorScheduler` in this code base.** There is no JSR, JMP or pointer to $E9C5 anywhere
+in the ROM, so in 5269718 and 5007033 none of these monitors runs, although most of their fault descriptors
+are enabled. [code] This is the main piece of work for an OBD-II "Enhanced Edition": the monitors exist,
+they only need to be scheduled, checked against the calibration and tested.
+
+| # | Routine | Address | Monitor | Fault | Status byte |
+|---|---|---|---|---|---|
+| 0 | `MonitorO2HeaterUp` | $9449 | Upstream O2 heater | P0135 | `$0113` |
+| 1 | `MonitorO2HeaterDown` | $945E | Downstream O2 heater | P0141 | `$0114` |
+| 2 | `MonitorO2Response` | $9881 | Upstream O2 response | P0133 | `$010E` |
+| 3 | `MonitorSecondaryAir` | $2F58 | Secondary air | P0411 | `$0112` |
+| 4 | `MonitorEvapPurgeFlow` | $A118 | EVAP purge flow | P0441 | `$0116` |
+| 5 | `MonitorCatalyst` | $428A | Catalyst efficiency | P0422 | `$0111` |
+| 6 | `MonitorEgrFlow` | $6A22 | EGR flow | P0401 | `$0115` |
+| 7 | `MonitorFuelSystemRich` | $A337 | Fuel system rich | P0172 | `$0117` |
+| 8 | `MonitorFuelSystemLean` | $A55F | Fuel system lean | P0171 | `$0118` |
+| 9 | `MonitorMisfire` | $AE3F | Misfire | P0300-P0304 | `$0119` |
 
 ## ISO 9141 (generic OBD-II)
 
@@ -82,7 +108,7 @@ numbers and the message layout are not decoded yet.
 ## Lamps
 
 The check-engine lamp (pin 36) and the charge indicator lamp (pin 37) are controlled through bits 6
-and 4 of `$00EE` (`StartupSwitchMirror2`, a name kept from the original disassembly). Flash codes are
+and 4 of `$00EE` (`OutputBits2`, called `StartupSwitchMirror2` in the original disassembly). Flash codes are
 blinked by toggling bit 6, so bit 6 is the check-engine lamp. [inferred] Bit 4 is set from `$0070` bit 7,
 which only charging-system faults set (flag bit 5), so bit 4 is most likely the charge lamp.
 [inferred] `$00EE` is sent out as part of a frame with the address bytes `$48`, `$50` and `$58`, together

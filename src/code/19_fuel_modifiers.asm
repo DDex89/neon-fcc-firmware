@@ -24,7 +24,7 @@
 ;---------------------------------------------------------------------------------------------------
 CalculatePartThrottleEnrichmentAndLatency_MM:
         clra
-        brset   <BitFlasg71,#$80,L7308
+        brset   <BitFlags71,#$80,L7308
         ldaa    <Counter_MainLoop
         bita    #$1F
         bne     L730A
@@ -230,7 +230,7 @@ PTELookupLatency:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <InjectorLatencyPW
         ldaa    >LBD76                               ; RETSPD: Retard from Speed.
-        brset   <BitFlasg71,#$80,L748A
+        brset   <BitFlags71,#$80,L748A
         ldaa    #$06
         ldab    <CoolantTemp
         cmpb    >LBD71                               ; RETSPD: Retard from Speed.
@@ -381,7 +381,7 @@ L7552:
         suba    >LC362                               ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
         bcs     L754C
         brset   <CCDFlags5,#$20,L754C
-        brset   <BitFlasg71,#$80,L754C
+        brset   <BitFlags71,#$80,L754C
         brset   <BitFlags69,#$04,L754C
         ldd     <EngineRpm_HB
         rolb

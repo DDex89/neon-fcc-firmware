@@ -271,7 +271,7 @@ L7A28:
         bra     L7A61
 
 L7A4E:
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
         brset   $24,x,#$10,L7A58
         bset    <L00F3,#$80
 L7A58:
@@ -280,7 +280,7 @@ L7A58:
 L7A5E:
         bclr    <SyncFlags75,#$07
 L7A61:
-        brclr   <BitFlasg71,#$02,L7AA2
+        brclr   <BitFlags71,#$02,L7AA2
         brclr   $00,x,#$80,L7A6E
         bclr    $26,x,#$10
         bra     L7A71
@@ -463,7 +463,7 @@ L7B8B:
         clra
         ldab    <TimerOverflowsBetweenCamPulses
         beq     L7B9E
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
         staa    <L00C4
         jmp     >L7CE8
 
@@ -474,13 +474,13 @@ L7B9E:
         bcs     L7BC2
         cmpb    >LB821                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BBD
-        brclr   <BitFlasg71,#$02,L7BB3
+        brclr   <BitFlags71,#$02,L7BB3
         clra
         staa    <L00C4
 L7BB3:
         cmpb    >LB822                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BDA
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
         bra     L7BDA
 
 L7BBD:
@@ -500,7 +500,7 @@ L7BD2:
         cmpa    >LB825                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BDA
 L7BD7:
-        bclr    <BitFlasg71,#$02
+        bclr    <BitFlags71,#$02
 L7BDA:
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
@@ -638,7 +638,7 @@ L7CE8:
         tab
 L7CF3:
         stab    <MapVolts
-        brclr   <BitFlasg71,#$08,L7D5F
+        brclr   <BitFlags71,#$08,L7D5F
         ldaa    >L017E
         anda    #$0F
         inca
@@ -767,7 +767,7 @@ L7DF0:
         subd    <LastCamFallingEdgeTime
         cpd     #$13F8
         bcs     L7E07
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
 L7E07:
         asld
         asld
@@ -798,7 +798,7 @@ L7E18:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlasg71,#$02,L7E48
+        brset   <BitFlags71,#$02,L7E48
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L7E5F
@@ -871,7 +871,7 @@ L7EBB:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlasg71,#$02,L7ED3
+        brset   <BitFlags71,#$02,L7ED3
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L7EE5
@@ -1116,7 +1116,7 @@ L8058:
 ;---------------------------------------------------------------------------------------------------
 CODE8059_MM:
         ldx     #REGS
-        brclr   <BitFlasg71,#$02,L8083
+        brclr   <BitFlags71,#$02,L8083
         brclr   $00,x,#$80,L8069                     ; PORTA: Port A data (timer pins: IC1-IC3, OC2-OC5, PAI)
         bclr    $26,x,#$10                           ; PACTL: Pulse accumulator control / RTI rate
         bra     L806C
@@ -1379,7 +1379,7 @@ CrankInterrupt_HandleCamSensorRisingEdgeB:
         subd    <L0063
         cpd     #$13F8
         bcs     L8285
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
 L8285:
         asld
         asld
@@ -1410,7 +1410,7 @@ L8296:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlasg71,#$02,L82C6
+        brset   <BitFlags71,#$02,L82C6
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L82D8
@@ -1419,7 +1419,7 @@ L82C6:
         bclr    $22,x,#$08
         ldaa    #$08
         staa    $23,x
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
         bra     L8325
 
 
@@ -1477,7 +1477,7 @@ L832A:
         asld
         addd    #$05DC
         std     <LastDistributorFallingEdgeTime
-        brset   <BitFlasg71,#$02,L8342
+        brset   <BitFlags71,#$02,L8342
         ldd     <TimerOverflowsBetweenCamPulses
         cpd     #$0080
         bcs     L8351
@@ -1486,7 +1486,7 @@ L8342:
         bclr    $22,x,#$20
         ldaa    #$20
         staa    $23,x
-        bset    <BitFlasg71,#$02
+        bset    <BitFlags71,#$02
         bra     L839E
 
 L8351:
@@ -1539,8 +1539,8 @@ L83A1:
         ldab    <DistributorFallingEdgePulsewidth_HB
         cmpb    >LBD72                               ; RETSPD: Retard from Speed.
         bcc     L83D9
-        brclr   <BitFlasg71,#$80,L83E1
-        bclr    <BitFlasg71,#$A0
+        brclr   <BitFlags71,#$80,L83E1
+        bclr    <BitFlags71,#$A0
         clra
         clrb
         std     <KeyOnOrEngineRunningTime
@@ -1559,7 +1559,7 @@ L83D9:
         cmpb    >LBD73                               ; RETSPD: Retard from Speed.
         bcs     L83E1
 L83DE:
-        bset    <BitFlasg71,#$90
+        bset    <BitFlags71,#$90
 L83E1:
         jmp     >L7F35
 
@@ -1577,7 +1577,7 @@ L83E1:
 ;   TimeToAngleAdvanceConvFactor / 256, i.e. a fixed fraction of the tooth period after the edge;
 ;   Isr_TOC4_KnockSample reads the sensor when it expires.
 ; - Forces the coil output of the active pair through CFORC (FOC3 or FOC5, chosen by SyncFlags74
-;   bit 0) when BitFlasg71 bit 1 requests it.
+;   bit 0) when BitFlags71 bit 1 requests it.
 ; - Calculates the running fuel (MAPHI, PRTTBL, modifiers, transient factors), the per-cylinder
 ;   knock retard (KNKMAP, KNKRPM, MAXRTD, RTRDRT) and writes the injector pulse-width registers.
 ;---------------------------------------------------------------------------------------------------
@@ -1604,7 +1604,7 @@ L8403:
 L840E:
         ldaa    #$10
         staa    $30,x
-        brclr   <BitFlasg71,#$02,L8428
+        brclr   <BitFlags71,#$02,L8428
         brset   <SyncFlags74,#$01,L8422
         bclr    $20,x,#$01
         bset    $0B,x,#$08
@@ -1996,7 +1996,7 @@ L86ED:
         bcc     L86F9
         ldaa    >LCBD5
 L86F9:
-        brclr   <BitFlasg71,#$02,L8705
+        brclr   <BitFlags71,#$02,L8705
         cmpa    >LCBDA
         bcc     L8705
         ldaa    >LCBDA
@@ -2239,7 +2239,7 @@ L88B2:
         ldy     #$0400
         bclr    <SyncFlags75,#$10
         ldaa    #$82
-        brset   <BitFlasg71,#$02,L88CD
+        brset   <BitFlags71,#$02,L88CD
         ldaa    #$C2
 L88CD:
         cmpa    <BatteryVolts
@@ -2265,7 +2265,7 @@ L88E5:
         brset   $10,y,#$02,L8929
         ldab    <SyncFlags74
         andb    #$01
-        brset   <BitFlasg71,#$02,L891A
+        brset   <BitFlags71,#$02,L891A
         ldx     #$018F
         abx
         ldaa    $00,x
@@ -2624,13 +2624,13 @@ LOAD_MAX_INJ_PULSEWIDTH:
 ;
 ; Blends cranking fuel into running fuel after the engine starts. [reviewed]
 ;
-; While the start flag (BitFlasg71 bit 4) is set, the larger of the running pulse width and the
+; While the start flag (BitFlags71 bit 4) is set, the larger of the running pulse width and the
 ; decaying start pulse width (InjectorPulsewidth_HB minus Factor_StartFuelDecayIntoRunFuel) is
 ; used. When the decaying start pulse falls below the running value the flag is cleared and only
 ; running fuel remains. Falls through into IncludeInjectorLatency.
 ;---------------------------------------------------------------------------------------------------
 HandleTransitionFromStartToRun:
-        brclr   <BitFlasg71,#$10,IncludeInjectorLatency
+        brclr   <BitFlags71,#$10,IncludeInjectorLatency
         std     <Temp5
         ldd     <InjectorPulsewidth_HB
         suba    <Factor_StartFuelDecayIntoRunFuel
@@ -2643,7 +2643,7 @@ HandleTransitionFromStartToRun:
 ;---------------------------------------------------------------------------------------------------
 TransitionFromStartToRunComplete:
         ldd     <Temp5
-        bclr    <BitFlasg71,#$10
+        bclr    <BitFlags71,#$10
 
 ;---------------------------------------------------------------------------------------------------
 ; IncludeInjectorLatency  ($8B4D)
@@ -2714,7 +2714,7 @@ L8B8E:
         bra     L8BD6
 
 L8BAE:
-        brset   <BitFlasg71,#$80,L8C19
+        brset   <BitFlags71,#$80,L8C19
         ldx     #BYTE8229
         ldab    <SyncFlags74
         andb    #$03

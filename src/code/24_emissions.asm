@@ -107,7 +107,7 @@ ControlPurgeSolenoid_MM:
         ldaa    >DrbOverrideState
         cmpa    #$02
         bne     L9C87
-        bset    <StartupSwitchMirror2,#$80
+        bset    <OutputBits2,#$80
         ldaa    #$C3
         staa    >L0176
         clra
@@ -117,7 +117,7 @@ ControlPurgeSolenoid_MM:
 L9C87:
         cmpa    #$01
         bne     L9C9A
-        bclr    <StartupSwitchMirror2,#$80
+        bclr    <OutputBits2,#$80
         ldaa    #$C3
         staa    >$0177
         clra
@@ -131,26 +131,26 @@ L9C9A:
         cmpa    #$14
         bne     L9CAF
 L9CA4:
-        bclr    <StartupSwitchMirror2,#$80
+        bclr    <OutputBits2,#$80
         bclr    <BitFlagsE3,#$02
         ldab    #$80
         jmp     >L9EFF
 
 L9CAF:
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         bita    #$04
         bne     L9CEA
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         bita    #$04
         bne     L9CEA
         ldaa    >LCCA9
         bita    #$40
         beq     L9CCB
-        ldaa    >L010E
+        ldaa    >ObdMonStatus_O2Response
         bita    #$04
         bne     L9CEA
 L9CCB:
-        brset   <BitFlasg71,#$80,L9CEA
+        brset   <BitFlags71,#$80,L9CEA
         ldaa    <CoolantTemp
         cmpa    >LC8ED
         bcs     L9CEA
@@ -218,7 +218,7 @@ L9D45:
         beq     L9D4A
         staa    <CylTrim_Adaptive_Var1
 L9D4A:
-        bset    <StartupSwitchMirror2,#$80
+        bset    <OutputBits2,#$80
         bra     L9DB4
 
 L9D4F:
@@ -236,7 +236,7 @@ L9D54:
         stab    <CylTrimFlags
 L9D60:
         clr     >CylTrim_Adaptive_Var1
-        bclr    <StartupSwitchMirror2,#$80
+        bclr    <OutputBits2,#$80
         bra     L9DB0
 
 L9D68:
@@ -485,7 +485,7 @@ L9F28:
         ldab    >L020B
 L9F2B:
         stab    <L00E4
-        brclr   <StartupSwitchMirror2,#$80,L9F3C
+        brclr   <OutputBits2,#$80,L9F3C
         ldaa    #$C3
         staa    >L0176
         clra
@@ -792,9 +792,15 @@ LA115:
 
 
 ;---------------------------------------------------------------------------------------------------
-; DeadCode_A118  ($A118)
+; MonitorEvapPurgeFlow  ($A118)
+;
+; OBD-II monitor: EVAP purge flow (P0441). Status byte ObdMonStatus_EvapPurge. [reviewed - table
+; entry]
+;
+; Entry 4 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-DeadCode_A118:
+MonitorEvapPurgeFlow:
         ldx     #$0116
         brset   $00,x,#$80,LA122
         jmp     >LA335
@@ -804,7 +810,7 @@ LA122:
         jmp     >LA325
 
 LA129:
-        brset   <BitFlasg71,#$80,LA136
+        brset   <BitFlags71,#$80,LA136
         ldaa    <CylTrimFlags
         bita    #$38
         beq     LA139
@@ -851,7 +857,7 @@ LA15E:
         ldaa    <BatteryVolts
         staa    >L0468
 LA193:
-        ldaa    >L011A
+        ldaa    >ObdStatusFlags
         bita    #$01
         beq     LA19D
         jmp     >CODEa344
@@ -871,8 +877,8 @@ LA1A6:
 LA1B3:
         cmpa    >LCD40
         bhi     LA1C0
-        ldaa    <L00E0
-        eora    <L00E1
+        ldaa    <AisLoadFlagsA
+        eora    <AisLoadFlagsB
         anda    #$E0
         beq     LA1C3
 LA1C0:
@@ -890,9 +896,9 @@ LA1CF:
         jmp     >LA335
 
 LA1D6:
-        ldaa    >L0116
+        ldaa    >ObdMonStatus_EvapPurge
         oraa    #$04
-        staa    >L0116
+        staa    >ObdMonStatus_EvapPurge
         ldaa    >L0203
         beq     LA249
         ldaa    >LCD2F
@@ -1019,9 +1025,9 @@ CODEa344:
         bset    $00,x,#$40
 LA2DD:
         bclr    $00,x,#$10
-        ldaa    >L0116
+        ldaa    >ObdMonStatus_EvapPurge
         anda    #$FB
-        staa    >L0116
+        staa    >ObdMonStatus_EvapPurge
         bra     LA335
 
 LA2EA:
@@ -1064,13 +1070,19 @@ LA330:
 LA335:
         rts
 
+        dc.b    $1D
 
 ;---------------------------------------------------------------------------------------------------
-; CODEa3a7  ($A336)
+; MonitorFuelSystemRich  ($A337)
+;
+; OBD-II monitor: fuel system rich (P0172). Status byte ObdMonStatus_FuelRich. [reviewed - table
+; entry]
+;
+; Entry 7 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-CODEa3a7:
-        bclr    $F6,x,#$01
-        tba
+MonitorFuelSystemRich:
+        ldab    >ObdMonStatus_FuelRich
         bitb    #$80
         beq     LA387
         bitb    #$40
@@ -1097,7 +1109,7 @@ LA363:
         jmp     >LA55E
 
 LA366:
-        ldab    >L011A
+        ldab    >ObdStatusFlags
         bitb    #$01
         bne     LA387
         ldab    >L045A
@@ -1107,7 +1119,7 @@ LA366:
 LA375:
         brclr   <BitFlags65,#$10,LA387
         brset   <BitFlags66,#$10,LA387
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         bita    #$04
         beq     LA38A
         jmp     >LA432
@@ -1157,7 +1169,7 @@ LA3B5:
         beq     LA3E1
         staa    >L04B0
 LA3E1:
-        cmpa    >CODEa3a7
+        cmpa    >$A336
         bcs     LA401
         ldaa    $03,x
         anda    #$7F
@@ -1167,9 +1179,9 @@ LA3E1:
         staa    $03,x
 LA3F1:
         bset    $03,x,#$80
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         oraa    #$40
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
         bra     LA401
 
 LA3FE:
@@ -1189,9 +1201,9 @@ LA40E:
         ldaa    >L018B
         cmpa    >LCD2A
         bcs     LA42F
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         oraa    #$04
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
         clra
         staa    <Counter_O2SensorFeedbackCount_Signed
         staa    >L018B
@@ -1284,9 +1296,9 @@ LA4B2:
         staa    $03,x
 LA4D6:
         bset    $03,x,#$80
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         oraa    #$40
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
         bra     LA4E6
 
 LA4E3:
@@ -1295,9 +1307,9 @@ LA4E6:
         bra     LA538
 
 LA4E8:
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         oraa    #$48
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
         ldx     #$012D
         brset   $02,x,#$10,LA50E
         clra
@@ -1309,25 +1321,25 @@ LA4E8:
         bset    $02,x,#$80
         bset    $02,x,#$20
 LA50E:
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         bita    #$10
         beq     LA530
 LA515:
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         oraa    #$01
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
         ldx     #$012D
         brclr   $02,x,#$20,LA529
         ldab    #$80
         stab    >L0130
 LA529:
-        ldab    >L011A
+        ldab    >ObdStatusFlags
         bitb    #$02
         bne     LA546
 LA530:
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         anda    #$7F
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
 LA538:
         ldaa    >L0187
         oraa    #$40
@@ -1335,9 +1347,9 @@ LA538:
         ldaa    >LCD2D
         staa    >L0210
 LA546:
-        ldaa    >L0117
+        ldaa    >ObdMonStatus_FuelRich
         anda    #$FB
-        staa    >L0117
+        staa    >ObdMonStatus_FuelRich
         ldaa    #$00
         staa    >L018B
         staa    >L0462
@@ -1349,10 +1361,16 @@ LA55E:
 
 
 ;---------------------------------------------------------------------------------------------------
-; DeadCode_A55F  ($A55F)
+; MonitorFuelSystemLean  ($A55F)
+;
+; OBD-II monitor: fuel system lean (P0171). Status byte ObdMonStatus_FuelLean. [reviewed - table
+; entry]
+;
+; Entry 8 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-DeadCode_A55F:
-        ldaa    >L0118
+MonitorFuelSystemLean:
+        ldaa    >ObdMonStatus_FuelLean
         bita    #$80
         bne     LA569
         jmp     >LA676
@@ -1363,7 +1381,7 @@ LA569:
         jmp     >LA646
 
 LA570:
-        ldab    >L011A
+        ldab    >ObdStatusFlags
         bitb    #$01
         bne     LA57F
         brclr   <BitFlags65,#$10,LA57F
@@ -1413,7 +1431,7 @@ LA5AE:
         beq     LA5DA
         staa    >L04B0
 LA5DA:
-        cmpa    >CODEa3a7
+        cmpa    >$A336
         bcs     LA5FA
         ldaa    $03,x
         anda    #$7F
@@ -1423,9 +1441,9 @@ LA5DA:
         staa    $03,x
 LA5EA:
         bset    $03,x,#$80
-        ldaa    >L0118
+        ldaa    >ObdMonStatus_FuelLean
         oraa    #$40
-        staa    >L0118
+        staa    >ObdMonStatus_FuelLean
         bra     LA5FA
 
 LA5F7:
@@ -1446,14 +1464,14 @@ LA60E:
         ldaa    >L018A
         cmpa    >LCD28
         bcs     LA676
-        ldaa    >L0118
+        ldaa    >ObdMonStatus_FuelLean
 
 ;---------------------------------------------------------------------------------------------------
 ; CODEa68d  ($A61C)
 ;---------------------------------------------------------------------------------------------------
 CODEa68d:
         oraa    #$48
-        staa    >L0118
+        staa    >ObdMonStatus_FuelLean
         ldx     #$012D
         brset   $02,x,#$20,LA63F
         clra
@@ -1465,25 +1483,25 @@ CODEa68d:
         bset    $02,x,#$80
         bset    $02,x,#$10
 LA63F:
-        ldaa    >L0118
+        ldaa    >ObdMonStatus_FuelLean
         bita    #$10
         beq     LA661
 LA646:
-        ldaa    >L0118
+        ldaa    >ObdMonStatus_FuelLean
         oraa    #$01
-        staa    >L0118
+        staa    >ObdMonStatus_FuelLean
         ldx     #$012D
         brclr   $02,x,#$10,LA65A
         ldab    #$80
         stab    >L0130
 LA65A:
-        ldab    >L011A
+        ldab    >ObdStatusFlags
         bitb    #$02
         bne     LA669
 LA661:
-        ldaa    >L0118
+        ldaa    >ObdMonStatus_FuelLean
         anda    #$7F
-        staa    >L0118
+        staa    >ObdMonStatus_FuelLean
 LA669:
         ldaa    #$00
         staa    >L018A

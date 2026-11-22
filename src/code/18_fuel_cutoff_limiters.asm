@@ -201,7 +201,7 @@ Cutout_CheckMPHLimitingValues:
         ldaa    >LC8F3
         bita    #$20
         bne     L715A
-        brclr   <PIA2_Buffer,#$01,L7164
+        brclr   <OutputDriverBits,#$01,L7164
 L715A:
         brset   <BitFlags69,#$08,L7164
         bset    <BitFlags69,#$0C
@@ -258,7 +258,7 @@ L7195:
         ldaa    >LC8F3
         bita    #$20
         bne     L7161
-        brset   <PIA2_Buffer,#$01,L7161
+        brset   <OutputDriverBits,#$01,L7161
 
 ;---------------------------------------------------------------------------------------------------
 ; Cutout_TurnFuelBackOn  ($71BF)

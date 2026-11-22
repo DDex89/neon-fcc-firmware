@@ -96,13 +96,13 @@ L1A95:
         cmpa    #$D2
         bhi     L1AA9
 L1AA4:
-        bset    <PIA2_Buffer,#$14
+        bset    <OutputDriverBits,#$14
         bra     L1AAC
 
 L1AA9:
-        bclr    <PIA2_Buffer,#$14
+        bclr    <OutputDriverBits,#$14
 L1AAC:
-        brset   <BitFlasg71,#$80,L1AB9
+        brset   <BitFlags71,#$80,L1AB9
         ldab    <KeyOnOrEngineRunningTime
         cmpb    #$04
         bcs     L1AB9

@@ -273,7 +273,7 @@ L6F1B:
         std     <TpsAverageValue_HB
         cli
 L6F1E:
-        brset   <BitFlasg71,#$80,L6F7B
+        brset   <BitFlags71,#$80,L6F7B
         ldd     <Temp2
 L6F24:
         std     <Pulsewidth_PartThrottleEnrichment_HB
@@ -345,7 +345,7 @@ L6F7E:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 CalculateInjectorPulsewidthForStarting_MM:
-        brset   <BitFlasg71,#$80,L6F89
+        brset   <BitFlags71,#$80,L6F89
         ldaa    <CoolantTemp
         staa    >CoolantTempCopy1
         rts

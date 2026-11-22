@@ -26,7 +26,7 @@ size of the `.bin` dumps.
 | `$B4CD-$B5FF` | Unused ($FF) |
 | `$B600-$B7FF` | Window of the HC11 internal EEPROM. The CPU sees the EEPROM here, not the EPROM image, and the ROM checksum skips this range. |
 | `$B800-$E228` | Calibration: header (part number, configuration flags) and about 460 tables and constants |
-| `$E229-$FFD5` | Program code, part 2; the copyright string is at $FFA4 |
+| `$E229-$FFD5` | Program code, part 2; the copyright string is at $FFA4. $FDDA-$FFA2 (457 bytes, including the checksum spare byte $FF50) and $FFC0-$FFD5 (22 bytes) are unused $FF |
 | `$FFD6-$FFFF` | Interrupt vectors |
 
 ### Calibration header

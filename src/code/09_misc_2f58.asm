@@ -10,9 +10,15 @@
 
 
 ;---------------------------------------------------------------------------------------------------
-; DEADCODE_2f58  ($2F58)
+; MonitorSecondaryAir  ($2F58)
+;
+; OBD-II monitor: secondary air system (P0411). Status byte ObdMonStatus_SecondaryAir. [reviewed -
+; table entry]
+;
+; Entry 3 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-DEADCODE_2f58:
+MonitorSecondaryAir:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$80
         bne     L2FCC
@@ -55,10 +61,10 @@ L2FA4:
         rts
 
 L2FB1:
-        bset    <PIA2_Buffer,#$20
-        ldaa    >L0112
+        bset    <OutputDriverBits,#$20
+        ldaa    >ObdMonStatus_SecondaryAir
         anda    #$FB
-        staa    >L0112
+        staa    >ObdMonStatus_SecondaryAir
         ldaa    >BitFlags049E
         anda    #$EF
         staa    >BitFlags049E
@@ -72,10 +78,10 @@ L2FCC:
 ;---------------------------------------------------------------------------------------------------
 ; L2FCD  ($2FCD)
 ;
-; Called from: DEADCODE_2f58
+; Called from: MonitorSecondaryAir
 ;---------------------------------------------------------------------------------------------------
 L2FCD:
-        brset   <BitFlasg71,#$80,L3007
+        brset   <BitFlags71,#$80,L3007
         ldaa    >L04AB
         bne     L2FFF
         ldaa    >Timer_OffThrottleFuelEnrich
@@ -209,7 +215,7 @@ L3081:
 ;---------------------------------------------------------------------------------------------------
 ; L308A  ($308A)
 ;
-; Called from: DEADCODE_2f58, L2FCD
+; Called from: L2FCD, MonitorSecondaryAir
 ;---------------------------------------------------------------------------------------------------
 L308A:
         brclr   <BitFlags65,#$10,L30C2
@@ -226,10 +232,10 @@ L308A:
         ldaa    <CoolantTemp
         cmpa    >CLTEMP_TempToStartCLTIMETimer       ; CLTEMP: Temperature to start CLTIME Timer - $94 = 70degreesF
         bcs     L30C2
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         bita    #$04
         bne     L30BC
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         bita    #$20
         beq     L30C2
 L30BC:
@@ -239,10 +245,10 @@ L30BC:
 L30C2:
         ldaa    #$06
         staa    >L04A5
-        bset    <PIA2_Buffer,#$20
-        ldaa    >L0112
+        bset    <OutputDriverBits,#$20
+        ldaa    >ObdMonStatus_SecondaryAir
         anda    #$FB
-        staa    >L0112
+        staa    >ObdMonStatus_SecondaryAir
         ldaa    >BitFlags049E
         anda    #$EF
         staa    >BitFlags049E
@@ -254,7 +260,7 @@ L30DA:
 ; L30DB  ($30DB)
 ;---------------------------------------------------------------------------------------------------
 L30DB:
-        brclr   <PIA2_Buffer,#$20,L30F7
+        brclr   <OutputDriverBits,#$20,L30F7
         inc     >L04A5
         ldd     #$0000
         std     >L04A3
@@ -287,9 +293,9 @@ L3105:
 ; L3109  ($3109)
 ;---------------------------------------------------------------------------------------------------
 L3109:
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         oraa    #$04
-        staa    >L0112
+        staa    >ObdMonStatus_SecondaryAir
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         suba    >LCCDF
         bvc     L3121
@@ -443,7 +449,7 @@ L3203:
 ; L3209  ($3209)
 ;---------------------------------------------------------------------------------------------------
 L3209:
-        bclr    <PIA2_Buffer,#$20
+        bclr    <OutputDriverBits,#$20
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD3
         bcs     L3221
@@ -481,7 +487,7 @@ L3241:
         bclr    <IPL2,#$10
         clr     >L04AB
         clr     >L0149
-        bset    <PIA2_Buffer,#$20
+        bset    <OutputDriverBits,#$20
         bclr    $00,x,#$04
         clra
         staa    >L04A8
@@ -507,10 +513,10 @@ L3263:
         bra     L32A0
 
 L328B:
-        ldaa    >L0112
+        ldaa    >ObdMonStatus_SecondaryAir
         oraa    #$01
-        staa    >L0112
-        ldaa    >L011A
+        staa    >ObdMonStatus_SecondaryAir
+        ldaa    >ObdStatusFlags
         bita    #$02
         bne     L32A0
         bclr    $00,x,#$80
@@ -521,7 +527,7 @@ L32A0:
         clra
         staa    >L04A8
         bclr    $00,x,#$04
-        bset    <PIA2_Buffer,#$20
+        bset    <OutputDriverBits,#$20
         rts
 
 

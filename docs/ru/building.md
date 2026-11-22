@@ -88,6 +88,7 @@ SHA-256 каждого образа с хешем из `annotations/variants.jso
 python tools/gen_source.py --roms roms
 python tools/gen_cal_docs.py --roms roms
 python tools/gen_fault_docs.py --roms roms
+python tools/gen_ram_docs.py --roms roms
 python tools/build.py           # по-прежнему должно быть OK для всех вариантов
 ```
 

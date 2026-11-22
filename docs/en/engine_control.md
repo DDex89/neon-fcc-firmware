@@ -218,11 +218,28 @@ Advance values are signed bytes in 0.5 degree steps (`raw / 2` = degrees BTDC).
 
 - Target idle speed vs coolant temperature: `AISPN` (park / neutral or manual) and `AISCLD` (drive,
   automatic), plus time- and load-dependent adders (for example the decel curve `TIMED2`).
-- `ControlAIS_MM` keeps an AIS state in `AISSubIndex` and runs one of nine state routines
-  (`AIS_Sub1`..`AIS_Sub9`) each pass, with RPM thresholds `RPMTHS` and barometric compensation
-  `BARAIS`. Positions come from the start-up (`AISTRT`), cold (`CLDPOS`), throttle (`THRPOS`), RPM and
-  speed tables. Mapping each state to its job is still open.
 - AIS steps are compensated in the fuel (see transient fuel) and idle speed is trimmed by spark scatter.
+
+`ControlAIS_MM` keeps the AIS state in the low nibble of `AISSubIndex` and runs one state routine
+per pass (`AISSubroutineTable`). While the engine is not running it forces state 0 or 1 by RPM
+(`BYTEc581`); a MAP sensor failure forces state 15. In the running states,
+`SelectAisStateA`/`SelectAisStateB` choose between throttle open, throttle closed and speed control.
+
+| State | Routine | When | What it does |
+|---|---|---|---|
+| 0 | `AisState0_EngineStopped` | Key on, engine stopped | Holds `BYTEc580` + `CALPOS` (baro compensated), goes to 1 when RPM reaches `BYTEc581` |
+| 1 | `AisState1_Cranking` | Cranking / start | `AISTRT`(coolant) + `CALPOS`, baro compensated; hands over to a running state when the motor is in position |
+| 4, 12 | `AisState4_ThrottleOpen`, `AisState12_ThrottleOpen` | Throttle open | Position from speed (`MPHPOS`), RPM (`RPMPOS`), a 3D table, cold (`CLDPOS`) and throttle (`THRPOS`), the largest wins |
+| 5, 13 | `AisState5_ClosedThrottle`, `AisState13_ClosedThrottle` | Throttle closed | Closed-loop idle speed control towards the target, A/C compensation, decel fuel cut decision |
+| 6, 14 | `AisState6_SpeedControl`, `AisState14_SpeedControl` | Speed control engaged (flag set by the cruise servo routine) | Holds the position for cruise |
+| 15 | `AisState15_MapLimpIn` | MAP sensor failure | Fixed position, 32 steps |
+| 2, 3, 7-11 | `AisState_Unused` | — | Not used, return to state 0 |
+
+The 12-14 versions also apply the **load-step records** (`AisLoadStepRecords`, eight 10-byte
+records at $37DE) through `AdjustAISPosition_A/B`. Each record adds or removes a step from a
+calibration byte when its conditions match, and remembers that in `AisLoadFlagsA`. Which state set
+is used depends on whether `AisLoadFlagsA` and `AisLoadFlagsB` agree. [code] Which load each record
+stands for (A/C, fan, power steering …) is not decoded yet.
 
 ## Limiters (`ControlEngineCutout_MM`, `CalculateVariableRevLimit_MM`)
 
@@ -237,9 +254,14 @@ Fuel is cut for whole engine revolutions:
 
 - **EGR** (`ExhGasRecirc_MM`): the solenoid is enabled when RPM, MAP (depending on baro), coolant
   temperature and time since start are inside the `EGR21`..`EGR27` windows, and only if
-  configuration bit $B811.6 is set. An EGR flow monitor sets a fault if no flow is detected.
-- **Canister purge** (`ControlPurgeSolenoid_MM`).
+  configuration bit $B811.6 is set.
+- **Canister purge**: duty-cycle routine at $B290 (output bit 5 of `OutputDriverBits`) and
+  `ControlPurgeSolenoid_MM` ($9C6A, `OutputBits2` bit 7).
 - **Downstream O2** sensor monitor (`VerifyOperationOfDownstreamO2Sensor_MM`).
+- **OBD-II monitors (dormant).** The code contains ten OBD-II monitors (O2 heaters, O2 response,
+  secondary air, EVAP purge flow, catalyst, EGR flow, fuel system rich / lean, misfire) with their
+  scheduler `ObdMonitorScheduler` ($E9C5), but nothing calls the scheduler in this code base, so none
+  of them runs. See [diagnostics.md](diagnostics.md#obd-ii-monitors).
 
 ## Other outputs *(from names)*
 
@@ -250,12 +272,9 @@ Fuel is cut for whole engine revolutions:
 - **Torque converter lock-up** (`ControlPTU_MM`): automatic transmission only.
 - **Cruise control servo** (`ControlCruiseServo0_MM`, `ControlCruiseServo1_MM`).
 
-## Diagnostics and communication *(from names)*
+## Diagnostics and communication
 
-- **SCI** (DRB II / DRB III scan tool protocol, `DRBIISerialCommunications_MM`): fault codes, live
-  data, memory read-out, actuator tests (`ActuatorTestMode_MM`), and a byte-mode code download used
-  for reprogramming. The fast logging mode is what tools such as MP Scan use.
-- **CCD bus** (`CCDBusComs`, `CCD_*`): data for the instrument cluster and body modules (RPM,
-  coolant temperature, speed, warning lamps ...).
-- **Fault codes:** each monitor calls `ThrowNonCriticalError` with a descriptor (`ErrBytes_CODEnn`
-  near $D4E3) that holds the code number, maturing counters and lamp behaviour.
+The DRB and ISO 9141 protocols, the actuator tests, the lamps and the OBD-II monitors are described in
+[diagnostics.md](diagnostics.md), the fault descriptors in [fault_codes.md](fault_codes.md). The CCD
+bus (`CCDBusComs`, `CCD_*`) carries data for the instrument cluster and body modules (RPM, coolant
+temperature, speed, warning lamps …); its message list is not decoded yet.

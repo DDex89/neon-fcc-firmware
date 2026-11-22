@@ -23,7 +23,7 @@ ControlFan_MM:
         cmpa    #$14
         beq     L2A24
         ldab    >CounterX
-        brclr   <BitFlasg71,#$80,L2A00
+        brclr   <BitFlags71,#$80,L2A00
         andb    #$F0
         orab    #$01
 L2A00:
@@ -95,19 +95,19 @@ L2A65:
         cmpb    #$06
         bne     L2A84
 L2A72:
-        ldab    >L00E0
+        ldab    >AisLoadFlagsA
         andb    #$3F
-        stab    >L00E0
-        ldab    >L00E1
+        stab    >AisLoadFlagsA
+        ldab    >AisLoadFlagsB
         andb    #$3F
-        stab    >L00E1
+        stab    >AisLoadFlagsB
         bra     L2A92
 
 L2A84:
-        ldab    >L00E0
+        ldab    >AisLoadFlagsA
         bitb    #$C0
         bne     L2A95
-        ldab    >L00E1
+        ldab    >AisLoadFlagsB
         bitb    #$C0
         bne     L2A95
 L2A92:
@@ -316,11 +316,11 @@ POINTER2b94:
 ; CODE2bb4  ($2BB4)
 ;---------------------------------------------------------------------------------------------------
 CODE2bb4:
-        ldab    >L00E0
+        ldab    >AisLoadFlagsA
         andb    #$C0
         cmpb    #$80
         bne     L2BC9
-        ldab    >L00E1
+        ldab    >AisLoadFlagsB
         andb    #$C0
         cmpb    #$80
         bne     L2BC9
@@ -677,11 +677,11 @@ L2DEE:
 ; CODE2df2  ($2DF2)
 ;---------------------------------------------------------------------------------------------------
 CODE2df2:
-        ldab    >L00E0
+        ldab    >AisLoadFlagsA
         andb    #$40
         cmpb    #$40
         bne     L2E07
-        ldab    >L00E1
+        ldab    >AisLoadFlagsB
         andb    #$40
         cmpb    #$40
         bne     L2E07
@@ -696,7 +696,7 @@ L2E07:
 ; Called from: L2A96, StoreMAPVoltsAndCalcMAPValue
 ;---------------------------------------------------------------------------------------------------
 CODE2e08:
-        bset    <PIA2_Buffer,#$08
+        bset    <OutputDriverBits,#$08
         bra     L2E10
 
 
@@ -706,7 +706,7 @@ CODE2e08:
 ; Called from: CODE2bca
 ;---------------------------------------------------------------------------------------------------
 TurnOnCEL_C:
-        bclr    <PIA2_Buffer,#$08
+        bclr    <OutputDriverBits,#$08
 L2E10:
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
@@ -717,7 +717,7 @@ L2E10:
 L2E1C:
         bitb    #$40
         beq     L2E23
-        bset    <StartupSwitchMirror2,#$10
+        bset    <OutputBits2,#$10
 L2E23:
         rts
 
@@ -728,7 +728,7 @@ L2E23:
 ; Called from: CODE2cbb
 ;---------------------------------------------------------------------------------------------------
 TurnOffCEL_C:
-        bclr    <PIA2_Buffer,#$08
+        bclr    <OutputDriverBits,#$08
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     L2E33
@@ -738,7 +738,7 @@ TurnOffCEL_C:
 L2E33:
         bitb    #$40
         beq     L2E3A
-        bclr    <StartupSwitchMirror2,#$10
+        bclr    <OutputBits2,#$10
 L2E3A:
         rts
 
@@ -749,11 +749,11 @@ L2E3A:
 ; Called from: CODE2d51
 ;---------------------------------------------------------------------------------------------------
 TurnOffCEL_D:
-        bset    <PIA2_Buffer,#$08
+        bset    <OutputDriverBits,#$08
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$40
         beq     L2E48
-        bclr    <StartupSwitchMirror2,#$10
+        bclr    <OutputBits2,#$10
 L2E48:
         rts
 
@@ -764,8 +764,8 @@ L2E48:
 ; Called from: CODE2aeb, L2AB2
 ;---------------------------------------------------------------------------------------------------
 CODE2e49:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2E56
         ldaa    #$E4
         staa    >CounterX
@@ -779,8 +779,8 @@ L2E56:
 ; Called from: CODE2aeb, L2AB2
 ;---------------------------------------------------------------------------------------------------
 CODE2e57:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2E64
         ldaa    #$E8
         staa    >CounterX
@@ -794,8 +794,8 @@ L2E64:
 ; Called from: L2AB2
 ;---------------------------------------------------------------------------------------------------
 CODE2e65:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2E72
         ldaa    #$EC
         staa    >CounterX
@@ -809,8 +809,8 @@ L2E72:
 ; Called from: CODE2bd7
 ;---------------------------------------------------------------------------------------------------
 L2E73:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2E80
         ldaa    #$E8
         staa    >CounterX
@@ -822,8 +822,8 @@ L2E80:
 ; CODE2e81  ($2E81)
 ;---------------------------------------------------------------------------------------------------
 CODE2e81:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2E8E
         ldaa    #$E4
         staa    >CounterX
@@ -837,8 +837,8 @@ L2E8E:
 ; Called from: CODE2bd7, CODE2cc8, CODE2d5e
 ;---------------------------------------------------------------------------------------------------
 CODE2e8f:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2E9C
         ldaa    #$E0
         staa    >CounterX
@@ -852,8 +852,8 @@ L2E9C:
 ; Called from: L2B00
 ;---------------------------------------------------------------------------------------------------
 L2E9D:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2EAA
         ldaa    #$F4
         staa    >CounterX
@@ -867,8 +867,8 @@ L2EAA:
 ; Called from: L2B00, L2EF1
 ;---------------------------------------------------------------------------------------------------
 CODE2eab:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2EB8
         ldaa    #$F8
         staa    >CounterX
@@ -882,8 +882,8 @@ L2EB8:
 ; Called from: L2B00, L2EF1
 ;---------------------------------------------------------------------------------------------------
 CODE2eb9:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2EC6
         ldaa    #$FC
         staa    >CounterX
@@ -897,8 +897,8 @@ L2EC6:
 ; Called from: CODE2bd7, CODE2c0d
 ;---------------------------------------------------------------------------------------------------
 CODE2ec7:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2ED4
         ldaa    #$F8
         staa    >CounterX
@@ -912,8 +912,8 @@ L2ED4:
 ; Called from: CODE2f01
 ;---------------------------------------------------------------------------------------------------
 CODE2ed5:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2EE2
         ldaa    #$F4
         staa    >CounterX
@@ -927,8 +927,8 @@ L2EE2:
 ; Called from: CODE2f01, L2F13
 ;---------------------------------------------------------------------------------------------------
 L2EE3:
-        ldab    >L00E0
-        eorb    >L00E1
+        ldab    >AisLoadFlagsA
+        eorb    >AisLoadFlagsB
         bne     L2EF0
         ldaa    #$F0
         staa    >CounterX

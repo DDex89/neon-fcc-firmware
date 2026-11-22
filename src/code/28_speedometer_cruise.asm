@@ -238,7 +238,7 @@ LB149:
 ControlCruiseServo1_MM:
         ldaa    <Timer_CountdownFromStartRunForAisFeedback
         beq     LB170
-        brclr   <BitFlasg71,#$20,LB169
+        brclr   <BitFlags71,#$20,LB169
         brclr   <BitFlags68,#$20,LB169
         clra
         ldab    >LC83C                               ; DLYTIM: Decel AIS Delay after throttle closes when moving
@@ -258,7 +258,7 @@ LB16C:
         bra     LB173
 
 LB170:
-        bset    <BitFlasg71,#$20
+        bset    <BitFlags71,#$20
 LB173:
         brclr   <BitFlags65,#$80,LB17B
 LB177:

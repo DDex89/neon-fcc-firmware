@@ -35,7 +35,7 @@ LF895:
         beq     LF8B3
         inc     >KeyOnOrEngineRunningTime
 LF8B3:
-        brset   <BitFlasg71,#$80,LF8C1
+        brset   <BitFlags71,#$80,LF8C1
         bclr    <BitFlags_AIS,#$03
         cmpa    <EngineRunningTimeMaxFF
         beq     LF8C1
@@ -45,7 +45,7 @@ LF8C1:
         ldaa    <TimerOverflowsBetweenCamPulses
         cmpa    #$02
         bcs     LF8D5
-        bset    <BitFlasg71,#$92
+        bset    <BitFlags71,#$92
         bclr    <BitFlags65,#$30
         bclr    <BitFlags66,#$02
         ldaa    <EngineRunningTimeMaxFF
@@ -67,7 +67,7 @@ LF8DC:
 DRB_SomethingLikeEMR_MM:
         brset   <BitFlags6b,#$01,LF90B
         brclr   <BitFlags6b,#$02,LF90B
-        brset   <BitFlasg71,#$80,LF90B
+        brset   <BitFlags71,#$80,LF90B
         sei
         ldaa    <BitFlags72
         bita    #$03
@@ -308,7 +308,7 @@ LFA86:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateVehicleSpeedOrEngineRpms  ($FA87)
 ;
-; Called from: CODE428a_Unused, CODEf101
+; Called from: CODEf101, MonitorCatalyst
 ;---------------------------------------------------------------------------------------------------
 CalculateVehicleSpeedOrEngineRpms:
         pshx
@@ -336,7 +336,7 @@ LFA9C:
 ; final (x_n, y_n). Returns y_0 for x <= x_0; otherwise finds the segment with x_i <= x < x_(i+1)
 ; and returns y_i + (x - x_i) x slope / 256 in A (and B). Slope is a 16-bit value in 1/256 units.
 ;
-; Called from: AIS_Sub3, AIS_Subroutine_12, AMTimer_EngineRunning, CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT, CODE7242_SM, CODE783b, CODE7886, CODEa3a7 ... (75 total)
+; Called from: AIS_Subroutine_12, AMTimer_EngineRunning, AisState1_Cranking, CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT, CODE7242_SM, CODE783b, CODE7886, CODEf101 ... (76 total)
 ;---------------------------------------------------------------------------------------------------
 Lookup4ByteTable:
         ldy     #$0000
@@ -402,7 +402,7 @@ ScaleYbyA:
 ;
 ; Fractional multiply-accumulate helper used by the fuel modifier code. [from name]
 ;
-; Called from: CODEa3a7, CalculateSumOfAllFuelModifiers_MM, DeadCode_A55F
+; Called from: CalculateSumOfAllFuelModifiers_MM, MonitorFuelSystemLean, MonitorFuelSystemRich
 ;---------------------------------------------------------------------------------------------------
 ScaleXbyB_addingA_intoD:
         psha
@@ -541,11 +541,11 @@ LFBB6:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LFBC6  ($FBC6)
+; Dead_FBC6  ($FBC6)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; JMP back into the serial wait loop; nothing references it (dead). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-LFBC6:
+Dead_FBC6:
         jmp     >LFBB6
 
 LFBC9:

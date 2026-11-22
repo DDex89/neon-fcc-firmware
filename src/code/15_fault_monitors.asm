@@ -24,9 +24,9 @@ MUCK_WITH_CEL:
         bita    #$70
         bne     L579E
 L5753:
-        ldab    <StartupSwitchMirror2
+        ldab    <OutputBits2
         eorb    #$40
-        stab    <StartupSwitchMirror2
+        stab    <OutputBits2
         bita    #$0F
         beq     L5766
         deca
@@ -236,8 +236,8 @@ L58C1:
         ldab    <L00EA
         bitb    #$40
         bne     L5906
-        ldaa    >L0113
-        oraa    >L0114
+        ldaa    >ObdMonStatus_O2HeaterUp
+        oraa    >ObdMonStatus_O2HeaterDown
         anda    #$04
         bne     L58D5
         bitb    #$04
@@ -250,7 +250,7 @@ L58D5:
         bhi     L58EA
         ldaa    #$50
         staa    >L0159
-        ldd     <StartupSwitchMirror2
+        ldd     <OutputBits2
         bra     L5900
 
 L58EA:
@@ -456,17 +456,17 @@ L5A28:
 ; Sends the relay/solenoid command byte to the SPI output driver and reads back its status.
 ; [reviewed]
 ;
-; Pulls $0403 bit 2 (chip select) low, writes PIA2_Buffer to SPDR, waits for the transfer,
+; Pulls $0403 bit 2 (chip select) low, writes OutputDriverBits to SPDR, waits for the transfer,
 ; releases the chip select and stores the returned byte in CCDFlagsX (the driver's fault status).
-; PIA2_Buffer bits: 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed control
-; solenoids (see docs/en/io_map.md).
+; OutputDriverBits bits: 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed
+; control solenoids (see docs/en/io_map.md).
 ;---------------------------------------------------------------------------------------------------
 SendOutputDriverByte:
         sei
         ldx     #REGS
         ldy     #$0400
         bclr    $03,y,#$04
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         staa    $2A,x                                ; SPDR: SPI data
         mul
         mul
@@ -477,7 +477,7 @@ SendOutputDriverByte:
         eora    <L003B
         ldab    <L003B
         stab    <CCDFlags3
-        ldab    <PIA2_Buffer
+        ldab    <OutputDriverBits
         stab    <L003B
         cli
         ldx     #$0113
@@ -513,7 +513,7 @@ L5A86:
         ldab    <KeyOnOrEngineRunningTime
         cmpb    #$0A
         bcs     L5AB9
-        brset   <BitFlasg71,#$80,L5AB9
+        brset   <BitFlags71,#$80,L5AB9
         ldx     #$0400
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$40
@@ -531,7 +531,7 @@ L5AAF:
         bra     L5AB9
 
 L5AB5:
-        brclr   <PIA2_Buffer,#$08,L5AFA
+        brclr   <OutputDriverBits,#$08,L5AFA
 
 ;---------------------------------------------------------------------------------------------------
 ; L5AB9  ($5AB9)
@@ -607,11 +607,11 @@ L5AFD:
         dc.b    $01,$01,$01,$01
 
 ;---------------------------------------------------------------------------------------------------
-; L5B01  ($5B01)
+; Dead_5B01  ($5B01)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; Short delay loop (Y = 7); nothing references it (dead). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-L5B01:
+Dead_5B01:
         ldy     #$0007
 L5B05:
         dey
@@ -657,13 +657,13 @@ L5B39:
         bra     L5B57
 
 L5B40:
-        cmpa    <ErrorBitRegisterStored3
+        cmpa    <FaultList7
         beq     L5B52
-        cmpa    <ErrorBitRegisterStored2
+        cmpa    <FaultList6
         bne     L5B57
-        ldd     <ErrorBitRegisterStored2
-        staa    <ErrorBitRegisterStored3
-        stab    <ErrorBitRegisterStored2
+        ldd     <FaultList6
+        staa    <FaultList7
+        stab    <FaultList6
         ldaa    <ErrorCodeUpdateKeyOnCount
         staa    <ErrorCodeUpdateKeyOnCount2
 L5B52:
@@ -727,7 +727,7 @@ L5BB3:
         brset   $03,y,#$08,L5BDB
         brclr   $03,y,#$40,L5BDB
         ldaa    $00,y
-        staa    >L011C
+        staa    >LastEmissionFault
         pshy
         jsr     >LEC31
         puly
@@ -886,7 +886,7 @@ L5CA3:
 ;---------------------------------------------------------------------------------------------------
 CheckForBadMAP:
         psha
-        brset   <BitFlasg71,#$80,L5CBE
+        brset   <BitFlags71,#$80,L5CBE
         ldaa    >BadMAPCOunter
         cmpa    >BadMAPCounterThreshold              ; BATVLT (BatteryVoltsTable)
         bcc     L5CBE
@@ -908,7 +908,7 @@ L5CBF:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 IncrementBadMAPCounter_MM:
-        brset   <BitFlasg71,#$80,L5CD8
+        brset   <BitFlags71,#$80,L5CD8
         ldaa    <Counter_MainLoop
         anda    #$0F
         cmpa    #$0F
@@ -935,7 +935,7 @@ CheckForErrorsAndSetCodes_MM:
         ldaa    <Counter_MainLoop
         bita    #$1F
         bne     L5D0D
-        brset   <BitFlasg71,#$80,L5D0D
+        brset   <BitFlags71,#$80,L5D0D
         ldaa    <BatteryVolts
         suba    <TargetBatteryVolts
         bcs     L5D05
@@ -999,7 +999,7 @@ L5D44:
 ;---------------------------------------------------------------------------------------------------
 CheckIfCheckEngineLightShouldBeOn_MM:
         ldab    #$40
-        brclr   <BitFlasg71,#$80,L5D65
+        brclr   <BitFlags71,#$80,L5D65
         ldaa    <DRBPointer1
         cmpa    #$0A
         bne     L5D54
@@ -1027,11 +1027,11 @@ L5D65:
         ldy     #$0438
         brset   $00,y,#$80,TurnCheckEngineLightOn
 TurnCheckEngineLightOff:
-        bclr    <StartupSwitchMirror2,#$40
+        bclr    <OutputBits2,#$40
         rts
 
 TurnCheckEngineLightOn:
-        bset    <StartupSwitchMirror2,#$40
+        bset    <OutputBits2,#$40
 L5D86:
         rts
 
@@ -1043,7 +1043,7 @@ CheckIfCheckEngineLightShouldBeOn_A_MM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L5DB6
-        brclr   <BitFlasg71,#$80,L5D98
+        brclr   <BitFlags71,#$80,L5D98
         ldaa    <KeyOnOrEngineRunningTime
         bne     L5DB3
         bra     L5DAF
@@ -1061,11 +1061,11 @@ CheckBatVoltsFlag:
         bra     L5DB3
 
 L5DAF:
-        bclr    <StartupSwitchMirror2,#$10
+        bclr    <OutputBits2,#$10
         rts
 
 L5DB3:
-        bset    <StartupSwitchMirror2,#$10
+        bset    <OutputBits2,#$10
 L5DB6:
         rts
 
@@ -1086,19 +1086,19 @@ CheckIfCheckEngineLightShouldBeOn_B_MM:
         bcs     L5DE9
 L5DD0:
         bclr    <L00EC,#$10
-        bset    <StartupSwitchMirror2,#$10
+        bset    <OutputBits2,#$10
         bset    <L006D,#$02
 L5DD9:
         brset   <IPL2,#$80,L5DEC
         ldx     #$04B6
         brset   $00,x,#$01,L5DEC
-        bset    <StartupSwitchMirror2,#$10
+        bset    <OutputBits2,#$10
         bra     L5DEF
 
 L5DE9:
         bset    <L00EC,#$10
 L5DEC:
-        bclr    <StartupSwitchMirror2,#$10
+        bclr    <OutputBits2,#$10
 L5DEF:
         rts
 
@@ -1111,18 +1111,18 @@ L5DEF:
 UpdateErrorTimersAndPossiblyClearErrors_MM:
         ldaa    <Counter_MainLoop
         bne     L5E19
-        ldd     <ErrorBitsAssociatedWithPIA1AndReg1eTo25_HB
+        ldd     <FaultMaturingSlot0
         tsta
         beq     L5E01
-        dec     >L0056
+        dec     >FaultMaturingCount0
         bne     L5E01
-        clr     >ErrorBitsAssociatedWithPIA1AndReg1eTo25_HB
+        clr     >FaultMaturingSlot0
 L5E01:
         tstb
         beq     L5E0C
-        dec     >L0057
+        dec     >FaultMaturingCount1
         bne     L5E0C
-        clr     >ErrorBitsAssociatedWithPIA1AndReg1eTo25_LB
+        clr     >FaultMaturingSlot1
 L5E0C:
         ldaa    <ERRORCODERESETTIMERIN_UN_ERRORCODEIN_LN_VAR
         beq     L5E19
@@ -1133,19 +1133,19 @@ L5E0C:
 L5E17:
         staa    <ERRORCODERESETTIMERIN_UN_ERRORCODEIN_LN_VAR
 L5E19:
-        ldaa    <BitFlasg71
+        ldaa    <BitFlags71
         bita    #$81
         bne     L5E43
-        bset    <BitFlasg71,#$01
-        brclr   <ErrorBitRegisterStored3,#$FF,L5E3C
-        ldaa    <ErrorBitRegisterStored1
+        bset    <BitFlags71,#$01
+        brclr   <FaultList7,#$FF,L5E3C
+        ldaa    <FaultList5
         beq     L5E31
         ldaa    <ErrorCodeUpdateKeyOnCount3
         inca
         beq     L5E31
         staa    <ErrorCodeUpdateKeyOnCount3
 L5E31:
-        ldaa    <ErrorBitRegisterStored2
+        ldaa    <FaultList6
         beq     L5E3C
         ldaa    <ErrorCodeUpdateKeyOnCount2
         inca
@@ -1166,7 +1166,7 @@ L5E43:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 DetectAlternatorFault_MM:
-        brset   <BitFlasg71,#$80,L5E8C
+        brset   <BitFlags71,#$80,L5E8C
         brset   <b59_IPL2,#$08,L5E8C
         ldaa    <CoolantTemp
         cmpa    >ERRTMP_CoolantTempLimitforErrorCodeSetting ; ERRTMP (CoolantTempLimitforErrorCodeSetting)
@@ -1237,7 +1237,7 @@ L5EB5:
         abx
         ldy     $00,x
         ldab    #$89
-        brset   <BitFlasg71,#$80,L5ED2
+        brset   <BitFlags71,#$80,L5ED2
         ldab    #$20
 L5ED2:
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1270,7 +1270,7 @@ L5F01:
 ; VerifyOperationOfAmbientTempSensor_MM  ($5F02)
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfAmbientTempSensor_MM:
-        brclr   <BitFlasg71,#$80,L5F3A
+        brclr   <BitFlags71,#$80,L5F3A
         brset   <b58_IPL1,#$01,L5F3A
         brset   <b59_IPL2,#$02,L5F3A
         brset   <b58_IPL1,#$02,L5F3A
@@ -1322,7 +1322,7 @@ VerifyOperationOfMapSensor_MM:
 L5F5C:
         cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPVACD (AllowMapToTestGoodThisNearBaro)
         bcc     L5F86
-        brset   <BitFlasg71,#$80,L5F86
+        brset   <BitFlags71,#$80,L5F86
         ldaa    <BaroPressure
         tab
         suba    <MapValue
@@ -1455,7 +1455,7 @@ L6007:
 CODE600e_SM:
         ldx     #$014D
         brclr   $00,x,#$04,L601E
-        brset   <BitFlasg71,#$80,L6059
+        brset   <BitFlags71,#$80,L6059
         ldaa    >L0218
         bne     L607A
 L601E:
@@ -1508,7 +1508,7 @@ L607A:
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 CheckStuffAndSetStatusFlags_SM:
-        brset   <BitFlasg71,#$80,L60D9
+        brset   <BitFlags71,#$80,L60D9
         ldaa    >L0218
         bne     L60D9
         ldaa    <L000B
@@ -1563,7 +1563,7 @@ L60D9:
 ;---------------------------------------------------------------------------------------------------
 CheckAnalog0170Limits_SM:
         brset   <IPL2,#$40,L6121
-        brset   <BitFlasg71,#$80,L6121
+        brset   <BitFlags71,#$80,L6121
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L60F8
@@ -1602,7 +1602,7 @@ L6121:
 ;---------------------------------------------------------------------------------------------------
 CheckAnalog0170Limits2_SM:
         brset   <IPL2,#$20,L6161
-        brset   <BitFlasg71,#$80,L6161
+        brset   <BitFlags71,#$80,L6161
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L6140
@@ -1711,8 +1711,8 @@ L61DC:
         jmp     >L634E
 
 L61DF:
-        ldaa    <ErrorBitsAssociatedWithPIA1AndReg1eTo25_HB
-        ldab    <ErrorBitsAssociatedWithPIA1AndReg1eTo25_LB
+        ldaa    <FaultMaturingSlot0
+        ldab    <FaultMaturingSlot1
         cmpa    >ErrBytes_CODE15
         beq     L61F7
         cmpb    >ErrBytes_CODE15
@@ -1759,7 +1759,7 @@ L61FA:
         cmpa    >LCDBD                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bls     L6270
         ldx     #$04B6
-        brclr   <StartupSwitchMirror2,#$20,L62A9
+        brclr   <OutputBits2,#$20,L62A9
         bset    $00,x,#$04
         ldaa    <VehicleSpeedScaled
         cmpa    >LCDB9                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
@@ -1892,7 +1892,7 @@ L634E:
 Set_ErrorBits_16_MM:
         ldx     #$049E
         brset   $00,x,#$40,L6384
-        brset   <BitFlasg71,#$80,L6384
+        brset   <BitFlags71,#$80,L6384
         brset   <b58_IPL1,#$02,L6384
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    >LC475                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
@@ -1924,8 +1924,8 @@ IncrementOrClearDiagFaultCounter_SM:
         brset   <b58_IPL1,#$20,L63CC
         brset   <b58_IPL1,#$80,L63CC
         brset   <b58_IPL1,#$40,L640C
-        brset   <BitFlasg71,#$80,L640C
-        brset   <BitFlasg71,#$02,L640C
+        brset   <BitFlags71,#$80,L640C
+        brset   <BitFlags71,#$02,L640C
         brset   <BitFlags65,#$80,L640C
         ldaa    >SystemStatusFlag_4b6
         bita    #$80
@@ -2112,7 +2112,7 @@ L64E9:
 ; Called from: TempSensorSubLoop_F
 ;---------------------------------------------------------------------------------------------------
 CODE64ea_SM:
-        brset   <BitFlasg71,#$80,L6554
+        brset   <BitFlags71,#$80,L6554
         sei
         ldy     #$0400
         brclr   $00,y,#$04,L64FE
@@ -2242,7 +2242,7 @@ CheckSpeedAndSomething_SM:
         bita    #$02
         bne     L65FA
         brclr   <BitFlags_AIS,#$40,L65FA
-        brset   <BitFlasg71,#$80,L65FA
+        brset   <BitFlags71,#$80,L65FA
         ldd     >VehicleSpeed_HB
         cpd     #$0E00
         bcs     L65FA
@@ -2263,7 +2263,7 @@ L65FA:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfThermostat_MM:
-        brset   <BitFlasg71,#$80,L6631
+        brset   <BitFlags71,#$80,L6631
         brset   <b58_IPL1,#$02,L6631
         ldaa    >Timer_ThermostatDiagnostics
         beq     L6631
@@ -2315,7 +2315,7 @@ VerifyOperationOfASDRelayAndO2Sensor_MM:
         ldy     #ErrBytes_CODE42_a
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 L6654:
-        brset   <BitFlasg71,#$80,L669D
+        brset   <BitFlags71,#$80,L669D
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    #$2C
         bcs     L669D
@@ -2358,7 +2358,7 @@ L669D:
         staa    >FuelLookupValue3D
 L66A8:
         staa    <Timer_O2MiddleDiagnostics
-        bclr    <StartupSwitchMirror2,#$01
+        bclr    <OutputBits2,#$01
         jmp     >L672A
 
 L66B0:
@@ -2380,7 +2380,7 @@ L66B9:
         clra
         staa    <Timer_O2MiddleDiagnostics
         staa    >FuelLookupValue3D
-        bset    <StartupSwitchMirror2,#$01
+        bset    <OutputBits2,#$01
         bra     L672A
 
 L66D9:
@@ -2395,7 +2395,7 @@ L66E2:
 L66E3:
         staa    <Timer_O2MiddleDiagnostics
 L66E5:
-        bclr    <StartupSwitchMirror2,#$01
+        bclr    <OutputBits2,#$01
         ldaa    >FuelLookupValue3D
         cmpa    >O2DIAG_CounterLimitForO2SensorDiag  ; O2DIAG (CounterLimitForO2SensorDiag)
         bcc     L66F5

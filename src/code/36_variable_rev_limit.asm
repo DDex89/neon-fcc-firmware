@@ -56,7 +56,7 @@ LFC9B:
 ; TPSandMAP_OK  ($FC9E)
 ;---------------------------------------------------------------------------------------------------
 TPSandMAP_OK:
-        brset   <BitFlasg71,#$80,JumpTo_VarRevLimit_Return
+        brset   <BitFlags71,#$80,JumpTo_VarRevLimit_Return
         ldaa    <EngineRpm_HB
         cmpa    >VarRevLimitRPMRef
         bls     LFC9B
@@ -107,7 +107,7 @@ LFCF1:
         bcc     LFD01
         ldaa    #$FF
 LFD01:
-        brset   <PIA2_Buffer,#$01,LFD0C
+        brset   <OutputDriverBits,#$01,LFD0C
         adda    >LCE73
         bcc     LFD0C
         ldaa    #$FF

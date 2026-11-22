@@ -56,7 +56,7 @@ CheckThrottle_BadTpsSignal:
 CheckThrottle_ErrorAlreadyFlagged:
         ldaa    #$33
         staa    <MINTHR_LowestSessionTPS
-        brset   <BitFlasg71,#$80,LE55B
+        brset   <BitFlags71,#$80,LE55B
         ldab    <BaroPressure
         subb    <MapValue
         bcc     LE54B
@@ -139,7 +139,7 @@ LE5B4:
 LE5C8:
         ldaa    <Timer_CountdownFromStartRunForAisFeedback
         bne     LE5EB
-        brset   <BitFlasg71,#$80,LE5EB
+        brset   <BitFlags71,#$80,LE5EB
         brclr   <KeyOnOrEngineRunningTime,#$FF,LE5EB
         ldaa    <Counter_MINTHR
         deca
@@ -318,7 +318,7 @@ LE6FA:
         bset    <BitFlags_AIS,#$08
 LE704:
         bclr    <BitFlags66,#$40
-        brset   <BitFlasg71,#$80,LE73F
+        brset   <BitFlags71,#$80,LE73F
         brset   <BitFlags65,#$80,LE73F
         bset    <BitFlags_AIS,#$04
         ldaa    <CoolantTemp
@@ -527,7 +527,7 @@ LE85C:
 ;---------------------------------------------------------------------------------------------------
 HandleBaroReadRequirement_MM:
         brset   <BitFlags67,#$40,LE865
-        brset   <BitFlasg71,#$80,LE891
+        brset   <BitFlags71,#$80,LE891
 LE865:
         ldaa    <EngineRpm_HB
         ldx     #BARCMP_BaroCompensationFromRPM      ; CRMASK (CruiseMask)

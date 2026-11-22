@@ -120,7 +120,7 @@ MainSubLoop:
         jsr     >ControlAirConditioning_MM           ; A/C compressor clutch relay control, including cut-out at wide open throttle.
         jsr     >ControlFan_MM                       ; Radiator fan relay control from coolant temperature, vehicle speed and A/C state.
         jsr     >CalculateTargetIdleSpeed_MM         ; Target idle speed.
-        jsr     >ControlAIS_MM                       ; Idle air control dispatcher: positions the AIS stepper towards the target idle speed.
+        jsr     >ControlAIS_MM                       ; Idle air control dispatcher: runs the AIS state in the low nibble of AISSubIndex.
         jsr     >ControlAsdRelay_MM                  ; Auto shutdown (ASD) relay: powers fuel pump, injectors and coils while the engine turns.
         jsr     >CalculateSparkAdvance_MM            ; Spark advance calculation (main loop).
         jsr     >CalculatePartThrottleEnrichmentAndLatency_MM ; Throttle enrichment factor (part throttle / WOT) and injector latency.
@@ -293,9 +293,15 @@ SubLoopH:
 
 
 ;---------------------------------------------------------------------------------------------------
-; ShutDownSubroutineB_Dead  ($9449)
+; MonitorO2HeaterUp  ($9449)
+;
+; OBD-II monitor: upstream O2 sensor heater (P0135). Status byte ObdMonStatus_O2HeaterUp.
+; [reviewed - table entry]
+;
+; Entry 0 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-ShutDownSubroutineB_Dead:
+MonitorO2HeaterUp:
         ldy     #$0113
         ldx     #$0135
         brset   $0D,x,#$40,L946F
@@ -305,11 +311,15 @@ ShutDownSubroutineB_Dead:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L945E  ($945E)
+; MonitorO2HeaterDown  ($945E)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; OBD-II monitor: downstream O2 sensor heater (P0141). Status byte ObdMonStatus_O2HeaterDown.
+; [reviewed - table entry]
+;
+; Entry 1 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-L945E:
+MonitorO2HeaterDown:
         ldy     #$0114
         ldx     #$0135
         brset   $0C,x,#$01,L946F
@@ -396,7 +406,7 @@ L9507:
 L9512:
         dey
         beq     L952D
-        bset    <StartupSwitchMirror2,#$01
+        bset    <OutputBits2,#$01
         pshy
         jsr     >ErrorCodeProcessingSomething_MM
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
@@ -411,7 +421,7 @@ L952D:
         anda    #$F0
         oraa    #$02
         staa    >$0109
-        bset    <PIA2_Buffer,#$04
+        bset    <OutputDriverBits,#$04
         jsr     >ErrorCodeProcessingSomething_MM
         ldx     #$FFFF
         stx     >L010A
@@ -577,7 +587,7 @@ L967B:
         ldaa    >L010C
         cmpa    >LCC95
         bcs     L969B
-        bclr    <PIA2_Buffer,#$04
+        bclr    <OutputDriverBits,#$04
         jsr     >ErrorCodeProcessingSomething_MM
         ldaa    >$0109
         anda    #$F0
@@ -712,7 +722,7 @@ L97B5:
         brclr   $00,x,#$10,L97D2
         bset    $00,x,#$01
 L97D2:
-        bset    <PIA2_Buffer,#$04
+        bset    <OutputDriverBits,#$04
         jsr     >ErrorCodeProcessingSomething_MM
 L97D8:
         rts
@@ -750,7 +760,7 @@ L9800:
 L981B:
         dey
         beq     L9838
-        bset    <StartupSwitchMirror2,#$08
+        bset    <OutputBits2,#$08
         pshb
         pshy
         jsr     >ErrorCodeProcessingSomething_MM
@@ -781,7 +791,7 @@ L9850:
 L9862:
         dey
         beq     L987F
-        bclr    <StartupSwitchMirror2,#$08
+        bclr    <OutputBits2,#$08
         pshb
         pshy
         jsr     >ErrorCodeProcessingSomething_MM
@@ -796,118 +806,409 @@ L9878:
 L987F:
         rts
 
-        dc.b    $3F,$7F,$00,$F4,$CE,$01,$0E,$1F
-        dc.b    $00,$80,$09,$1E,$00,$40,$02,$20
-        dc.b    $06,$7E,$9A,$DD,$7E,$9B,$3F,$B6
-        dc.b    $B8,$11,$85,$20,$27,$0D,$12,$0A
-        dc.b    $08,$09,$15,$FF,$40,$7F,$01,$F0
-        dc.b    $7E,$9B,$23,$12,$FF,$40,$25,$DC
-        dc.b    $49,$05,$05,$05,$B1,$CC,$AD,$25
-        dc.b    $15,$96,$B2,$B5,$98,$80,$26,$0E
-        dc.b    $F6,$01,$F0,$5C,$27,$0B,$F1,$CC
-        dc.b    $AE,$24
+        dc.b    $3F
 
 ;---------------------------------------------------------------------------------------------------
-; L9880  ($98CA)
+; MonitorO2Response  ($9881)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; OBD-II monitor: upstream O2 sensor response (P0133). Status byte ObdMonStatus_O2Response.
+; [reviewed - table entry]
+;
+; Entry 2 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-L9880:
-        tap
-        stab    >$01F0
-        jmp     >L98D1
+MonitorO2Response:
+        clr     >Temp0
+        ldx     #$010E
+        brclr   $00,x,#$80,L9894
+        brset   $00,x,#$40,L9891
+        bra     L9897
 
-        dc.b    $14,$FF,$40,$7C,$00,$F4,$D6,$B9
-        dc.b    $F1,$CC,$B4,$26,$06,$12,$66,$40
-        dc.b    $02,$20,$03,$7E,$99,$BA,$B6,$01
-        dc.b    $F0,$27,$12,$D6,$B2,$F5,$98,$80
-        dc.b    $26,$04,$4A,$B7,$01,$F0,$26,$02
-        dc.b    $20,$03,$7E,$99,$BA,$7C,$00,$F4
-        dc.b    $96,$B1,$B1,$CC,$AB,$25,$F3,$96
-        dc.b    $90,$B1,$CC,$AC,$25,$EC,$7C,$00
-        dc.b    $F4,$F6,$01,$1A,$C5,$01,$26,$E2
-        dc.b    $B6,$00,$77,$85,$80,$27,$0C,$12
-        dc.b    $FF,$04,$08,$B6,$CC,$B3,$B7,$01
-        dc.b    $F0,$20,$CF,$D6,$B9,$CE,$00,$0D
-        dc.b    $3A,$A6,$00,$B1,$CC,$AF,$2E,$C2
-        dc.b    $B1,$CC,$B0,$2D,$BD,$7C,$00,$F4
-        dc.b    $18,$CE,$04,$00,$B6,$04,$59,$27
-        dc.b    $0C,$96,$B2,$B5,$98,$80,$26,$AA
-        dc.b    $7A,$04,$59,$26,$A5,$B6,$00,$3A
-        dc.b    $85,$01,$26,$0C,$13,$FF,$08,$0E
-        dc.b    $B6,$CC,$C9,$B7,$04,$59,$20,$92
-        dc.b    $12,$FF,$08,$02,$20,$F2,$B6,$CC
-        dc.b    $A9,$85,$80,$26,$13,$B6,$B8,$12
-        dc.b    $85,$20,$26,$07,$18,$1F,$09,$04
-        dc.b    $38,$20,$05,$18,$1E,$09,$04,$31
-        dc.b    $7C,$00,$F4,$13,$65,$10,$2A,$7C
-        dc.b    $00,$F4,$12,$66,$10,$23,$7C,$00
-        dc.b    $F4,$7C,$00,$F4,$12,$EE,$80,$08
-        dc.b    $96,$D9,$27,$04,$13,$37,$08,$11
-        dc.b    $7C,$00,$F4,$96,$7A,$B1,$CC,$B1
-        dc.b    $22,$07,$B1,$CC,$B2,$25,$02,$20
-        dc.b    $03,$7E,$9B,$3F,$CE,$01,$0E,$1E
-        dc.b    $00,$04,$06,$1C,$00,$04,$7E,$9B
-        dc.b    $5B,$96,$8D,$B1,$CC,$AA,$23,$19
-        dc.b    $14,$6D,$20,$B6,$01,$28,$85,$80
-        dc.b    $26,$0F,$B6,$01,$F2,$44,$44,$B7
-        dc.b    $01,$28,$8A,$80,$8A,$40,$B7,$01
-        dc.b    $28,$12,$FF,$10,$0B,$14,$FF,$10
-        dc.b    $96,$8D,$B7,$01,$FA,$7E,$9B,$61
-        dc.b    $96,$B2,$B5,$98,$80,$26,$61,$C6
-        dc.b    $01,$B6,$01,$F1,$4C,$27,$2B,$B7
-        dc.b    $01,$F1,$B1,$CC,$C0,$25,$51,$22
-        dc.b    $21,$14,$FF,$20,$FC,$01,$F5,$F3
-        dc.b    $01,$F7,$24,$03,$CC,$FF,$FF,$FD
-        dc.b    $01,$F7,$F6,$01,$F4,$FB,$01,$F9
-        dc.b    $24,$02,$C6,$FF,$F7,$01,$F9,$F6
-        dc.b    $CC,$C0,$FB,$01,$F2,$24,$02,$C6
-        dc.b    $FF,$F7,$01,$F2,$12,$6D,$20,$20
-        dc.b    $B6,$01,$F2,$B1,$CC,$C5,$25,$18
-        dc.b    $B6,$01,$28,$85,$80,$26,$0E,$86
-        dc.b    $FF,$44,$44,$B7,$01,$28,$8A,$80
-        dc.b    $8A,$40,$B7,$01,$28,$7E,$9A,$DD
-        dc.b    $96,$8D,$B0,$01,$FA,$2A,$01,$40
-        dc.b    $B1,$CC,$C1,$25,$1F,$FE,$01,$F5
-        dc.b    $08,$27,$03,$FF,$01,$F5,$13,$FF
-        dc.b    $20,$12,$86,$0C,$97,$F4,$FE,$01
-        dc.b    $F7,$08,$27,$71,$FF,$01,$F7,$BC
-        dc.b    $CC,$C2,$24,$69,$96,$8D,$B7,$01
-        dc.b    $FA,$F6,$01,$F3,$27,$22,$7F,$01
-        dc.b    $F3,$F6,$01,$F4,$5C,$27,$03,$F7
-        dc.b    $01,$F4,$13,$FF,$20,$12,$86,$0D
-        dc.b    $97,$F4,$F6,$01,$F9,$5C,$27,$45
-        dc.b    $F7,$01,$F9,$F1,$CC,$C4,$24,$3D
-        dc.b    $B6,$01,$F2,$B1,$CC,$C5,$24,$03
-        dc.b    $7E,$9B,$AA,$86,$0B,$97,$F4,$B6
-        dc.b    $01,$27,$85,$80,$26,$0E,$86,$FF
-        dc.b    $44,$44,$B7,$01,$27,$8A,$80,$8A
-        dc.b    $40,$B7,$01,$27,$CE,$01,$0E,$1C
-        dc.b    $00,$48,$13,$FF,$80,$3C,$1C,$00
-        dc.b    $01,$F6,$01,$1A,$C5,$02,$26,$4E
-        dc.b    $1D,$00,$80,$20,$2D,$B6,$01,$27
-        dc.b    $85,$80,$26,$0F,$B6,$01,$F2,$44
-        dc.b    $44,$B7,$01,$27,$8A,$80,$8A,$40
-        dc.b    $B7,$01,$27,$B6,$01,$F2,$81,$1E
-        dc.b    $24,$03,$7E,$9B,$AA,$13,$6D,$20
-        dc.b    $F9,$CE,$01,$0E,$1C,$00,$40,$1D
-        dc.b    $00,$80,$7F,$01,$F2,$CC,$00,$00
-        dc.b    $FD,$01,$F7,$7F,$01,$F9,$B6,$01
-        dc.b    $27,$84,$7F,$B7,$01,$27,$B6,$01
-        dc.b    $28,$84,$7F,$B7,$01,$28,$CE,$01
-        dc.b    $0E,$1F,$00,$04,$15,$1D,$00,$04
-        dc.b    $CE,$CC,$C7,$96,$AF,$2A,$02,$08
-        dc.b    $40,$E6,$00,$B1,$CC,$C6,$23,$02
-        dc.b    $D7,$AF,$7F,$01,$F3,$15,$FF,$10
-        dc.b    $15,$FF,$20,$7F,$01,$F1,$CC,$00
-        dc.b    $00,$FD,$01,$F5,$7F,$01,$F4,$B6
-        dc.b    $00,$3A,$85,$01,$26,$05,$15,$FF
-        dc.b    $08,$20,$03,$14,$FF,$08,$B6,$00
-        dc.b    $77,$85,$80,$26,$05,$15,$FF,$04
-        dc.b    $20,$03,$14,$FF,$04,$B6,$B8,$11
-        dc.b    $85,$20,$27,$04,$13,$0A,$08,$11
-        dc.b    $12,$66,$40,$07,$D6,$B9,$F1,$CC
-        dc.b    $B4,$27,$06,$B6,$CC,$B3,$B7,$01
-        dc.b    $F0
+L9891:
+        jmp     >L9ADD
+
+L9894:
+        jmp     >L9B3F
+
+L9897:
+        ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
+        bita    #$20
+        beq     L98AB
+        brset   <BitFlags_AIS,#$08,L98AB
+        bclr    <L00FF,#$40
+        clr     >$01F0
+        jmp     >L9B23
+
+L98AB:
+        brset   <L00FF,#$40,L98D4
+        ldd     <VehicleSpeed_HB
+        asld
+        asld
+        asld
+        cmpa    >LCCAD
+        bcs     L98CE
+        ldaa    <Counter_MainLoop
+        bita    >$9880
+        bne     L98CE
+        ldab    >$01F0
+        incb
+        beq     L98D1
+        cmpb    >LCCAE
+        bcc     L98D1
+        stab    >$01F0
+L98CE:
+        jmp     >L98D1_9BAA
+
 L98D1:
+        bset    <L00FF,#$40
+L98D4:
+        inc     >Temp0
+        ldab    <PointerIntoAdaptiveMemory
+        cmpb    >LCCB4
+        bne     L98E4
+        brset   <BitFlags66,#$40,L98E4
+        bra     L98E7
+
+L98E4:
+        jmp     >L99BA
+
+L98E7:
+        ldaa    >$01F0
+        beq     L98FE
+        ldab    <Counter_MainLoop
+        bitb    >$9880
+        bne     L98F7
+        deca
+        staa    >$01F0
+L98F7:
+        bne     L98FB
+        bra     L98FE
+
+L98FB:
+        jmp     >L99BA
+
+L98FE:
+        inc     >Temp0
+        ldaa    <KeyOnOrEngineRunningTime
+        cmpa    >LCCAB
+        bcs     L98FB
+        ldaa    <CoolantTemp
+        cmpa    >LCCAC
+        bcs     L98FB
+        inc     >Temp0
+        ldab    >ObdStatusFlags
+        bitb    #$01
+        bne     L98FB
+        ldaa    >L0077
+        bita    #$80
+        beq     L992C
+        brset   <L00FF,#$04,L992C
+        ldaa    >LCCB3
+        staa    >$01F0
+        bra     L98FB
+
+L992C:
+        ldab    <PointerIntoAdaptiveMemory
+        ldx     #$000D
+        abx
+        ldaa    $00,x
+        cmpa    >LCCAF
+        bgt     L98FB
+        cmpa    >LCCB0
+        blt     L98FB
+        inc     >Temp0
+        ldy     #$0400
+        ldaa    >$0459
+        beq     L9956
+        ldaa    <Counter_MainLoop
+        bita    >$9880
+        bne     L98FB
+        dec     >$0459
+        bne     L98FB
+L9956:
+        ldaa    >OutputDriverBits
+        bita    #$01
+        bne     L9969
+        brclr   <L00FF,#$08,L996F
+L9961:
+        ldaa    >LCCC9
+        staa    >$0459
+        bra     L98FB
+
+L9969:
+        brset   <L00FF,#$08,L996F
+        bra     L9961
+
+L996F:
+        ldaa    >LCCA9
+        bita    #$80
+        bne     L9989
+        ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
+        bita    #$20
+        bne     L9984
+        brclr   $09,y,#$04,L99BA
+        bra     L9989
+
+L9984:
+        brset   $09,y,#$04,L99BA
+L9989:
+        inc     >Temp0
+        brclr   <BitFlags65,#$10,L99BA
+        inc     >Temp0
+        brset   <BitFlags66,#$10,L99BA
+        inc     >Temp0
+        inc     >Temp0
+        brset   <OutputBits2,#$80,L99A9
+        ldaa    <CylTrim_Adaptive_Var1
+        beq     L99A9
+        brclr   <L0037,#$08,L99BA
+L99A9:
+        inc     >Temp0
+        ldaa    <EngineRpm_HB
+        cmpa    >LCCB1
+        bhi     L99BA
+        cmpa    >LCCB2
+        bcs     L99BA
+        bra     L99BD
+
+L99BA:
+        jmp     >L9B3F
+
+L99BD:
+        ldx     #$010E
+        brset   $00,x,#$04,L99CA
+        bset    $00,x,#$04
+        jmp     >L9B5B
+
+L99CA:
+        ldaa    <O2SensorVolts
+        cmpa    >LCCA9+1
+        bls     L99EA
+        bset    <L006D,#$20
+        ldaa    >L0128
+        bita    #$80
+        bne     L99EA
+        ldaa    >L01F2
+        lsra
+        lsra
+        staa    >L0128
+        oraa    #$80
+        oraa    #$40
+        staa    >L0128
+L99EA:
+        brset   <L00FF,#$10,L99F9
+        bset    <L00FF,#$10
+        ldaa    <O2SensorVolts
+        staa    >$01FA
+        jmp     >L9B61
+
+L99F9:
+        ldaa    <Counter_MainLoop
+        bita    >$9880
+        bne     L9A61
+        ldab    #$01
+        ldaa    >$01F1
+        inca
+        beq     L9A33
+        staa    >$01F1
+        cmpa    >LCCC0
+        bcs     L9A61
+        bhi     L9A33
+        bset    <L00FF,#$20
+        ldd     >$01F5
+        addd    >L01F7
+        bcc     L9A20
+        ldd     #$FFFF
+L9A20:
+        std     >L01F7
+        ldab    >$01F4
+        addb    >L01F9
+        bcc     L9A2D
+        ldab    #$FF
+L9A2D:
+        stab    >L01F9
+        ldab    >LCCC0
+L9A33:
+        addb    >L01F2
+        bcc     L9A3A
+        ldab    #$FF
+L9A3A:
+        stab    >L01F2
+        brset   <L006D,#$20,L9A61
+        ldaa    >L01F2
+        cmpa    >LCCC5
+        bcs     L9A61
+        ldaa    >L0128
+        bita    #$80
+        bne     L9A5E
+        ldaa    #$FF
+        lsra
+        lsra
+        staa    >L0128
+        oraa    #$80
+        oraa    #$40
+        staa    >L0128
+L9A5E:
+        jmp     >L9ADD
+
+L9A61:
+        ldaa    <O2SensorVolts
+        suba    >$01FA
+        bpl     L9A69
+        nega
+L9A69:
+        cmpa    >LCCC1
+        bcs     L9A8D
+        ldx     >$01F5
+        inx
+        beq     L9A77
+        stx     >$01F5
+L9A77:
+        brclr   <L00FF,#$20,L9A8D
+        ldaa    #$0C
+        staa    <Temp0
+        ldx     >L01F7
+        inx
+        beq     L9AF6
+        stx     >L01F7
+        cpx     >LCCC2
+        bcc     L9AF6
+L9A8D:
+        ldaa    <O2SensorVolts
+        staa    >$01FA
+        ldab    >L01F3
+        beq     L9AB9
+        clr     >L01F3
+        ldab    >$01F4
+        incb
+        beq     L9AA3
+        stab    >$01F4
+L9AA3:
+        brclr   <L00FF,#$20,L9AB9
+        ldaa    #$0D
+        staa    <Temp0
+        ldab    >L01F9
+        incb
+        beq     L9AF6
+        stab    >L01F9
+        cmpb    >LCCC4
+        bcc     L9AF6
+L9AB9:
+        ldaa    >L01F2
+        cmpa    >LCCC5
+        bcc     L9AC4
+        jmp     >L98D1_9BAA
+
+L9AC4:
+        ldaa    #$0B
+        staa    <Temp0
+        ldaa    >ISO_ErrorBitRegisterStored4
+        bita    #$80
+        bne     L9ADD
+        ldaa    #$FF
+        lsra
+        lsra
+        staa    >ISO_ErrorBitRegisterStored4
+        oraa    #$80
+        oraa    #$40
+        staa    >ISO_ErrorBitRegisterStored4
+L9ADD:
+        ldx     #$010E
+        bset    $00,x,#$48
+        brclr   <L00FF,#$80,L9B23
+        bset    $00,x,#$01
+        ldab    >ObdStatusFlags
+        bitb    #$02
+        bne     L9B3F
+        bclr    $00,x,#$80
+        bra     L9B23
+
+L9AF6:
+        ldaa    >ISO_ErrorBitRegisterStored4
+        bita    #$80
+        bne     L9B0C
+        ldaa    >L01F2
+        lsra
+        lsra
+        staa    >ISO_ErrorBitRegisterStored4
+        oraa    #$80
+        oraa    #$40
+        staa    >ISO_ErrorBitRegisterStored4
+L9B0C:
+        ldaa    >L01F2
+        cmpa    #$1E
+        bcc     L9B16
+L9B13:
+        jmp     >L98D1_9BAA
+
+L9B16:
+        brclr   <L006D,#$20,L9B13
+        ldx     #$010E
+        bset    $00,x,#$40
+        bclr    $00,x,#$80
+L9B23:
+        clr     >L01F2
+        ldd     #$0000
+        std     >L01F7
+        clr     >L01F9
+        ldaa    >ISO_ErrorBitRegisterStored4
+        anda    #$7F
+        staa    >ISO_ErrorBitRegisterStored4
+        ldaa    >L0128
+        anda    #$7F
+        staa    >L0128
+L9B3F:
+        ldx     #$010E
+        brclr   $00,x,#$04,L9B5B
+        bclr    $00,x,#$04
+        ldx     #LCCC7
+        ldaa    <Counter_O2SensorFeedbackCount_Signed
+        bpl     L9B52
+        inx
+        nega
+L9B52:
+        ldab    $00,x
+        cmpa    >LCCC6
+        bls     L9B5B
+        stab    <Counter_O2SensorFeedbackCount_Signed
+L9B5B:
+        clr     >L01F3
+        bclr    <L00FF,#$10
+L9B61:
+        bclr    <L00FF,#$20
+        clr     >$01F1
+        ldd     #$0000
+        std     >$01F5
+        clr     >$01F4
+        ldaa    >OutputDriverBits
+        bita    #$01
+        bne     L9B7C
+        bclr    <L00FF,#$08
+        bra     L9B7F
+
+L9B7C:
+        bset    <L00FF,#$08
+L9B7F:
+        ldaa    >L0077
+        bita    #$80
+        bne     L9B8B
+        bclr    <L00FF,#$04
+        bra     L9B8E
+
+L9B8B:
+        bset    <L00FF,#$04
+L9B8E:
+        ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
+        bita    #$20
+        beq     L9B99
+        brclr   <BitFlags_AIS,#$08,L98D1_9BAA
+L9B99:
+        brset   <BitFlags66,#$40,L9BA4
+        ldab    <PointerIntoAdaptiveMemory
+        cmpb    >LCCB4
+        beq     L98D1_9BAA
+L9BA4:
+        ldaa    >LCCB3
+        staa    >$01F0
+L98D1_9BAA:
         rts

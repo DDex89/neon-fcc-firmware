@@ -110,7 +110,7 @@ next cylinder are scheduled from these handlers.
 Output compare 4 interrupt: samples the knock sensor at the end of the knock window. [reviewed - partially]
 
 Starts an A/D conversion on channel 3, waits a few cycles and stores ADR1 in KnockVolts (or zero
-when knock sensing is disabled by BitFlasg71 bit 7). The value feeds CalculateKnockRetard_MM.
+when knock sensing is disabled by BitFlags71 bit 7). The value feeds CalculateKnockRetard_MM.
 
 ## AC21 Interrupt_DwellTimerA
 Output compare 3 (PA5) interrupt: ignition coil channel A. [reviewed - partially]
@@ -198,7 +198,7 @@ Crank event handler for event phase 3 (9 degree BTDC slot, probable): the main c
   / 256, i.e. a fixed fraction of the tooth period after the edge; Isr_TOC4_KnockSample reads the
   sensor when it expires.
 - Forces the coil output of the active pair through CFORC (FOC3 or FOC5, chosen by SyncFlags74 bit 0)
-  when BitFlasg71 bit 1 requests it.
+  when BitFlags71 bit 1 requests it.
 - Calculates the running fuel (MAPHI, PRTTBL, modifiers, transient factors), the per-cylinder knock
   retard (KNKMAP, KNKRPM, MAXRTD, RTRDRT) and writes the injector pulse-width registers.
 
@@ -279,7 +279,7 @@ rev limits for a failed MAP or TPS sensor. The cut is applied per revolution
 ## 8B38 HandleTransitionFromStartToRun
 Blends cranking fuel into running fuel after the engine starts. [reviewed]
 
-While the start flag (BitFlasg71 bit 4) is set, the larger of the running pulse width and the
+While the start flag (BitFlags71 bit 4) is set, the larger of the running pulse width and the
 decaying start pulse width (InjectorPulsewidth_HB minus Factor_StartFuelDecayIntoRunFuel) is used.
 When the decaying start pulse falls below the running value the flag is cleared and only running fuel
 remains. Falls through into IncludeInjectorLatency.
@@ -398,11 +398,11 @@ AISPN (park/neutral or manual) or AISCLD (drive, automatic only) vs coolant temp
 and load-dependent adders (decel airflow curve TIMED2 and further small tables), giving TargetIdleSpeedHB.
 
 ## 3514 ControlAIS_MM
-Idle air control dispatcher: positions the AIS stepper towards the target idle speed. [reviewed - data flow]
+Idle air control dispatcher: runs the AIS state in the low nibble of AISSubIndex. [reviewed]
 
-Uses the RPM thresholds RPMTHS and the barometric compensation BARAIS, keeps the current AIS state
-in the low nibble of AISSubIndex and calls the matching routine from AISSubroutineTable (AIS_Sub1 ..
-AIS_Sub9). Which state is which (start-up, decel, closed-loop feedback ...) is not mapped yet.
+Forces state 0 or 1 while the engine is not running (by RPM against BYTEc581) and state 15 on a
+MAP sensor failure, then calls AISSubroutineTable[state]. The running states (4-6 and 12-14) are
+chosen by SelectAisStateA/B. State list: docs/en/engine_control.md.
 
 ## 1563 AisDriveRoutine
 Low-level AIS stepper motor phase sequencing. [from name]
@@ -501,7 +501,7 @@ Variable rev limiter (rev limit that depends on vehicle speed / TPS / MAP state)
 ## 552D ActuatorTestMode_MM
 Runs the DRB actuator test selected by ATMOffset (set by DRB command $13). [reviewed]
 
-Called every main loop. Loads A = PIA2_Buffer and B = StartupSwitchMirror2, then jumps through
+Called every main loop. Loads A = OutputDriverBits and B = OutputBits2, then jumps through
 ATMFunctionTable with test number n using entry n-1 (the table base is loaded as $4EB9). Each test
 toggles one output with Counter_MainLoop as the clock, so the output pulses at a few hertz. The test
 ends when KeyOnOrEngineRunningTime reaches $99. Test numbers and outputs: docs/en/diagnostics.md.
@@ -521,8 +521,8 @@ Clears all stored fault codes. [from name]
 ## 5A29 SendOutputDriverByte
 Sends the relay/solenoid command byte to the SPI output driver and reads back its status. [reviewed]
 
-Pulls $0403 bit 2 (chip select) low, writes PIA2_Buffer to SPDR, waits for the transfer, releases the
-chip select and stores the returned byte in CCDFlagsX (the driver's fault status). PIA2_Buffer bits:
+Pulls $0403 bit 2 (chip select) low, writes OutputDriverBits to SPDR, waits for the transfer, releases the
+chip select and stores the returned byte in CCDFlagsX (the driver's fault status). OutputDriverBits bits:
 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed control solenoids (see
 docs/en/io_map.md).
 
@@ -550,4 +550,151 @@ Stores an OBD-II freeze frame for fault A at $011E-$0126 if its priority B is hi
 Saves the fault index, $043B, MaxRPMxMaxMAPFraction (load), CoolantTempVolts, the O2 feedback
 counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, EngineRpm_HB and
 VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
+
+## 9449 MonitorO2HeaterUp
+OBD-II monitor: upstream O2 sensor heater (P0135). Status byte ObdMonStatus_O2HeaterUp. [reviewed - table entry]
+
+Entry 0 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## 945E MonitorO2HeaterDown
+OBD-II monitor: downstream O2 sensor heater (P0141). Status byte ObdMonStatus_O2HeaterDown. [reviewed - table entry]
+
+Entry 1 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## 9881 MonitorO2Response
+OBD-II monitor: upstream O2 sensor response (P0133). Status byte ObdMonStatus_O2Response. [reviewed - table entry]
+
+Entry 2 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## 2F58 MonitorSecondaryAir
+OBD-II monitor: secondary air system (P0411). Status byte ObdMonStatus_SecondaryAir. [reviewed - table entry]
+
+Entry 3 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## A118 MonitorEvapPurgeFlow
+OBD-II monitor: EVAP purge flow (P0441). Status byte ObdMonStatus_EvapPurge. [reviewed - table entry]
+
+Entry 4 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## 428A MonitorCatalyst
+OBD-II monitor: catalyst efficiency (P0422). Status byte ObdMonStatus_Catalyst. [reviewed - table entry]
+
+Entry 5 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## 6A22 MonitorEgrFlow
+OBD-II monitor: EGR flow (P0401). Status byte ObdMonStatus_Egr. [reviewed - table entry]
+
+Entry 6 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## A337 MonitorFuelSystemRich
+OBD-II monitor: fuel system rich (P0172). Status byte ObdMonStatus_FuelRich. [reviewed - table entry]
+
+Entry 7 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## A55F MonitorFuelSystemLean
+OBD-II monitor: fuel system lean (P0171). Status byte ObdMonStatus_FuelLean. [reviewed - table entry]
+
+Entry 8 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## AE3F MonitorMisfire
+OBD-II monitor: misfire (P0300-P0304). Status byte ObdMonStatus_Misfire. [reviewed - table entry]
+
+Entry 9 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+
+## E9C5 ObdMonitorScheduler
+Runs the ten OBD-II monitors from the table at $E939. Not called anywhere in this code base. [reviewed]
+
+Table: 10 records of 14 bytes from $E939 to $E9C4: +0 monitor routine, +2 status byte in RAM
+($010E-$0119), +4 pointer to a scheduling mask ($E931-$E937, tested against Counter_MainLoop), +6
+fault descriptor, +8/+10/+12 calibration pointers of three enable conditions (evaluated by
+CalculateSomething; the results go to ObdStatusFlags bits 0-1). A monitor runs when its status
+byte has bit 7 set and the mask allows this pass; when it sets bit 6 the scheduler sets bit 1 and
+calls LEABA. After the loop it runs LED24, LEDAD, LEDD0, LEED3, LEE14 and LEFD1. No JSR, JMP or
+pointer anywhere in the ROM reaches $E9C5, so in 5269718 and 5007033 the whole monitor set is
+dormant even though ObdMonitorInit prepares the status bytes.
+
+## E8EA ObdMonitorInit
+Prepares the status bytes of the ten OBD-II monitors (table at $E939). [reviewed]
+
+For each record: clears bit 2 of the status byte, clears bits 0, 3 and 6 (the two heater monitors
+keep them if bit 6 is set) and sets bit 7 when the monitor's fault descriptor is enabled. Then it
+clears ObdStatusFlags bits 0-6 and bit 7 of $0130 and $012C. Called from
+StoreMAPVoltsAndCalcMAPValue.
+
+## 3593 AisState_Unused
+States 2, 3 and 7-11: not used; clear the state nibble back to state 0. [reviewed - data flow]
+
+## 359A AisState0_EngineStopped
+State 0, key on with the engine stopped: holds BYTEc580 + CALPOS (with BaroAISComp); moves to state 1 once RPM reaches BYTEc581. [reviewed - data flow]
+
+## 35AD AisState1_Cranking
+State 1, cranking / start: AISTRT (coolant temperature) + CALPOS with baro compensation; hands over to the running states through SelectAisStateA when the motor has reached its target. [reviewed - data flow]
+
+## 35FE AisState4_ThrottleOpen
+State 4, throttle open: position from CalculateAISPosition3 (speed MPHPOS, RPM RPMPOS, 3D table, cold CLDPOS, throttle THRPOS). [reviewed - data flow]
+
+## 3864 AisState5_ClosedThrottle
+State 5, throttle closed: closed-loop idle speed control (CalculateAisPosition1), A/C compensation, decel fuel cut decision, load steps. [reviewed - data flow]
+
+## 3EB1 AisState6_SpeedControl
+State 6, speed control active (BitFlags66 bit 6, set by ControlCruiseServo1_MM). [reviewed - data flow]
+
+## 367D AisState12_ThrottleOpen
+State 12: as state 4, and applies the load-step records (AdjustAISPosition_A/B). [reviewed - data flow]
+
+## 38CE AisState13_ClosedThrottle
+State 13: as state 5, with the load-step records. [reviewed - data flow]
+
+## 3F16 AisState14_SpeedControl
+State 14: as state 6, with the load-step records. [reviewed - data flow]
+
+## 35EB AisState15_MapLimpIn
+State 15, MAP sensor failure (b58_IPL1 bit 5 or 7, set by VerifyOperationOfMapSensor_MM): fixed position of $20 steps, load flags cleared. [reviewed - data flow]
+
+## 4192 SelectAisStateA
+Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIndex. [reviewed]
+
+12 when BitFlags68 bit 5 is set, 14 when speed control is active (BitFlags66 bit 6), 13 with the
+throttle closed (BitFlags65 bit 7 clear). With the throttle open: 13 if BitFlagsED bit 6 is set
+and RPM is above TABLEc681(TPS), otherwise 12.
+
+## 41C4 SelectAisStateB
+Same as SelectAisStateA, but picks from the set 4-6. [reviewed]
+
+The running state routines call A when AisLoadFlagsA equals AisLoadFlagsB and B when they
+differ.
+
+## 41F6 AdjustAISPosition_A
+Applies one AIS load-step record (X): adds the step returned by the record's getter. [reviewed]
+
+Record (10 bytes, eight of them at $37DE-$382D): +0 value that A must match, +1 mask of
+AisLoadFlagsA|B bits that block the step, +2 mask of bits that must already be set, +3 bits to
+set in AisLoadFlagsA, +4 getter routine (returns the step in A, $382E-$3863), +6 calibration byte
+added to the scaled position, +8 RAM result (always $01C8). The step is added to
+DesiredNewAisPosition, limited by AISHLM. Returns carry set when the record applied.
+
+## 4241 AdjustAISPosition_B
+Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA. [reviewed]
+
+## 3F15 Dead_3F15
+Lone RTS just before AisState14_SpeedControl; nothing references it (dead). [reviewed]
+
+## 5B01 Dead_5B01
+Short delay loop (Y = 7); nothing references it (dead). [reviewed]
+
+## 68BD Dead_68BD
+Lone RTS; nothing references it (dead). [reviewed]
+
+## FBC6 Dead_FBC6
+JMP back into the serial wait loop; nothing references it (dead). [reviewed]
 

@@ -260,11 +260,11 @@ ControlAirConditioning_MM:
         beq     L252D
         cmpa    #$14
         beq     L252D
-        brset   <BitFlasg71,#$80,L2520
+        brset   <BitFlags71,#$80,L2520
 L251C:
         brset   <L006E,#$04,L252E
 L2520:
-        bset    <PIA2_Buffer,#$01
+        bset    <OutputDriverBits,#$01
         ldaa    >L01FC
         anda    #$F0
         oraa    #$02
@@ -287,8 +287,8 @@ L252E:
 ; AC_Rout1  ($253D)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout1:
-        ldaa    >L00E0
-        oraa    >L00E1
+        ldaa    >AisLoadFlagsA
+        oraa    >AisLoadFlagsB
         bita    #$20
         bne     L254A
         inc     >L01FC
@@ -300,7 +300,7 @@ L254A:
 ; AC_Rout2  ($254B)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout2:
-        bset    <PIA2_Buffer,#$01
+        bset    <OutputDriverBits,#$01
         ldaa    >LC8C0                               ; FANTMP6: Detailed Description3
         staa    <L00E9
         inc     >L01FC
@@ -402,7 +402,7 @@ ACSubroutineTable2:
 ; AC_Rout5  ($25E5)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout5:
-        bset    <PIA2_Buffer,#$01
+        bset    <OutputDriverBits,#$01
         clra
         staa    >L01FF
         inc     >L01FC
@@ -473,8 +473,8 @@ L264D:
 ; AC_Rout6  ($264E)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout6:
-        ldaa    >L00E0
-        anda    >L00E1
+        ldaa    >AisLoadFlagsA
+        anda    >AisLoadFlagsB
         tab
         anda    #$A0
         cmpa    #$A0
@@ -494,7 +494,7 @@ L2664:
 AC_Rout7:
         ldaa    >L04AE
         bne     L2679
-        bclr    <PIA2_Buffer,#$01
+        bclr    <OutputDriverBits,#$01
         ldaa    >LC8B1                               ; FANTMP6: Detailed Description3
         staa    >L01FF
         inc     >L01FC
@@ -672,8 +672,8 @@ ACSubroutineTable4:
 ; AC_Rout10  ($278B)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout10:
-        ldaa    >L00E0
-        anda    >L00E1
+        ldaa    >AisLoadFlagsA
+        anda    >AisLoadFlagsB
         anda    #$60
         cmpa    #$60
         bne     L279A
@@ -804,8 +804,8 @@ ACSubroutineTable3:
 ; AC_Rout12  ($2863)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout12:
-        ldaa    >L00E0
-        eora    >L00E1
+        ldaa    >AisLoadFlagsA
+        eora    >AisLoadFlagsB
         bne     L2875
         ldaa    >L01FC
         anda    #$10
@@ -819,8 +819,8 @@ L2875:
 ; AC_Rout13  ($2876)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout13:
-        ldaa    >L00E0
-        eora    >L00E1
+        ldaa    >AisLoadFlagsA
+        eora    >AisLoadFlagsB
         bne     L2888
         ldaa    >L01FC
         anda    #$10
@@ -834,8 +834,8 @@ L2888:
 ; AC_Rout15  ($2889)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout15:
-        ldaa    >L00E0
-        eora    >L00E1
+        ldaa    >AisLoadFlagsA
+        eora    >AisLoadFlagsB
         bne     L289B
         ldaa    >L01FC
         anda    #$10
@@ -849,8 +849,8 @@ L289B:
 ; AC_Rout17_Unused  ($289C)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout17_Unused:
-        ldaa    >L00E0
-        eora    >L00E1
+        ldaa    >AisLoadFlagsA
+        eora    >AisLoadFlagsB
         bne     L28AE
         ldaa    >L01FC
         anda    #$10
@@ -864,8 +864,8 @@ L28AE:
 ; AC_Rout16  ($28AF)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout16:
-        ldaa    >L00E0
-        eora    >L00E1
+        ldaa    >AisLoadFlagsA
+        eora    >AisLoadFlagsB
         bne     L28C1
         ldaa    >L01FC
         anda    #$10
@@ -879,8 +879,8 @@ L28C1:
 ; AC_Rout18  ($28C2)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout18:
-        ldaa    >L00E0
-        eora    >L00E1
+        ldaa    >AisLoadFlagsA
+        eora    >AisLoadFlagsB
         bne     L28D4
         ldaa    >L01FC
         anda    #$10
@@ -897,7 +897,7 @@ L28D4:
 ;---------------------------------------------------------------------------------------------------
 DecrementCounter01ff_SM:
         brset   <L006E,#$04,L28E5
-        brset   <BitFlasg71,#$80,L28E5
+        brset   <BitFlags71,#$80,L28E5
         dec     >L01FF
         bne     L28E5
         bset    <L006E,#$04

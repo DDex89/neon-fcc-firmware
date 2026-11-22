@@ -62,7 +62,7 @@ level sensor (pin 13) does not appear on any channel read so far; its path is st
 | `$0424`, `$0428`, `$042C`, `$0430` | 16 bit | Injector pulse width, cylinders 1, 2, 3, 4 (microseconds); pins 4, 23, 3, 24 | [code] |
 | `$0402`, `$0404`-`$040F` | | Configured by `DealWithConfigurationAndPulseAccumulator_MM` and at reset; function not yet decoded | |
 
-## SPI output driver: `PIA2_Buffer` ($003A)
+## SPI output driver: `OutputDriverBits` ($003A, `PIA2_Buffer` in the original disassembly)
 
 `SendOutputDriverByte` ($5A29) pulls `$0403` bit 2 low, shifts this byte out over SPI and stores
 the byte shifted back in (`CCDFlagsX`), which is the driver's fault status. This behaviour matches
@@ -80,7 +80,7 @@ an octal serial low-side switch with diagnostics. [code]
 
 ## Second output byte: `$00EE`
 
-`$00EE` (named `StartupSwitchMirror2` in the original disassembly) holds more outputs. It is sent
+`$00EE` (`OutputBits2`; `StartupSwitchMirror2` in the original disassembly) holds more outputs. It is sent
 out in a frame with the address bytes `$48`/`$50`/`$58` together with `$0176` and `$00EC`; the
 receiving chip is not identified yet.
 

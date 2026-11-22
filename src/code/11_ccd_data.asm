@@ -301,7 +301,7 @@ L46B3:
 
 L46B4:
         brset   <CCDFlags5,#$10,L4702
-        brset   <BitFlasg71,#$80,L4702
+        brset   <BitFlags71,#$80,L4702
         ldaa    <BitFlags72
         bita    #$03
         bne     L4702
@@ -416,7 +416,7 @@ L4728:
 ;---------------------------------------------------------------------------------------------------
 Set_ErrorBits_3_MM:
         brclr   <BitFlags_AIS,#$08,L4766
-        brset   <BitFlasg71,#$80,L4766
+        brset   <BitFlags71,#$80,L4766
         ldaa    >L01EF
         inca
         bne     L473E
@@ -631,7 +631,7 @@ CCD_SwitchState:
         ldab    >CruiseControlSwitchStateAnalog
         cmpb    #$FD
         bcc     L485D
-        brclr   <BitFlasg71,#$80,L485D
+        brclr   <BitFlags71,#$80,L485D
         ldab    <KeyOnOrEngineRunningTime
         bne     L485D
         bra     L485B
@@ -648,10 +648,10 @@ L4863:
         brclr   <BitFlagsED,#$40,L4869
         oraa    #$04
 L4869:
-        brclr   <PIA2_Buffer,#$01,L486F
+        brclr   <OutputDriverBits,#$01,L486F
         oraa    #$08
 L486F:
-        brset   <StartupSwitchMirror2,#$40,L4875
+        brset   <OutputBits2,#$40,L4875
         oraa    #$20
 L4875:
         brclr   <L006C,#$20,L48AC

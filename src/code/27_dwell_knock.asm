@@ -28,7 +28,7 @@ Interrupt_DwellTimerA:
         asld
         tsta
         bne     LAC6B
-        brset   <BitFlasg71,#$02,LAC6B
+        brset   <BitFlags71,#$02,LAC6B
         brclr   $20,x,#$10,LAC6B                     ; TCTL1: Timer control 1 (OC2-OC5 pin actions)
         brclr   <SyncFlags74,#$01,LAC6B
         ldaa    >AdvanceTemporary
@@ -77,7 +77,7 @@ Interrupt_DwellTimerB:
         asld
         tsta
         bne     LACB9
-        brset   <BitFlasg71,#$02,LACB9
+        brset   <BitFlags71,#$02,LACB9
         brclr   $20,x,#$01,LACB9                     ; TCTL1: Timer control 1 (OC2-OC5 pin actions)
         brset   <SyncFlags74,#$01,LACB9
         ldaa    >AdvanceTemporary
@@ -118,7 +118,7 @@ LACB9:
 ;---------------------------------------------------------------------------------------------------
 LACBD:
         brclr   <SyncFlags75,#$10,LACD8
-        brset   <BitFlasg71,#$02,LACD8
+        brset   <BitFlags71,#$02,LACD8
         ldx     #$018F
         brclr   <Counter_MainLoop,#$20,LACCD
         inx
@@ -191,7 +191,7 @@ LAD17:
         deca
         staa    <KnockRetardSum_AllCyls
 LAD27:
-        brset   <BitFlasg71,#$80,LAD7E
+        brset   <BitFlags71,#$80,LAD7E
         ldaa    <CoolantTemp
         cmpa    >ARMINT_AdaptiveRetardMinimumTemp    ; ARMINT (AdaptiveRetardMinimumTemp)
         bls     LAD6D
@@ -267,7 +267,7 @@ CalculateAverageKnockVolts_SM:
         ldaa    <ChargeTemp
         cmpa    >KNAIAT_MinChargeTempForAverageKnockVoltCalc ; KNAIAT (MinChargeTempForAverageKnockVoltCalc)
         bcc     LAE0C
-        brset   <BitFlasg71,#$02,LAE0C
+        brset   <BitFlags71,#$02,LAE0C
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    >KNAERT_MinEngRunTImeForAverageKnockVoltCalc ; KNAERT (MinEngRunTImeForAverageKnockVoltCalc)
         bls     LAE0C
@@ -357,10 +357,10 @@ LAE19:
 ; partially]
 ;
 ; Starts an A/D conversion on channel 3, waits a few cycles and stores ADR1 in KnockVolts (or zero
-; when knock sensing is disabled by BitFlasg71 bit 7). The value feeds CalculateKnockRetard_MM.
+; when knock sensing is disabled by BitFlags71 bit 7). The value feeds CalculateKnockRetard_MM.
 ;---------------------------------------------------------------------------------------------------
 Isr_TOC4_KnockSample:
-        brclr   <BitFlasg71,#$80,LAE24
+        brclr   <BitFlags71,#$80,LAE24
         clra
         bra     LAE31
 
@@ -382,21 +382,25 @@ LAE31:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LAE3F  ($AE3F)
+; MonitorMisfire  ($AE3F)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; OBD-II monitor: misfire (P0300-P0304). Status byte ObdMonStatus_Misfire. [reviewed - table
+; entry]
+;
+; Entry 9 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-LAE3F:
+MonitorMisfire:
         ldaa    <L00E5
         anda    #$F7
         staa    <L00E5
-        ldab    >L011A
+        ldab    >ObdStatusFlags
         bitb    #$01
         beq     LAE50
         oraa    #$08
         staa    <L00E5
 LAE50:
-        ldaa    >L0119
+        ldaa    >ObdMonStatus_Misfire
         anda    #$10
         bne     LAE5A
         bclr    <L00E5,#$20
@@ -429,12 +433,12 @@ LAE7D:
         anda    #$F0
         oraa    <L00E7
         staa    <L00E7
-        ldaa    >L0119
+        ldaa    >ObdMonStatus_Misfire
         oraa    #$49
-        staa    >L0119
-        ldaa    >L011A
+        staa    >ObdMonStatus_Misfire
+        ldaa    >ObdStatusFlags
         oraa    #$10
-        staa    >L011A
+        staa    >ObdStatusFlags
         ldaa    >L012B
         oraa    #$80
         staa    >L012B
@@ -465,7 +469,7 @@ LAEC8:
         ldaa    <L00E6
         oraa    <L00E7
         staa    <L00E7
-        ldaa    >L0119
+        ldaa    >ObdMonStatus_Misfire
         oraa    #$48
         ldab    >L012C
         andb    #$80
@@ -473,7 +477,7 @@ LAEC8:
         oraa    #$01
         orab    #$80
 LAEF5:
-        staa    >L0119
+        staa    >ObdMonStatus_Misfire
         stab    >L012C
         ldaa    >L012B
         oraa    #$80
@@ -540,9 +544,9 @@ LAF71:
         cmpb    #$7F
         beq     LAF82
         incb
-        ldaa    >L0119
+        ldaa    >ObdMonStatus_Misfire
         oraa    #$40
-        staa    >L0119
+        staa    >ObdMonStatus_Misfire
 LAF82:
         orab    #$80
         stab    >L012C

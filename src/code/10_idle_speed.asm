@@ -287,7 +287,7 @@ L34E0:
         ldaa    <Temp0
 L34E2:
         brclr   <BitFlags6b,#$02,L34FB
-        brset   <BitFlasg71,#$80,L34FB
+        brset   <BitFlags71,#$80,L34FB
         ldx     <KeyOnOrEngineRunningTime
         cpx     #$0744
         bls     L34FB
@@ -328,13 +328,11 @@ L3513:
 ;---------------------------------------------------------------------------------------------------
 ; ControlAIS_MM  ($3514)
 ;
-; Idle air control dispatcher: positions the AIS stepper towards the target idle speed. [reviewed
-; - data flow]
+; Idle air control dispatcher: runs the AIS state in the low nibble of AISSubIndex. [reviewed]
 ;
-; Uses the RPM thresholds RPMTHS and the barometric compensation BARAIS, keeps the current AIS
-; state in the low nibble of AISSubIndex and calls the matching routine from AISSubroutineTable
-; (AIS_Sub1 .. AIS_Sub9). Which state is which (start-up, decel, closed-loop feedback ...) is not
-; mapped yet.
+; Forces state 0 or 1 while the engine is not running (by RPM against BYTEc581) and state 15 on a
+; MAP sensor failure, then calls AISSubroutineTable[state]. The running states (4-6 and 12-14) are
+; chosen by SelectAisStateA/B. State list: docs/en/engine_control.md.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -360,7 +358,7 @@ ControlAIS_MM:
         cmpa    #$14
         beq     L3572
         ldab    <AISSubIndex
-        brclr   <BitFlasg71,#$80,L355D
+        brclr   <BitFlags71,#$80,L355D
         ldaa    <EngineRpm_HB
         cmpa    >BYTEc581                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
         bcc     L3557
@@ -390,27 +388,29 @@ L3572:
 
 
 AISSubroutineTable:
-        dc.w    AIS_Sub2
-        dc.w    AIS_Sub3
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub4
-        dc.w    AIS_Sub5
-        dc.w    AIS_Sub6
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub1
-        dc.w    AIS_Sub7
-        dc.w    AIS_Sub9
-        dc.w    AIS_Sub8
-        dc.w    AIS_SubA
+        dc.w    AisState0_EngineStopped
+        dc.w    AisState1_Cranking
+        dc.w    AisState_Unused
+        dc.w    AisState_Unused
+        dc.w    AisState4_ThrottleOpen
+        dc.w    AisState5_ClosedThrottle
+        dc.w    AisState6_SpeedControl
+        dc.w    AisState_Unused
+        dc.w    AisState_Unused
+        dc.w    AisState_Unused
+        dc.w    AisState_Unused
+        dc.w    AisState_Unused
+        dc.w    AisState12_ThrottleOpen
+        dc.w    AisState13_ClosedThrottle
+        dc.w    AisState14_SpeedControl
+        dc.w    AisState15_MapLimpIn
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub1  ($3593)
+; AisState_Unused  ($3593)
+;
+; States 2, 3 and 7-11: not used; clear the state nibble back to state 0. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub1:
+AisState_Unused:
         ldaa    <AISSubIndex
         anda    #$F0
         staa    <AISSubIndex
@@ -418,10 +418,13 @@ AIS_Sub1:
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub2  ($359A)
+; AisState0_EngineStopped  ($359A)
+;
+; State 0, key on with the engine stopped: holds BYTEc580 + CALPOS (with BaroAISComp); moves to
+; state 1 once RPM reaches BYTEc581. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub2:
-        brset   <BitFlasg71,#$80,L35A5
+AisState0_EngineStopped:
+        brset   <BitFlags71,#$80,L35A5
         ldaa    <EngineRpm_HB
         cmpa    >BYTEc581                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
         bcs     L35A8
@@ -433,15 +436,19 @@ L35A8:
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub3  ($35AD)
+; AisState1_Cranking  ($35AD)
+;
+; State 1, cranking / start: AISTRT (coolant temperature) + CALPOS with baro compensation; hands
+; over to the running states through SelectAisStateA when the motor has reached its target.
+; [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub3:
-        brset   <BitFlasg71,#$80,L35BE
+AisState1_Cranking:
+        brset   <BitFlags71,#$80,L35BE
         ldaa    <DesiredNewAisPosition
         cmpa    <CurrentAisPosition
         bne     L35BE
         brset   <BitFlags_AIS,#$20,L35BE
-        jsr     >Set0034_A
+        jsr     >SelectAisStateA                     ; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIn
 L35BE:
         ldaa    <CoolantTemp
         ldx     #AISTRT_AisStartupPosition_FromTemp  ; AISTRT: AIS motor startup position from engine temp
@@ -470,52 +477,58 @@ L35E0:
         staa    <DesiredNewAisPosition
         bclr    <BitFlags6a,#$02
         clra
-        staa    <L00E0
-        staa    <L00E1
+        staa    <AisLoadFlagsA
+        staa    <AisLoadFlagsB
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_SubA  ($35EB)
+; AisState15_MapLimpIn  ($35EB)
+;
+; State 15, MAP sensor failure (b58_IPL1 bit 5 or 7, set by VerifyOperationOfMapSensor_MM): fixed
+; position of $20 steps, load flags cleared. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_SubA:
+AisState15_MapLimpIn:
         ldaa    #$20
         staa    <DesiredNewAisPosition
         clra
-        staa    <L00E0
-        staa    <L00E1
+        staa    <AisLoadFlagsA
+        staa    <AisLoadFlagsB
         brclr   <b58_IPL1,#$A0,L35FA
         bra     L35FD
 
 L35FA:
-        jsr     >Set0034_A
+        jsr     >SelectAisStateA                     ; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIn
 L35FD:
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub4  ($35FE)
+; AisState4_ThrottleOpen  ($35FE)
+;
+; State 4, throttle open: position from CalculateAISPosition3 (speed MPHPOS, RPM RPMPOS, 3D table,
+; cold CLDPOS, throttle THRPOS). [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub4:
+AisState4_ThrottleOpen:
         jsr     >AIS_Init00DF
         jsr     >CalculateAisPosition2
         bclr    <BitFlags6a,#$02
         brset   <BitFlags_AIS,#$08,L3613
-        bclr    <L00E0,#$08
-        bclr    <L00E1,#$08
+        bclr    <AisLoadFlagsA,#$08
+        bclr    <AisLoadFlagsB,#$08
         bra     L3619
 
 L3613:
-        bset    <L00E0,#$08
-        bset    <L00E1,#$08
+        bset    <AisLoadFlagsA,#$08
+        bset    <AisLoadFlagsB,#$08
 L3619:
         clr     >L01C9
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$EF
-        stab    <L00E0
-        ldaa    <L00E1
+        stab    <AisLoadFlagsA
+        ldaa    <AisLoadFlagsB
         anda    #$EF
-        staa    <L00E1
+        staa    <AisLoadFlagsB
         ldab    >L01FC
         andb    #$0F
         cmpb    #$05
@@ -526,12 +539,12 @@ L3635:
         clrb
         stab    >L01C9
         stab    >L01C8
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$DF
-        stab    <L00E0
-        ldab    <L00E1
+        stab    <AisLoadFlagsA
+        ldab    <AisLoadFlagsB
         andb    #$DF
-        stab    <L00E1
+        stab    <AisLoadFlagsB
 L3648:
         ldab    >L01C8
         beq     L3653
@@ -540,14 +553,14 @@ L3648:
         bne     L365C
 L3653:
         anda    #$1F
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$E0
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L365C:
-        eora    <L00E0
+        eora    <AisLoadFlagsA
         tab
-        andb    <L00E0
+        andb    <AisLoadFlagsA
         bitb    #$20
         bne     L3669
         bita    #$F0
@@ -555,23 +568,26 @@ L365C:
 L3669:
         jsr     >CalculateAISPosition3
 L366C:
-        ldaa    <L00E0
-        eora    <L00E1
+        ldaa    <AisLoadFlagsA
+        eora    <AisLoadFlagsB
         anda    #$F0
         bne     L3679
-        jsr     >Set0034_A
+        jsr     >SelectAisStateA                     ; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIn
         bra     L367C
 
 L3679:
-        jsr     >Set0034_B
+        jsr     >SelectAisStateB                     ; Same as SelectAisStateA, but picks from the set 4-6.
 L367C:
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub7  ($367D)
+; AisState12_ThrottleOpen  ($367D)
+;
+; State 12: as state 4, and applies the load-step records (AdjustAISPosition_A/B). [reviewed -
+; data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub7:
+AisState12_ThrottleOpen:
         ldaa    >L01FC
         anda    #$0F
         cmpa    #$05
@@ -582,67 +598,67 @@ L368A:
         clra
         staa    >L01C9
         staa    >L01C8
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         anda    #$DF
-        staa    <L00E0
-        ldaa    <L00E1
+        staa    <AisLoadFlagsA
+        ldaa    <AisLoadFlagsB
         anda    #$DF
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L369D:
         jsr     >AIS_Init00DF
         jsr     >CalculateAisPosition2
         bclr    <BitFlags6a,#$02
         brset   <BitFlags_AIS,#$08,L36B2
-        bclr    <L00E0,#$08
-        bclr    <L00E1,#$08
+        bclr    <AisLoadFlagsA,#$08
+        bclr    <AisLoadFlagsB,#$08
         bra     L36B8
 
 L36B2:
-        bset    <L00E0,#$08
-        bset    <L00E1,#$08
+        bset    <AisLoadFlagsA,#$08
+        bset    <AisLoadFlagsB,#$08
 L36B8:
         ldaa    >CounterX
         anda    #$0F
-        ldx     #BYTE37de
-        jsr     >AdjustAISPosition_A
+        ldx     #AisLoadStepRecords
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L370C
         ldx     #BYTE37e8
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L370C
         anda    #$0B
         ldx     #BYTE37f2
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L370C
         ldaa    >L01FC
         anda    #$0B
         ldx     #BYTE37fc
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3709
         ldx     #BYTE3806
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L370C
         ldaa    >CounterX
         anda    #$0F
         ldx     #BYTE381a
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L370C
         ldx     #BYTE3824
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L370C
         ldx     #BYTE3810
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L370C
 L3709:
         jsr     >CalculateAISPosition3
 L370C:
-        ldaa    <L00E0
-        eora    <L00E1
+        ldaa    <AisLoadFlagsA
+        eora    <AisLoadFlagsB
         bne     L3717
-        jsr     >Set0034_A
+        jsr     >SelectAisStateA                     ; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIn
         bra     L371A
 
 L3717:
-        jsr     >Set0034_B
+        jsr     >SelectAisStateB                     ; Same as SelectAisStateA, but picks from the set 4-6.
 L371A:
         rts
 
@@ -650,7 +666,7 @@ L371A:
 ;---------------------------------------------------------------------------------------------------
 ; AIS_Init00DF  ($371B)
 ;
-; Called from: AIS_Sub4, AIS_Sub7
+; Called from: AisState12_ThrottleOpen, AisState4_ThrottleOpen
 ;---------------------------------------------------------------------------------------------------
 AIS_Init00DF:
         ldaa    >LC83D                               ; DLYTIM: Decel AIS Delay after throttle closes when moving
@@ -662,7 +678,7 @@ AIS_Init00DF:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateAISPosition3  ($3725)
 ;
-; Called from: AIS_Sub4, AIS_Sub7
+; Called from: AisState12_ThrottleOpen, AisState4_ThrottleOpen
 ;---------------------------------------------------------------------------------------------------
 CalculateAISPosition3:
         ldaa    <VehicleSpeed_HB
@@ -696,7 +712,7 @@ L375D:
         adda    <Temp0
         bcs     L37C3
         staa    <Temp0
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         bita    #$20
         beq     L3795
         ldaa    <AISACCompensation
@@ -706,7 +722,7 @@ L375D:
         ldaa    <VehicleSpeedScaled
         ldx     #ACCTBL_ACOffIdleDelta_FromSpeed     ; ACCTBL (ACOffIdleDelta_FromSpeed)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        ldab    <L00E1
+        ldab    <AisLoadFlagsB
         bitb    #$20
         bne     L378F
         ldab    >PERKCK_AcClutchAisAdjustmentConstant ; PERKCK (AcClutchAisAdjustmentConstant)
@@ -723,7 +739,7 @@ L3795:
         adda    <Temp0
         bcs     L37C3
         brset   <BitFlags67,#$10,MultiplyTempvar1ByA_Unsign_A
-        ldab    >L0116
+        ldab    >ObdMonStatus_EvapPurge
         bitb    #$04
         bne     L37DD
         adda    >CALPOS_PositionAisMotorIsAtIdle     ; CALPOS: AIS: Position electronics thinks motor is (at idle)
@@ -762,42 +778,55 @@ L37DD:
         rts
 
 
-BYTE37de:
-        dc.b    $04,$C0,$00,$80,$38,$2E,$C7,$6A
+AisLoadStepRecords:
+        dc.b    $04,$C0,$00,$80
+        dc.w    L382E
+        dc.w    LC76A
         dc.b    $01,$C8
 
 BYTE37e8:
-        dc.b    $08,$40,$80,$C0,$38,$32,$C7,$6C
+        dc.b    $08,$40,$80,$C0
+        dc.w    L3832
+        dc.w    LC76C
         dc.b    $01,$C8
 
 BYTE37f2:
-        dc.b    $08,$80,$00,$C0,$38,$36,$C7,$6B
+        dc.b    $08,$80,$00,$C0
+        dc.w    L3836
+        dc.w    LC76B
         dc.b    $01,$C8
 
 BYTE37fc:
-        dc.b    $08,$20,$00,$20,$38,$3A,$C7,$68
-        dc.b    $01,$C8
+        dc.b    $08,$20,$00,$20
+        dc.w    L383A
+        dc.b    $C7,$68,$01,$C8
 
 BYTE3806:
-        dc.b    $00,$00,$20,$DF,$38,$3C,$C7,$66
+        dc.b    $00,$00,$20,$DF
+        dc.w    L383C
+        dc.w    LC766
         dc.b    $01,$C8
 
 BYTE3810:
-        dc.b    $00,$00,$80,$7F,$38,$58,$C7,$6A
+        dc.b    $00,$00,$80,$7F
+        dc.w    L3858
+        dc.w    LC76A
         dc.b    $01,$C8
 
 BYTE381a:
-        dc.b    $00,$00,$40,$3F,$38,$5C,$C7,$6B
+        dc.b    $00,$00,$40,$3F
+        dc.w    L385C
+        dc.w    LC76B
         dc.b    $01,$C8
 
 BYTE3824:
-        dc.b    $04,$00,$40,$BF,$38,$60,$C7,$6C
+        dc.b    $04,$00,$40,$BF
+        dc.w    L3860
+        dc.w    LC76C
         dc.b    $01,$C8
 
 ;---------------------------------------------------------------------------------------------------
 ; L382E  ($382E)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L382E:
         ldaa    >LC773                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
@@ -806,8 +835,6 @@ L382E:
 
 ;---------------------------------------------------------------------------------------------------
 ; L3832  ($3832)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L3832:
         ldaa    >LC775                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
@@ -816,8 +843,6 @@ L3832:
 
 ;---------------------------------------------------------------------------------------------------
 ; L3836  ($3836)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L3836:
         ldaa    >LC774                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
@@ -826,16 +851,22 @@ L3836:
 
 ;---------------------------------------------------------------------------------------------------
 ; L383A  ($383A)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L383A:
         clra
         rts
 
+
+;---------------------------------------------------------------------------------------------------
+; L383C  ($383C)
+;---------------------------------------------------------------------------------------------------
 L383C:
-        dc.b    $3C,$96,$4B,$CE,$C6,$AC,$BD,$FA
-        dc.b    $9D,$F6,$C6,$C0,$3D
+        pshx
+        ldaa    <VehicleSpeedScaled
+        ldx     #ACCTBL_ACOffIdleDelta_FromSpeed     ; ACCTBL (ACOffIdleDelta_FromSpeed)
+        jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
+        ldab    >OFFPER2_AisInstantlyClosesWhenAcDisengages2 ; OFFPER2 (AisInstantlyClosesWhenAcDisengages2)
+        mul
 
 ;---------------------------------------------------------------------------------------------------
 ; MultiplyTempvar1ByA_Pos  ($3849)
@@ -855,8 +886,6 @@ L3856:
 
 ;---------------------------------------------------------------------------------------------------
 ; L3858  ($3858)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L3858:
         ldaa    >LC778                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
@@ -865,8 +894,6 @@ L3858:
 
 ;---------------------------------------------------------------------------------------------------
 ; L385C  ($385C)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L385C:
         ldaa    >LC777                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
@@ -875,8 +902,6 @@ L385C:
 
 ;---------------------------------------------------------------------------------------------------
 ; L3860  ($3860)
-;
-; Not reached by static analysis: called through a computed jump, or dead code.
 ;---------------------------------------------------------------------------------------------------
 L3860:
         ldaa    >LC776                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
@@ -884,9 +909,12 @@ L3860:
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub5  ($3864)
+; AisState5_ClosedThrottle  ($3864)
+;
+; State 5, throttle closed: closed-loop idle speed control (CalculateAisPosition1), A/C
+; compensation, decel fuel cut decision, load steps. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub5:
+AisState5_ClosedThrottle:
         jsr     >DecideToUseDecelFuelCut             ; Decides whether deceleration fuel cut-off is allowed.
         jsr     >CalculateAisPosition1
         jsr     >CalculateAisPosition2
@@ -902,14 +930,14 @@ L3880:
         clra
         staa    >L01C9
         staa    >L01C8
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         anda    #$DF
-        staa    <L00E0
-        ldaa    <L00E1
+        staa    <AisLoadFlagsA
+        ldaa    <AisLoadFlagsB
         anda    #$DF
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L3893:
-        ldaa    <L00E1
+        ldaa    <AisLoadFlagsB
         ldab    >L01C9
         beq     L38A0
         decb
@@ -917,10 +945,10 @@ L3893:
         bne     L38A9
 L38A0:
         anda    #$EF
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$10
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L38A9:
         ldab    >L01C8
         beq     L38B4
@@ -929,26 +957,28 @@ L38A9:
         bne     L38BD
 L38B4:
         anda    #$1F
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$E0
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L38BD:
         ldab    >AdvanceDownCounter_A
         bne     L38CB
         anda    #$F7
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$08
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L38CB:
         jmp     >L3967
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub9  ($38CE)
+; AisState13_ClosedThrottle  ($38CE)
+;
+; State 13: as state 5, with the load-step records. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub9:
+AisState13_ClosedThrottle:
         jsr     >DecideToUseDecelFuelCut             ; Decides whether deceleration fuel cut-off is allowed.
         jsr     >CalculateAisPosition1
         jsr     >CalculateAisPosition2
@@ -964,12 +994,12 @@ L38EA:
         clra
         staa    >L01C9
         staa    >L01C8
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         anda    #$DF
-        staa    <L00E0
-        ldaa    <L00E1
+        staa    <AisLoadFlagsA
+        ldaa    <AisLoadFlagsB
         anda    #$DF
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L38FD:
         ldaa    <BitFlags68
         anda    #$04
@@ -977,42 +1007,42 @@ L38FD:
         cmpb    >LC77C                               ; AISINC (AISPOSIncrementForSW2b7)
         bcc     L3910
         ldx     #L3DA9
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3967
 L3910:
         ldx     #L3DB3
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3967
         ldaa    >CounterX
         anda    #$0F
         ldx     #L3DBD
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3967
         ldx     #L3DC7
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3967
         anda    #$0B
         ldx     #L3DD1
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3967
         ldaa    >L01FC
         anda    #$0B
         ldx     #L3DDB
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3967
         ldx     #L3DE5
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3967
         ldaa    >CounterX
         anda    #$0F
         ldx     #L3DF9
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3967
         ldx     #L3E03
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3967
         ldx     #L3DEF
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
 L3967:
         ldaa    <Counter_IdleControl
         cmpa    #$01
@@ -1022,21 +1052,21 @@ L3967:
         ldaa    <BitFlags_AIS
         anda    #$08
         ldx     #L3E0D
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3982
         ldx     #L3E17
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
 L3982:
         jsr     >L3AF8
         jsr     >L3B19
-        ldaa    <L00E0
-        eora    <L00E1
+        ldaa    <AisLoadFlagsA
+        eora    <AisLoadFlagsB
         bne     L3993
-        jsr     >Set0034_A
+        jsr     >SelectAisStateA                     ; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIn
         bra     L3996
 
 L3993:
-        jsr     >Set0034_B
+        jsr     >SelectAisStateB                     ; Same as SelectAisStateA, but picks from the set 4-6.
 L3996:
         rts
 
@@ -1050,7 +1080,7 @@ L3996:
 ; the target idle speed, coolant above DCLMCT and running time above DCLMER; sets the decel flags
 ; used by the fuel code. Called from the AIS decel logic.
 ;
-; Called from: AIS_Sub5, AIS_Sub9
+; Called from: AisState13_ClosedThrottle, AisState5_ClosedThrottle
 ;---------------------------------------------------------------------------------------------------
 DecideToUseDecelFuelCut:
         brset   <b58_IPL1,#$40,L39BD
@@ -1079,7 +1109,7 @@ L39C2:
         ldaa    >LC5D6                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
         bita    #$08
         bne     L39D8
-        brclr   <PIA2_Buffer,#$01,L39DB
+        brclr   <OutputDriverBits,#$01,L39DB
         ldaa    >BYTEc57f                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
         staa    >L04AE
 L39D8:
@@ -1093,7 +1123,7 @@ L39DE:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateAisPosition1  ($39DF)
 ;
-; Called from: AIS_Sub5, AIS_Sub9
+; Called from: AisState13_ClosedThrottle, AisState5_ClosedThrottle
 ;---------------------------------------------------------------------------------------------------
 CalculateAisPosition1:
         ldaa    <Timer_DacalCountdown
@@ -1129,12 +1159,12 @@ L3A05:
 ;---------------------------------------------------------------------------------------------------
 ; IncDecAISACCompensationCounter  ($3A08)
 ;
-; Called from: AIS_Sub5, AIS_Sub9
+; Called from: AisState13_ClosedThrottle, AisState5_ClosedThrottle
 ;---------------------------------------------------------------------------------------------------
 IncDecAISACCompensationCounter:
         clrb
-        ldab    <L00E0
-        andb    <L00E1
+        ldab    <AisLoadFlagsA
+        andb    <AisLoadFlagsB
         bitb    #$20
         beq     L3A1D
         ldab    <Counter_MainLoop
@@ -1153,7 +1183,7 @@ L3A1F:
 ;---------------------------------------------------------------------------------------------------
 ; AIS_Subroutine_12  ($3A20)
 ;
-; Called from: AIS_Sub5, AIS_Sub9
+; Called from: AisState13_ClosedThrottle, AisState5_ClosedThrottle
 ;---------------------------------------------------------------------------------------------------
 AIS_Subroutine_12:
         ldab    <Timer_CountdownFromStartRunForAisFeedback
@@ -1179,8 +1209,8 @@ L3A49:
         asld
         cmpa    >DADRPM_DeltaRpmFromIdleSpeedForDacalUpdate ; DADRPM (DeltaRpmFromIdleSpeedForDacalUpdate)
         bcc     L3A8A
-        ldaa    <L00E0
-        anda    <L00E1
+        ldaa    <AisLoadFlagsA
+        anda    <AisLoadFlagsB
         bita    #$20
         beq     L3A8C
         ldab    <Counter_AISACCompensation
@@ -1216,8 +1246,8 @@ L3A8A:
         bra     L3AF7
 
 L3A8C:
-        ldaa    <L00E0
-        oraa    <L00E1
+        ldaa    <AisLoadFlagsA
+        oraa    <AisLoadFlagsB
         bita    #$20
         bne     L3AF7
         ldaa    <Counter_MainLoop
@@ -1242,7 +1272,7 @@ L3AAC:
         ldaa    <DesiredNewAisPosition
         cmpa    <CurrentAisPosition
         bne     L3AF7
-        ldab    >L0116
+        ldab    >ObdMonStatus_EvapPurge
         bitb    #$04
         bne     L3AF7
         ldab    >CALPOS_PositionAisMotorIsAtIdle     ; CALPOS: AIS: Position electronics thinks motor is (at idle)
@@ -1256,8 +1286,8 @@ L3ACA:
         adda    <Temp0
         tab
         bcs     L3AE7
-        ldaa    <L00E0
-        oraa    <L00E1
+        ldaa    <AisLoadFlagsA
+        oraa    <AisLoadFlagsB
         bita    #$10
         beq     L3AE9
         addb    >AISINC_AISPOSIncrementForSW2b7      ; AISINC (AISPOSIncrementForSW2b7)
@@ -1282,7 +1312,7 @@ L3AF7:
 ;---------------------------------------------------------------------------------------------------
 ; L3AF8  ($3AF8)
 ;
-; Called from: AIS_Sub9
+; Called from: AisState13_ClosedThrottle
 ;---------------------------------------------------------------------------------------------------
 L3AF8:
         ldaa    <DesiredNewAisPosition
@@ -1309,7 +1339,7 @@ L3B18:
 ;---------------------------------------------------------------------------------------------------
 ; L3B19  ($3B19)
 ;
-; Called from: AIS_Sub9
+; Called from: AisState13_ClosedThrottle
 ;---------------------------------------------------------------------------------------------------
 L3B19:
         brset   <BitFlags76,#$02,L3B20
@@ -1446,8 +1476,8 @@ L3C03:
         adda    #$80
         staa    >EngineIdleIncrDecrBit7
         brset   <BitFlags_AIS,#$04,L3C18
-        ldaa    <L00E0
-        eora    <L00E1
+        ldaa    <AisLoadFlagsA
+        eora    <AisLoadFlagsB
         bita    #$F0
         beq     L3C1B
         bset    <BitFlags76,#$20
@@ -1626,13 +1656,13 @@ L3D39:
         ldx     #CLDPOS_AisColdPosition_FromTemp     ; CLDPOS: Cold OffIdle AIS Positioning, Increases instantly, decreases after DLY
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         brset   <BitFlags67,#$10,L3D55
-        ldab    >L0116
+        ldab    >ObdMonStatus_EvapPurge
         bitb    #$04
         bne     L3DA8
         adda    >CALPOS_PositionAisMotorIsAtIdle     ; CALPOS: AIS: Position electronics thinks motor is (at idle)
         bcs     L3D67
 L3D55:
-        brset   <PIA2_Buffer,#$01,L3D69
+        brset   <OutputDriverBits,#$01,L3D69
         staa    <Temp0
         ldaa    <AISACCompensation
         ldx     #TABLEc77d                           ; AISINC (AISPOSIncrementForSW2b7)
@@ -1930,9 +1960,12 @@ L3EAF:
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub6  ($3EB1)
+; AisState6_SpeedControl  ($3EB1)
+;
+; State 6, speed control active (BitFlags66 bit 6, set by ControlCruiseServo1_MM). [reviewed -
+; data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub6:
+AisState6_SpeedControl:
         bclr    <BitFlags6a,#$02
         jsr     >L3FC0
         jsr     >CalculateAisPosition2
@@ -1946,14 +1979,14 @@ L3EC7:
         clra
         staa    >L01C9
         staa    >L01C8
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         anda    #$DF
-        staa    <L00E0
-        ldaa    <L00E1
+        staa    <AisLoadFlagsA
+        ldaa    <AisLoadFlagsB
         anda    #$DF
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L3EDA:
-        ldaa    <L00E1
+        ldaa    <AisLoadFlagsB
         ldab    >L01C9
         beq     L3EE7
         decb
@@ -1961,10 +1994,10 @@ L3EDA:
         bne     L3EF0
 L3EE7:
         anda    #$EF
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$10
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L3EF0:
         ldab    >L01C8
         beq     L3EFB
@@ -1973,35 +2006,37 @@ L3EF0:
         bne     L3F04
 L3EFB:
         anda    #$1F
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$E0
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L3F04:
         ldab    >AdvanceDownCounter_A
         bne     L3F12
         anda    #$F7
-        ldab    <L00E0
+        ldab    <AisLoadFlagsA
         andb    #$08
         aba
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L3F12:
         jmp     >L3FAE
 
 
 ;---------------------------------------------------------------------------------------------------
-; L3F15  ($3F15)
+; Dead_3F15  ($3F15)
 ;
-; Not reached by static analysis: called through a computed jump, or dead code.
+; Lone RTS just before AisState14_SpeedControl; nothing references it (dead). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-L3F15:
+Dead_3F15:
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
-; AIS_Sub8  ($3F16)
+; AisState14_SpeedControl  ($3F16)
+;
+; State 14: as state 6, with the load-step records. [reviewed - data flow]
 ;---------------------------------------------------------------------------------------------------
-AIS_Sub8:
+AisState14_SpeedControl:
         bclr    <BitFlags6a,#$02
         ldaa    >L01FC
         anda    #$0F
@@ -2013,12 +2048,12 @@ L3F26:
         clra
         staa    >L01C9
         staa    >L01C8
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         anda    #$DF
-        staa    <L00E0
-        ldaa    <L00E1
+        staa    <AisLoadFlagsA
+        ldaa    <AisLoadFlagsB
         anda    #$DF
-        staa    <L00E1
+        staa    <AisLoadFlagsB
 L3F39:
         jsr     >L3FC0
         jsr     >CalculateAisPosition2
@@ -2028,54 +2063,54 @@ L3F39:
         cmpb    >LC77C                               ; AISINC (AISPOSIncrementForSW2b7)
         bcc     L3F52
         ldx     #L3DA9
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3FAE
 L3F52:
         ldx     #L3DB3
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3FAE
         ldaa    >CounterX
         anda    #$0F
         ldx     #L3DBD
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3FAE
         ldx     #L3DC7
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3FAE
         anda    #$0B
         ldx     #L3DD1
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3FAE
         ldaa    >L01FC
         anda    #$0B
         ldx     #L3DDB
-        jsr     >AdjustAISPosition_A
+        jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
         bcs     L3FAE
         ldaa    >L01FC
         anda    #$0B
         ldx     #L3DE5
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3FAE
         ldaa    >CounterX
         anda    #$0F
         ldx     #L3DF9
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3FAE
         ldx     #L3E03
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
         bcs     L3FAE
         ldx     #L3DEF
-        jsr     >AdjustAISPosition_B
+        jsr     >AdjustAISPosition_B                 ; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
 L3FAE:
         jsr     >L40CA
-        ldaa    <L00E0
-        eora    <L00E1
+        ldaa    <AisLoadFlagsA
+        eora    <AisLoadFlagsB
         bne     L3FBC
-        jsr     >Set0034_A
+        jsr     >SelectAisStateA                     ; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIn
         bra     L3FBF
 
 L3FBC:
-        jsr     >Set0034_B
+        jsr     >SelectAisStateB                     ; Same as SelectAisStateA, but picks from the set 4-6.
 L3FBF:
         rts
 
@@ -2083,7 +2118,7 @@ L3FBF:
 ;---------------------------------------------------------------------------------------------------
 ; L3FC0  ($3FC0)
 ;
-; Called from: AIS_Sub6, AIS_Sub8
+; Called from: AisState14_SpeedControl, AisState6_SpeedControl
 ;---------------------------------------------------------------------------------------------------
 L3FC0:
         ldaa    <Timer_DacalCountdown
@@ -2116,8 +2151,8 @@ L3FDC:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <Temp0
         bcs     L4019
-        ldab    <L00E0
-        andb    <L00E1
+        ldab    <AisLoadFlagsA
+        andb    <AisLoadFlagsB
         bitb    #$20
         beq     L4010
         staa    <Temp0
@@ -2176,7 +2211,7 @@ L4060:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateAisPosition2  ($4063)
 ;
-; Called from: AIS_Sub4, AIS_Sub5, AIS_Sub6, AIS_Sub7, AIS_Sub8, AIS_Sub9
+; Called from: AisState12_ThrottleOpen, AisState13_ClosedThrottle, AisState14_SpeedControl, AisState4_ThrottleOpen, AisState5_ClosedThrottle, AisState6_SpeedControl
 ;---------------------------------------------------------------------------------------------------
 CalculateAisPosition2:
         ldaa    <Timer_DacalCountdown
@@ -2242,13 +2277,13 @@ L40C6:
 ;---------------------------------------------------------------------------------------------------
 ; L40CA  ($40CA)
 ;
-; Called from: AIS_Sub8
+; Called from: AisState14_SpeedControl
 ;---------------------------------------------------------------------------------------------------
 L40CA:
         ldaa    <Timer_CountdownFromStartRunForAisFeedback
         bne     L40D6
-        ldab    <L00E0
-        eorb    <L00E1
+        ldab    <AisLoadFlagsA
+        eorb    <AisLoadFlagsB
         bitb    #$F0
         beq     L40D9
 L40D6:
@@ -2367,11 +2402,18 @@ L4191:
 
 
 ;---------------------------------------------------------------------------------------------------
-; Set0034_A  ($4192)
+; SelectAisStateA  ($4192)
 ;
-; Called from: AIS_Sub3, AIS_Sub4, AIS_Sub7, AIS_Sub8, AIS_Sub9, AIS_SubA
+; Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIndex.
+; [reviewed]
+;
+; 12 when BitFlags68 bit 5 is set, 14 when speed control is active (BitFlags66 bit 6), 13 with the
+; throttle closed (BitFlags65 bit 7 clear). With the throttle open: 13 if BitFlagsED bit 6 is set
+; and RPM is above TABLEc681(TPS), otherwise 12.
+;
+; Called from: AisState12_ThrottleOpen, AisState13_ClosedThrottle, AisState14_SpeedControl, AisState15_MapLimpIn, AisState1_Cranking, AisState4_ThrottleOpen
 ;---------------------------------------------------------------------------------------------------
-Set0034_A:
+SelectAisStateA:
         ldaa    #$0C
         brset   <BitFlags68,#$20,L41BC
         ldaa    #$0E
@@ -2399,11 +2441,16 @@ L41BC:
 
 
 ;---------------------------------------------------------------------------------------------------
-; Set0034_B  ($41C4)
+; SelectAisStateB  ($41C4)
 ;
-; Called from: AIS_Sub4, AIS_Sub7, AIS_Sub8, AIS_Sub9
+; Same as SelectAisStateA, but picks from the set 4-6. [reviewed]
+;
+; The running state routines call A when AisLoadFlagsA equals AisLoadFlagsB and B when they
+; differ.
+;
+; Called from: AisState12_ThrottleOpen, AisState13_ClosedThrottle, AisState14_SpeedControl, AisState4_ThrottleOpen
 ;---------------------------------------------------------------------------------------------------
-Set0034_B:
+SelectAisStateB:
         ldaa    #$04
         brset   <BitFlags68,#$20,L41EE
         ldaa    #$06
@@ -2433,24 +2480,32 @@ L41EE:
 ;---------------------------------------------------------------------------------------------------
 ; AdjustAISPosition_A  ($41F6)
 ;
-; Called from: AIS_Sub7, AIS_Sub8, AIS_Sub9
+; Applies one AIS load-step record (X): adds the step returned by the record's getter. [reviewed]
+;
+; Record (10 bytes, eight of them at $37DE-$382D): +0 value that A must match, +1 mask of
+; AisLoadFlagsA|B bits that block the step, +2 mask of bits that must already be set, +3 bits to
+; set in AisLoadFlagsA, +4 getter routine (returns the step in A, $382E-$3863), +6 calibration
+; byte added to the scaled position, +8 RAM result (always $01C8). The step is added to
+; DesiredNewAisPosition, limited by AISHLM. Returns carry set when the record applied.
+;
+; Called from: AisState12_ThrottleOpen, AisState13_ClosedThrottle, AisState14_SpeedControl
 ;---------------------------------------------------------------------------------------------------
 AdjustAISPosition_A:
         cmpa    $00,x
         bne     L423F
-        ldab    <L00E0
-        orab    <L00E1
+        ldab    <AisLoadFlagsA
+        orab    <AisLoadFlagsB
         andb    $01,x
         bne     L423F
         ldab    $02,x
         beq     L420C
-        andb    <L00E0
-        andb    <L00E1
+        andb    <AisLoadFlagsA
+        andb    <AisLoadFlagsB
         beq     L423F
 L420C:
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         oraa    $03,x
-        staa    <L00E0
+        staa    <AisLoadFlagsA
         ldy     $04,x
         jsr     $00,y
         tab
@@ -2484,24 +2539,27 @@ L4240:
 ;---------------------------------------------------------------------------------------------------
 ; AdjustAISPosition_B  ($4241)
 ;
-; Called from: AIS_Sub7, AIS_Sub8, AIS_Sub9
+; Same as AdjustAISPosition_A but removes the step and clears the +3 bits in AisLoadFlagsA.
+; [reviewed]
+;
+; Called from: AisState12_ThrottleOpen, AisState13_ClosedThrottle, AisState14_SpeedControl
 ;---------------------------------------------------------------------------------------------------
 AdjustAISPosition_B:
         cmpa    $00,x
         bne     L4288
-        ldab    <L00E0
-        orab    <L00E1
+        ldab    <AisLoadFlagsA
+        orab    <AisLoadFlagsB
         andb    $01,x
         bne     L4288
         ldab    $02,x
         beq     L4257
-        andb    <L00E0
-        andb    <L00E1
+        andb    <AisLoadFlagsA
+        andb    <AisLoadFlagsB
         beq     L4288
 L4257:
-        ldaa    <L00E0
+        ldaa    <AisLoadFlagsA
         anda    $03,x
-        staa    <L00E0
+        staa    <AisLoadFlagsA
         ldy     $04,x
         jsr     $00,y
         tab
@@ -2534,9 +2592,15 @@ L4289:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE428a_Unused  ($428A)
+; MonitorCatalyst  ($428A)
+;
+; OBD-II monitor: catalyst efficiency (P0422). Status byte ObdMonStatus_Catalyst. [reviewed -
+; table entry]
+;
+; Entry 5 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
+; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
-CODE428a_Unused:
+MonitorCatalyst:
         ldy     #$0111
         brset   $00,y,#$80,L4296
         jmp     >L447C
@@ -2640,7 +2704,7 @@ L4342:
 L4364:
         brset   $00,x,#$01,L4383
         bset    $00,y,#$04
-        bset    <PIA2_Buffer,#$20
+        bset    <OutputDriverBits,#$20
         ldd     >L0440
         addd    #$0001
         beq     L4380

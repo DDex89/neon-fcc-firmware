@@ -27,16 +27,23 @@ LE8E9:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LE8EA  ($E8EA)
+; ObdMonitorInit  ($E8EA)
+;
+; Prepares the status bytes of the ten OBD-II monitors (table at $E939). [reviewed]
+;
+; For each record: clears bit 2 of the status byte, clears bits 0, 3 and 6 (the two heater
+; monitors keep them if bit 6 is set) and sets bit 7 when the monitor's fault descriptor is
+; enabled. Then it clears ObdStatusFlags bits 0-6 and bit 7 of $0130 and $012C. Called from
+; StoreMAPVoltsAndCalcMAPValue.
 ;
 ; Called from: StoreMAPVoltsAndCalcMAPValue
 ;---------------------------------------------------------------------------------------------------
-LE8EA:
-        ldy     #$E939
+ObdMonitorInit:
+        ldy     #ObdMonitorTable
 LE8EE:
         ldx     $02,y
         bclr    $00,x,#$04
-        cpy     #$E939
+        cpy     #ObdMonitorTable
         beq     LE900
         cpy     #$E947
         bne     LE904
@@ -52,7 +59,7 @@ LE907:
 LE914:
         ldab    #$0E
         aby
-        cpy     #DiagnoticRoutine_NonDRB
+        cpy     #ObdMonitorScheduler
         bcs     LE8EE
         ldx     #$011A
         bclr    $00,x,#$7F
@@ -62,32 +69,70 @@ LE914:
         bclr    $03,x,#$80
         rts
 
-LE931:
+
+ObdMonitorMasks:
         dc.b    $40,$00,$00,$40,$40,$DF,$C0,$7F
-        dc.b    $94,$49,$01,$13,$E9,$38,$D8,$1B
-        dc.b    $D1,$39,$D1,$62,$D1,$8B,$94,$5E
-        dc.b    $01,$14,$E9,$38,$D8,$2B,$D1,$39
-        dc.b    $D1,$62,$D1,$8B,$98,$81,$01,$0E
-        dc.b    $E9,$31,$D8,$13,$D0,$BE,$D0,$E7
-        dc.b    $D1,$10,$2F,$58,$01,$12,$E9,$32
-        dc.b    $D8,$5B,$D3,$A4,$D3,$CD,$D3,$F6
-        dc.b    $A1,$18,$01,$16,$E9,$33,$D8,$6B
-        dc.b    $D1,$B4,$D1,$DD,$D2,$0A,$42,$8A
-        dc.b    $01,$11,$E9,$34,$D8,$63,$D0,$3F
-        dc.b    $D0,$68,$D0,$95,$6A,$22,$01,$15
-        dc.b    $E9,$35,$D6,$53,$D2,$33,$D2,$5C
-        dc.b    $D2,$85,$A3,$37,$01,$17,$E9,$36
-        dc.b    $D8,$93,$D3,$29,$D3,$52,$D3,$7B
-        dc.b    $A5,$5F,$01,$18,$E9,$36,$D8,$9B
-        dc.b    $D3,$29,$D3,$52,$D3,$7B,$AE,$3F
-        dc.b    $01,$19,$E9,$37,$D8,$33,$D2,$AE
-        dc.b    $D2,$D7,$D3,$00
+
+ObdMonitorTable:
+        dc.w    MonitorO2HeaterUp
+        dc.b    $01,$13,$E9,$38
+        dc.w    ErrBytes_CODE21_e
+        dc.b    $D1,$39,$D1,$62,$D1,$8B
+        dc.w    MonitorO2HeaterDown
+        dc.b    $01,$14,$E9,$38
+        dc.w    ErrBytes_CODE21_g
+        dc.b    $D1,$39,$D1,$62,$D1,$8B
+        dc.w    MonitorO2Response
+        dc.b    $01,$0E
+        dc.w    ObdMonitorMasks
+        dc.w    ErrBytes_CODE21_d
+        dc.b    $D0,$BE,$D0,$E7,$D1,$10
+        dc.w    MonitorSecondaryAir
+        dc.b    $01,$12,$E9,$32
+        dc.w    ErrBytes_CODE36_c
+        dc.b    $D3,$A4,$D3,$CD,$D3,$F6
+        dc.w    MonitorEvapPurgeFlow
+        dc.b    $01,$16,$E9,$33
+        dc.w    ErrBytes_CODE31_a
+        dc.b    $D1,$B4,$D1,$DD,$D2,$0A
+        dc.w    MonitorCatalyst
+        dc.b    $01,$11,$E9,$34
+        dc.w    ErrBytes_CODE64_g
+        dc.b    $D0,$3F,$D0,$68,$D0,$95
+        dc.w    MonitorEgrFlow
+        dc.b    $01,$15,$E9,$35
+        dc.w    ErrBytes_CODE32_a
+        dc.b    $D2,$33,$D2,$5C,$D2,$85
+        dc.w    MonitorFuelSystemRich
+        dc.b    $01,$17,$E9,$36
+        dc.w    ErrBytes_CODE52_d
+        dc.b    $D3,$29,$D3,$52,$D3,$7B
+        dc.w    MonitorFuelSystemLean
+        dc.b    $01,$18,$E9,$36
+        dc.w    ErrBytes_CODE51_d
+        dc.b    $D3,$29,$D3,$52,$D3,$7B
+        dc.w    MonitorMisfire
+        dc.b    $01,$19,$E9,$37
+        dc.w    ErrBytes_CODE43_e
+        dc.b    $D2,$AE,$D2,$D7,$D3,$00
 
 ;---------------------------------------------------------------------------------------------------
-; DiagnoticRoutine_NonDRB  ($E9C5)
+; ObdMonitorScheduler  ($E9C5)
+;
+; Runs the ten OBD-II monitors from the table at $E939. Not called anywhere in this code base.
+; [reviewed]
+;
+; Table: 10 records of 14 bytes from $E939 to $E9C4: +0 monitor routine, +2 status byte in RAM
+; ($010E-$0119), +4 pointer to a scheduling mask ($E931-$E937, tested against Counter_MainLoop),
+; +6 fault descriptor, +8/+10/+12 calibration pointers of three enable conditions (evaluated by
+; CalculateSomething; the results go to ObdStatusFlags bits 0-1). A monitor runs when its status
+; byte has bit 7 set and the mask allows this pass; when it sets bit 6 the scheduler sets bit 1
+; and calls LEABA. After the loop it runs LED24, LEDAD, LEDD0, LEED3, LEE14 and LEFD1. No JSR, JMP
+; or pointer anywhere in the ROM reaches $E9C5, so in 5269718 and 5007033 the whole monitor set is
+; dormant even though ObdMonitorInit prepares the status bytes.
 ;---------------------------------------------------------------------------------------------------
-DiagnoticRoutine_NonDRB:
-        ldy     #$E939
+ObdMonitorScheduler:
+        ldy     #ObdMonitorTable
 LE9C9:
         ldx     $02,y
         brclr   $00,x,#$80,LEA4B
@@ -151,7 +196,7 @@ LEA31:
 LEA4B:
         ldab    #$0E
         aby
-        cpy     #DiagnoticRoutine_NonDRB
+        cpy     #ObdMonitorScheduler
         bcc     LEA58
         jmp     >LE9C9
 
@@ -168,7 +213,7 @@ LEA58:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateSomething  ($EA6B)
 ;
-; Called from: DiagnoticRoutine_NonDRB, LEFD1
+; Called from: LEFD1, ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 CalculateSomething:
         ldab    $00,x
@@ -257,7 +302,7 @@ LEAB7:
 ;---------------------------------------------------------------------------------------------------
 ; LEABA  ($EABA)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LEABA:
         ldx     $02,y
@@ -342,7 +387,7 @@ LEB71:
         pshy
         ldy     $06,y
         ldaa    $00,y
-        staa    >L011C
+        staa    >LastEmissionFault
         cmpa    >ErrBytes_CODE43_e
         bne     LEB90
         jsr     >LEC3B
@@ -422,7 +467,7 @@ LEC17:
 LEC18:
         ldx     #$011A
         brset   $00,x,#$04,LEC30
-        cmpa    >L011C
+        cmpa    >LastEmissionFault
         bne     LEC30
         bset    $00,x,#$04
         ldaa    >L011B
@@ -562,7 +607,7 @@ EraseErorrCodes:
 ;---------------------------------------------------------------------------------------------------
 ; LECD7  ($ECD7)
 ;
-; Called from: CODEa3a7, DeadCode_A55F, LAE3F
+; Called from: MonitorFuelSystemLean, MonitorFuelSystemRich, MonitorMisfire
 ;---------------------------------------------------------------------------------------------------
 LECD7:
         ldaa    $01,x
@@ -599,7 +644,7 @@ LED04:
 ;---------------------------------------------------------------------------------------------------
 ; LED05  ($ED05)
 ;
-; Called from: CODEa3a7, CODEa68d, LAE3F
+; Called from: CODEa68d, MonitorFuelSystemRich, MonitorMisfire
 ;---------------------------------------------------------------------------------------------------
 LED05:
         ldaa    <MapValue
@@ -635,7 +680,7 @@ LED23:
 ;---------------------------------------------------------------------------------------------------
 ; LED24  ($ED24)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LED24:
         clra
@@ -713,7 +758,7 @@ LEDAC:
 ;---------------------------------------------------------------------------------------------------
 ; LEDAD  ($EDAD)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LEDAD:
         ldx     #$011A
@@ -737,10 +782,10 @@ LEDCF:
 ;---------------------------------------------------------------------------------------------------
 ; LEDD0  ($EDD0)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LEDD0:
-        brclr   <BitFlasg71,#$80,LEE13
+        brclr   <BitFlags71,#$80,LEE13
         ldx     #$011A
         brset   $00,x,#$80,LEE13
         ldaa    >L0035
@@ -748,13 +793,13 @@ LEDD0:
         bcs     LEE13
         clr     >L0035
         jsr     >EraseErorrCodes
-        ldy     #$E939
+        ldy     #ObdMonitorTable
         ldab    #$0E
 LEDEE:
         ldx     $02,y
         bclr    $00,x,#$20
         aby
-        cpy     #DiagnoticRoutine_NonDRB
+        cpy     #ObdMonitorScheduler
         bcs     LEDEE
         clra
         ldx     #$001B
@@ -776,7 +821,7 @@ LEE13:
 ;---------------------------------------------------------------------------------------------------
 ; LEE14  ($EE14)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LEE14:
         ldx     #$0100
@@ -828,7 +873,7 @@ LEE67:
 LEE83:
         ldx     #$0100
         brclr   $00,x,#$40,LEEA2
-        ldy     #$E939
+        ldy     #ObdMonitorTable
         jsr     >LEEB9
         bcc     LEEA2
         ldy     #$E947
@@ -877,7 +922,7 @@ LEED2:
 ;---------------------------------------------------------------------------------------------------
 ; LEED3  ($EED3)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LEED3:
         ldx     #$011A
@@ -906,7 +951,7 @@ LEEFE:
 LEF01:
         brset   $00,x,#$04,LEF37
         ldaa    #$08
-        ldab    >L011C
+        ldab    >LastEmissionFault
         mul
         addd    #$D4E3
         xgdy
@@ -922,7 +967,7 @@ LEF01:
 LEF2D:
         brset   $02,x,#$02,LEF37
 LEF31:
-        ldaa    >L011C
+        ldaa    >LastEmissionFault
         jsr     >LEC18
 LEF37:
         ldaa    >L011B
@@ -978,7 +1023,7 @@ BYTESEFAA:
 ;---------------------------------------------------------------------------------------------------
 ; LEFD1  ($EFD1)
 ;
-; Called from: DiagnoticRoutine_NonDRB
+; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
 LEFD1:
         ldx     #$EFCC

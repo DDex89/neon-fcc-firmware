@@ -299,9 +299,9 @@ L509B:
 ; OutputErrorBits  ($50A5)
 ;---------------------------------------------------------------------------------------------------
 OutputErrorBits:
-        ldaa    <ErrorBitsAssociatedWithPIA1AndReg1eTo25_HB
+        ldaa    <FaultMaturingSlot0
         brclr   <DRBPointer2,#$FF,L50B0
-        ldaa    <ErrorBitsAssociatedWithPIA1AndReg1eTo25_LB
+        ldaa    <FaultMaturingSlot1
         clr     >DRBPointer1
 L50B0:
         inc     >DRBPointer2
@@ -703,7 +703,7 @@ L52A7:
 ; L52AB  ($52AB)
 ;---------------------------------------------------------------------------------------------------
 L52AB:
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         bra     SerialOutput1a
 
 
@@ -711,7 +711,7 @@ L52AB:
 ; L52AF  ($52AF)
 ;---------------------------------------------------------------------------------------------------
 L52AF:
-        ldaa    <StartupSwitchMirror2
+        ldaa    <OutputBits2
         bra     SerialOutput1a
 
 
@@ -1018,21 +1018,21 @@ L5428:
 EraseErrorCodes:
         clra
         clrb
-        std     <ErrorBitRegister0
-        std     <ErrorBitRegister2
-        std     <ErrorBitRegisterStored0
-        std     <ErrorBitRegisterStored2
+        std     <FaultList0
+        std     <FaultList2
+        std     <FaultList4
+        std     <FaultList6
         staa    <b58_IPL1
         staa    <b59_IPL2
         staa    <b5a_IPL3
         staa    <ErrorCodeUpdateKeyOnCount
         staa    <ErrorCodeUpdateKeyOnCount2
         staa    <ErrorCodeUpdateKeyOnCount3
-        staa    >L011A
+        staa    >ObdStatusFlags
         staa    >L010F
         staa    >$0110
         staa    >L011B
-        staa    >L011C
+        staa    >LastEmissionFault
         staa    >ISO_ErrBitStatus
         staa    >L0149
         staa    >ObdDtcCount
@@ -1051,36 +1051,36 @@ L5470:
         inx
         cpx     #$0127
         bcs     L5470
-        ldaa    >L010E
+        ldaa    >ObdMonStatus_O2Response
         anda    #$80
-        staa    >L010E
-        ldaa    >L0111
+        staa    >ObdMonStatus_O2Response
+        ldaa    >ObdMonStatus_Catalyst
         anda    #$80
-        staa    >L0111
-        ldaa    >L0112
+        staa    >ObdMonStatus_Catalyst
+        ldaa    >ObdMonStatus_SecondaryAir
         anda    #$80
-        staa    >L0112
-        ldaa    >L0113
+        staa    >ObdMonStatus_SecondaryAir
+        ldaa    >ObdMonStatus_O2HeaterUp
         anda    #$80
-        staa    >L0113
-        ldaa    >L0114
+        staa    >ObdMonStatus_O2HeaterUp
+        ldaa    >ObdMonStatus_O2HeaterDown
         anda    #$80
-        staa    >L0114
-        ldaa    >L0115
+        staa    >ObdMonStatus_O2HeaterDown
+        ldaa    >ObdMonStatus_Egr
         anda    #$80
-        staa    >L0115
-        ldaa    >L0116
+        staa    >ObdMonStatus_Egr
+        ldaa    >ObdMonStatus_EvapPurge
         anda    #$80
-        staa    >L0116
-        ldaa    >L0117
+        staa    >ObdMonStatus_EvapPurge
+        ldaa    >ObdMonStatus_FuelRich
         anda    #$80
-        staa    >L0117
-        ldaa    >L0118
+        staa    >ObdMonStatus_FuelRich
+        ldaa    >ObdMonStatus_FuelLean
         anda    #$80
-        staa    >L0118
-        ldaa    >L0119
+        staa    >ObdMonStatus_FuelLean
+        ldaa    >ObdMonStatus_Misfire
         anda    #$80
-        staa    >L0119
+        staa    >ObdMonStatus_Misfire
         ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         staa    >L0100
         ldx     #$012D
@@ -1089,7 +1089,7 @@ L5470:
         ldx     #$0129
         bclr    $02,x,#$C2
         bclr    $03,x,#$FF
-        bset    <StartupSwitchMirror2,#$10
+        bset    <OutputBits2,#$10
         rts
 
 
@@ -1150,7 +1150,7 @@ L552C:
 ;
 ; Runs the DRB actuator test selected by ATMOffset (set by DRB command $13). [reviewed]
 ;
-; Called every main loop. Loads A = PIA2_Buffer and B = StartupSwitchMirror2, then jumps through
+; Called every main loop. Loads A = OutputDriverBits and B = OutputBits2, then jumps through
 ; ATMFunctionTable with test number n using entry n-1 (the table base is loaded as $4EB9). Each
 ; test toggles one output with Counter_MainLoop as the clock, so the output pulses at a few hertz.
 ; The test ends when KeyOnOrEngineRunningTime reaches $99. Test numbers and outputs:
@@ -1172,12 +1172,12 @@ L553A:
 L553B:
         ldaa    #$05
         staa    >TFLG1
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         ldx     #$4EB9
         ldab    <ATMOffset
         aslb
         abx
-        ldab    <StartupSwitchMirror2
+        ldab    <OutputBits2
         ldx     $00,x
         jmp     $00,x
 
@@ -1190,7 +1190,7 @@ ATM_FanRelay:
         brset   <Counter_MainLoop,#$70,L5557
         anda    #$F7
 L5557:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1198,12 +1198,12 @@ L5557:
 ; L555A  ($555A)
 ;---------------------------------------------------------------------------------------------------
 L555A:
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         oraa    #$08
         brset   <Counter_MainLoop,#$70,L5564
         anda    #$F7
 L5564:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1211,7 +1211,7 @@ L5564:
 ; L5567  ($5567)
 ;---------------------------------------------------------------------------------------------------
 L5567:
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         oraa    #$08
         ldab    <L00EF
         andb    #$7F
@@ -1222,7 +1222,7 @@ L5567:
         orab    #$80
         stab    <L00EF
 L557D:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1234,7 +1234,7 @@ ATM_PTUIndicator:
         brset   <Counter_MainLoop,#$80,L5588
         andb    #$DF
 L5588:
-        stab    <StartupSwitchMirror2
+        stab    <OutputBits2
         rts
 
 
@@ -1257,7 +1257,7 @@ ATM_ASDRelay:
 L55A0:
         anda    #$FB
 L55A2:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1280,7 +1280,7 @@ L55A5:
 L55BA:
         anda    #$EF
 L55BC:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1292,7 +1292,7 @@ ATM_PurgeSolenoid:
         brset   <Counter_MainLoop,#$80,L55C7
         anda    #$DF
 L55C7:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1304,7 +1304,7 @@ L55CA:
         brset   <Counter_MainLoop,#$80,L55D2
         anda    #$FD
 L55D2:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1315,14 +1315,14 @@ ATM_ACClutchRelay:
         ldab    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bitb    #$80
         beq     L55DF
-        bclr    <PIA2_Buffer,#$08
+        bclr    <OutputDriverBits,#$08
 L55DF:
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         oraa    #$01
         brset   <Counter_MainLoop,#$80,L55E9
         anda    #$FE
 L55E9:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1339,7 +1339,7 @@ ATM_SCServoSolenoid:
         bcs     L55FC
         oraa    #$80
 L55FC:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1353,7 +1353,7 @@ L55FF:
         bcs     L5609
         anda    #$BF
 L5609:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1371,7 +1371,7 @@ ATM_InjBank4:
 ; ATM_SetOutputBits_PIA_B  ($5616)
 ;---------------------------------------------------------------------------------------------------
 ATM_SetOutputBits_PIA_B:
-        staa    <PIA2_Buffer
+        staa    <OutputDriverBits
         rts
 
 
@@ -1393,23 +1393,23 @@ ATM_AllSolenoidsRelays:
         ldaa    #$08
         staa    >CFORC
         andb    #$FF
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         anda    #$19
         brset   <Counter_MainLoop,#$80,L5645
         orab    #$00
         ldaa    <DRBPointer1
         cmpa    #$18
         beq     L5641
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         oraa    #$E6
         bra     L5645
 
 L5641:
-        ldaa    <PIA2_Buffer
+        ldaa    <OutputDriverBits
         oraa    #$E2
 L5645:
-        staa    <PIA2_Buffer
-        stab    <StartupSwitchMirror2
+        staa    <OutputDriverBits
+        stab    <OutputBits2
         ldaa    #$10
         brset   <Counter_MainLoop,#$80,L5651
         ldaa    #$70
@@ -1421,7 +1421,7 @@ L5651:
 ;---------------------------------------------------------------------------------------------------
 L5653:
         ldx     #$0400
-        bclr    <PIA2_Buffer,#$04
+        bclr    <OutputDriverBits,#$04
         sei
         brclr   <Counter_MainLoop,#$80,L5666
         bset    $00,x,#$04
@@ -1540,5 +1540,5 @@ L56D9:
         ldd     #$01F4
         std     $00,x
 L56E3:
-        bclr    <PIA2_Buffer,#$04
+        bclr    <OutputDriverBits,#$04
         rts

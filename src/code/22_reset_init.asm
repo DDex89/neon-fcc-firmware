@@ -286,7 +286,7 @@ L9008:
         inc     >BitFlags_AIS
         ldab    #$EB
 L900D:
-        stab    <PIA2_Buffer
+        stab    <OutputDriverBits
         bclr    $03,y,#$04
         stab    $2A,x
         ldy     #$0359
@@ -297,7 +297,7 @@ L9019:
         stab    $30,x
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         ldaa    #$B7
-        staa    <StartupSwitchMirror2
+        staa    <OutputBits2
         ldaa    #$03
         staa    <Counter_MINTHR
         ldaa    #$0C
@@ -305,8 +305,8 @@ L9019:
         ldaa    #$14
         staa    <BitFlags66
         ldaa    #$92
-        staa    <BitFlasg71
-        jsr     >LE8EA
+        staa    <BitFlags71
+        jsr     >ObdMonitorInit                      ; Prepares the status bytes of the ten OBD-II monitors (table at $E939).
         ldy     #$0400
         ldx     #REGS
         bset    $03,y,#$04
@@ -522,7 +522,7 @@ L9222:
         staa    <L0039
         bset    <SyncFlags74,#$80
 L922E:
-        ldaa    >L0119
+        ldaa    >ObdMonStatus_Misfire
         anda    #$10
         beq     L9238
         bset    <L00E5,#$20

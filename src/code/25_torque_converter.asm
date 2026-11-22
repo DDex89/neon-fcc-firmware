@@ -94,7 +94,7 @@ LA6E5:
 ; PTU_SetPTUBits  ($A6EB)
 ;---------------------------------------------------------------------------------------------------
 PTU_SetPTUBits:
-        bset    <StartupSwitchMirror2,#$20
+        bset    <OutputBits2,#$20
         bclr    <BitFlags69,#$C0
         clrb
 LA6F2:
@@ -113,20 +113,20 @@ LA6F9:
 
 LA703:
         ldx     #PTUUUL_UpperLimitForPTUUnlock       ; PTUUUL: Primary engagnement point for PTU
-        brclr   <StartupSwitchMirror2,#$20,LA70D
+        brclr   <OutputBits2,#$20,LA70D
         ldx     #PTULUL_UpperLimitForPTULock         ; PTULUL: Secondary engagnement point for PTU
 LA70D:
         bsr     LookupTableFromVehSpdAndCompareToTPS
         bls     PTU_SetPTUBits
         ldx     #PTUULL_LowerLimitForPTUUnlock       ; PTUULL: Primary disengagnement point for PTU
-        brclr   <StartupSwitchMirror2,#$20,LA71B
+        brclr   <OutputBits2,#$20,LA71B
         ldx     #PTULLL_LowerLimitForPTULock         ; PTULLL: Secondary disengagnement point for PTU
 LA71B:
         bsr     LookupTableFromVehSpdAndCompareToTPS
         bhi     PTU_SetPTUBits
         ldaa    >DownCounterUnknown
         beq     PTU_LookupPTUParam
-        bclr    <StartupSwitchMirror2,#$20
+        bclr    <OutputBits2,#$20
         rts
 
 
