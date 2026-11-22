@@ -1,0 +1,23 @@
+{
+ "name": "B4C2",
+ "banner": "Chrysler factory revision 5269646",
+ "src": "src_b4c2",
+ "code_ranges": [
+  [
+   "1200",
+   "B4C3"
+  ],
+  [
+   "E229",
+   "FFD6"
+  ]
+ ],
+ "ram_runs": [],
+ "variants": {
+  "5269646": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed low altitude, manual (4874154 rev C)",
+   "sha256": "c532ea723317afe6402a45cd7a392f1d760461361c26de6714fe5bfc15ee0caa",
+   "size": 60928
+  }
+ }
+}

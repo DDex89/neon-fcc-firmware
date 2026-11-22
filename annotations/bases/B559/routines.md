@@ -17,7 +17,7 @@ Evaporative canister purge solenoid control. [from name]
 B559 only ($9CF9-$9D1D): while PurgeDelayTimer is non-zero, BitFlags71 bit 7 and BitFlags65 bit 7 are
 clear and the car is slower than MPHREF, the timer counts down once per Counter_MainLoop wrap and, if
 purge has already been enabled (BitFlagsE3 bit 3), the purge calculation is skipped. Above MPHREF the
-normal purge logic runs. Called from MainSubLoop; B4CC has no call to this routine. [reviewed]
+normal purge logic runs. Called from MainSubLoop (also in B4F3 and B4C2); B4CC has no call to this routine. [reviewed]
 
 ## B238 ExhGasRecirc_MM
 EGR solenoid control: enables EGR within RPM, MAP, coolant and time windows. [reviewed]

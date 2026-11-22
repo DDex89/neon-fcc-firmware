@@ -16,8 +16,8 @@
 ;
 ; Once the engine is warm, compares the downstream O2 voltage with LCCD0/LCCD1 while the upstream
 ; sensor is clearly rich (above O2HIGH) or lean (below O2LOW). If the downstream sensor does not
-; follow for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559 calls it from
-; MainSubLoop.
+; follow for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559, B4F3 and B4C2
+; call it from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfDownstreamO2Sensor_MM:
         brset   <BitFlags6E,#$80,L9BC2
@@ -107,8 +107,8 @@ L9C69:
 ;
 ; Evaporative canister purge solenoid control. [from name]
 ;
-; Not called in B4CC; B559 calls it from MainSubLoop. In B4CC nothing reaches this routine, so the
-; purge solenoid is only driven by the DRB actuator tests. [reviewed]
+; Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In B4CC nothing reaches this
+; routine, so the purge solenoid is only driven by the DRB actuator tests. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 ControlPurgeSolenoid_MM:
         ldaa    >DrbOverrideTarget
@@ -538,7 +538,7 @@ L9F67:
 ;
 ; Individual cylinder fuel trims (CL1PTR..CLTRP4). [from name]
 ;
-; Not called in B4CC; B559 calls it from MainSubLoop. [reviewed]
+; Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 DetermineIndividualInjectorTrims_MM:
         brset   <CylTrim_Flags_1,#$40,L9FDA

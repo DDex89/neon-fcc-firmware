@@ -16,8 +16,8 @@
 ;
 ; Once the engine is warm, compares the downstream O2 voltage with LCCD0/LCCD1 while the upstream
 ; sensor is clearly rich (above O2HIGH) or lean (below O2LOW). If the downstream sensor does not
-; follow for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559 calls it from
-; MainSubLoop.
+; follow for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559, B4F3 and B4C2
+; call it from MainSubLoop.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -112,8 +112,8 @@ L9C69:
 ; B559 only ($9CF9-$9D1D): while PurgeDelayTimer is non-zero, BitFlags71 bit 7 and BitFlags65 bit
 ; 7 are clear and the car is slower than MPHREF, the timer counts down once per Counter_MainLoop
 ; wrap and, if purge has already been enabled (BitFlagsE3 bit 3), the purge calculation is
-; skipped. Above MPHREF the normal purge logic runs. Called from MainSubLoop; B4CC has no call to
-; this routine. [reviewed]
+; skipped. Above MPHREF the normal purge logic runs. Called from MainSubLoop (also in B4F3 and
+; B4C2); B4CC has no call to this routine. [reviewed]
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -562,7 +562,7 @@ L9F67:
 ;
 ; Individual cylinder fuel trims (CL1PTR..CLTRP4). [from name]
 ;
-; Not called in B4CC; B559 calls it from MainSubLoop. [reviewed]
+; Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. [reviewed]
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

@@ -23,3 +23,8 @@ jobs:
 
       - name: Assemble and verify the B559 images
         run: python3 tools/build.py --base B559
+
+      - name: Assemble and verify the B4F3 and B4C2 images
+        run: |
+          python3 tools/build.py --base B4F3
+          python3 tools/build.py --base B4C2

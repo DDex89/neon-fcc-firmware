@@ -119,8 +119,8 @@ ObdMonitorTable:
 ;---------------------------------------------------------------------------------------------------
 ; ObdMonitorScheduler  ($E9C5)
 ;
-; Runs the ten OBD-II monitors from the table at $E939. Called from MainSubLoop in B559; not
-; called in B4CC. [reviewed]
+; Runs the ten OBD-II monitors from the table at $E939. Called from MainSubLoop in B559, B4F3 and
+; B4C2; not called in B4CC. [reviewed]
 ;
 ; Table: 10 records of 14 bytes from $E939 to $E9C4: +0 monitor routine, +2 status byte in RAM
 ; ($010E-$0119), +4 pointer to a scheduling mask ($E931-$E937, tested against Counter_MainLoop),

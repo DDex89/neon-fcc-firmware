@@ -263,12 +263,12 @@
   конфигурации $B811.6.
 - **Продувка адсорбера**: подпрограмма со скважностью по адресу $B290 (бит 5 `OutputDriverBits`) и
   `ControlPurgeSolenoid_MM` ($9C6A, бит 7 `OutputBits2`). B4CC `ControlPurgeSolenoid_MM` не вызывает,
-  B559 вызывает (см. [code_bases.md](code_bases.md#b559-в-сравнении-с-b4cc)).
-- **Монитор заднего датчика O2** (`VerifyOperationOfDownstreamO2Sensor_MM`), вызывается только в B559.
+  заводские базы вызывают (см. [code_bases.md](code_bases.md#b559-в-сравнении-с-b4cc)).
+- **Монитор заднего датчика O2** (`VerifyOperationOfDownstreamO2Sensor_MM`), в B4CC не вызывается.
 - **Мониторы OBD-II (спят).** В коде есть десять мониторов OBD-II (нагреватели O2, отклик O2,
   вторичный воздух, расход продувки EVAP, катализатор, расход EGR, богатая / бедная смесь, пропуски
   зажигания) и их планировщик `ObdMonitorScheduler` ($E9C5), но в B4CC планировщик никто
-  не вызывает, так что там ни один из них не работает (в B559 вызывается). См. [diagnostics.md](diagnostics.md#мониторы-obd-ii).
+  не вызывает, так что там ни один из них не работает (в B559, B4F3 и B4C2 вызывается). См. [diagnostics.md](diagnostics.md#мониторы-obd-ii).
 
 ## Другие выходы *(по названиям)*
 

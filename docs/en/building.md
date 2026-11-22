@@ -105,7 +105,8 @@ python tools/build.py --base B559            # all eleven B559 images
 python tools/build.py --base B559 4874154    # one image
 ```
 
-The images go to `build/B559/`. The B559 source is not annotated separately. It is generated from the
+The code bases B4F3 and B4C2 work the same way (`--base B4F3`, `--base B4C2`, sources in
+`src_b4f3/` and `src_b4c2/`). The images go to `build/<base>/`. The B559 source is not annotated separately. It is generated from the
 same annotation database, with every address moved to B559 through a translation map:
 
 - `annotations/bases/B559/base.json` - code ranges, RAM differences, the variants and their hashes;

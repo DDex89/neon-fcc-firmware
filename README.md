@@ -19,8 +19,9 @@ Both images share the same program code (code base "B4CC"); only the calibration
 factory 1995 calibrations (4874154-4874165, 5013113) use the earlier code base "B559". Its source is
 generated from the same annotations into `src_b559/`, and its eleven factory images rebuild
 byte-identically too. B4CC turns out to be B559 with the OBD-II monitors, canister purge, cylinder
-trims, the variable rev limit and several sensor checks no longer called; see
-[docs/en/code_bases.md](docs/en/code_bases.md#b559-compared-with-b4cc).
+trims, the variable rev limit and several sensor checks no longer called. The later factory revisions
+on code bases B4F3 (5269709, 5269712, 5269738) and B4C2 (5269646) are ported and rebuild the same
+way; see [docs/en/code_bases.md](docs/en/code_bases.md#feature-summary).
 
 ## What is in here
 
@@ -31,11 +32,12 @@ src/                      the firmware source (vasm, Motorola syntax, 68HC11)
   code/NN_*.asm           program code split by subsystem (37 modules, in address order)
   cal/<variant>.asm       calibration data, formatted table by table
 src_b559/                 the same for the factory code base B559 (generated, eleven images)
+src_b4f3/, src_b4c2/      the same for the code bases B4F3 (three images) and B4C2 (one image)
 annotations/              the knowledge base the source is generated from
   routines.md             hand-written routine descriptions (edit this!)
   comments.txt            per-instruction comments
   *.json                  labels, RAM names, table definitions, code entry points, module layout
-  bases/B559/             address map to B559, its variants, and notes on B559-only code
+  bases/<base>/           address map to another code base, its variants, notes on its own code
 tools/
   build.py                assemble + verify against the original hashes
   gen_source.py           regenerate src/ from ROM dumps + annotations (--base B559 for src_b559/)
@@ -52,7 +54,8 @@ docs/en, docs/ru          documentation (English / Russian)
 
 1. Build the vasm assembler (6800 family, Motorola syntax) - see [docs/en/building.md](docs/en/building.md).
 2. `python tools/build.py` - assembles both variants into `build/` and checks the SHA-256.
-3. `python tools/build.py --base B559` - the same for the eleven B559 images (into `build/B559/`).
+3. `python tools/build.py --base B559` - the same for the eleven B559 images (into `build/B559/`);
+   `--base B4F3` and `--base B4C2` for the other two code bases.
 
 Expected output:
 
@@ -84,7 +87,7 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 
 ## Status
 
-- Byte-identical rebuild of both B4CC variants and of the eleven B559 images, checked in CI.
+- Byte-identical rebuild of 17 images on four code bases (B4CC 2, B559 11, B4F3 3, B4C2 1), checked in CI.
 - 20,075 instructions identified. All code reached through pointer tables is now traced; only 7
   instructions in four unreferenced fragments remain, marked as dead code.
 - 617 routine headers with call graph; 188 routines described by hand, 155 of them checked (fully or partly) against the
@@ -106,7 +109,7 @@ Help is welcome: improving the knowledge base means editing `annotations/routine
    Open: most switch input bits, the fuel level input, the registers of the I/O device at $0400 and
    the companion chip, which cannot be decoded further without their documentation.
 3. Port the annotations to the other code bases. Done: B559 (all annotations carried over, its own
-   additions named, differences documented). Open: B4F3, B4C2 and B588.
+   additions named, differences documented), B4F3 and B4C2. Open: B588, a different 1993 generation.
 4. "Enhanced Edition": a modified firmware for the same hardware (higher resolution tables, wideband
    input, faster logging, better diagnostics). Built on top of the verified source. The OBD-II
    monitors already in the code but never scheduled are the natural starting point for OBD-II.

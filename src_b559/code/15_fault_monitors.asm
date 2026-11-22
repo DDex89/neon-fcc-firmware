@@ -1051,7 +1051,7 @@ L5D86:
 ;
 ; Despite the original name this drives the charge lamp, not the MIL. The lamp output follows
 ; KeyOnOrEngineRunningTime, BitFlags71 bit 7 and the charging fault flags (IPL2 bit 7,
-; SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559 calls it from MainSubLoop.
+; SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -1094,7 +1094,8 @@ L5DB6:
 ; Same job as the A routine for the other configuration: a start-up phase (also switching
 ; LinkReg48Data bit 4) that ends when KeyOnOrEngineRunningTime or engine speed passes a fixed
 ; limit (BitFlags6D bit 1 marks the end), then the lamp follows the charging fault flags (IPL2 bit
-; 7, SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559 calls it from MainSubLoop.
+; 7, SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from
+; MainSubLoop.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -1298,8 +1299,8 @@ L5F01:
 ;
 ; Runs when BitFlags71 bit 7 is set and none of the related IPL fault bits is set. When
 ; AmbientAirTemp is below $58 and close to CoolantTemp (within LE019) but differs from ChargeTemp
-; by more than LE019, it reports ErrBytes_CODE23_b. Not called in B4CC; B559 calls it from
-; MainSubLoop.
+; by more than LE019, it reports ErrBytes_CODE23_b. Not called in B4CC; B559, B4F3 and B4C2 call
+; it from MainSubLoop.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -2133,7 +2134,8 @@ L64B8:
 ;
 ; With the engine running and IPL1 bit 2 set, counts DiagCounter_KnockSensorActive while
 ; KnockVolts is outside the LE020 window and reports code 16 when it reaches LE022; a voltage
-; inside the window clears the counter. Not called in B4CC; B559 calls it from SubLoopC.
+; inside the window clears the counter. Not called in B4CC; B559, B4F3 and B4C2 call it from
+; SubLoopC.
 ;
 ; Called from: SubLoopC
 ;---------------------------------------------------------------------------------------------------

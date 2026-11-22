@@ -541,8 +541,8 @@ L32A0:
 ;
 ; When BitFlags049E bit 4 is set and the upstream O2 voltage (O2SensorVolts) is at or above LCCEB,
 ; counts DiagCounter_DSO2SensorDiagnostics down; at zero it reloads it from DSO2NT and steps
-; DiagCounter_DSO2SensorSigned by LCCE9 (saturating at $80). Not called in B4CC; B559 calls it
-; from MainSubLoop.
+; DiagCounter_DSO2SensorSigned by LCCE9 (saturating at $80). Not called in B4CC; B559, B4F3 and
+; B4C2 call it from MainSubLoop.
 ;---------------------------------------------------------------------------------------------------
 DecrementDSO2SensorDiagnosticCounter_MM:
         ldaa    >BitFlags049E

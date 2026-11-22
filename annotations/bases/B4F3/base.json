@@ -1,0 +1,33 @@
+{
+ "name": "B4F3",
+ "banner": "Chrysler factory revisions 5269709, 5269712, 5269738",
+ "src": "src_b4f3",
+ "code_ranges": [
+  [
+   "1200",
+   "B4F4"
+  ],
+  [
+   "E229",
+   "FFD6"
+  ]
+ ],
+ "ram_runs": [],
+ "variants": {
+  "5269709": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed low altitude, manual (4874154 rev D)",
+   "sha256": "d4e9992a6d9a7e9bff33f8cf7bb882ea22d677deee0ebe80cb993d76838e9d98",
+   "size": 60928
+  },
+  "5269712": {
+   "description": "Chrysler factory 1995 Neon SOHC Fed & Taiwan, automatic (4874156 rev D)",
+   "sha256": "5ea1602386c76b72e08919bd88f0f974332596646c439a50b0ad6f1aacc94534",
+   "size": 60928
+  },
+  "5269738": {
+   "description": "Chrysler factory 1995 Neon SOHC export, automatic",
+   "sha256": "28fbed58737c0d8caaa32f085b6601d6ff0df2ffb0fb61a2008f0accda3f987d",
+   "size": 60928
+  }
+ }
+}

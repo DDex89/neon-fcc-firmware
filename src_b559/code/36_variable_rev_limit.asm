@@ -15,9 +15,9 @@
 ; Variable rev limiter (rev limit that depends on vehicle speed / TPS / MAP state). [from name]
 ;
 ; Writes VariableRevLimit from vehicle speed, baro (VarRevLimitBaroFactor) and the TPS table
-; RevLimitFromTPSOverMinThr. Not called in B4CC; B559 calls it from MainSubLoop. In B4CC
-; VariableRevLimit keeps the value $FF set at reset, so the fuel cut-off checks against it never
-; trigger and only the fixed rev limits act. [reviewed]
+; RevLimitFromTPSOverMinThr. Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In
+; B4CC VariableRevLimit keeps the value $FF set at reset, so the fuel cut-off checks against it
+; never trigger and only the fixed rev limits act. [reviewed]
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

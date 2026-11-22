@@ -1,0 +1,1 @@
+168D  B4C2: link status 6 sets the flag without the BTVAIS battery voltage check of the other code bases

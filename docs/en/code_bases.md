@@ -9,8 +9,8 @@ Applications and revision letters come from the "Neon Code Families" spreadsheet
 |---|---|---|---|
 | B588 | 1 | 1993 | 94½ generation |
 | B559 | 12 | 1994 | The original 1995 part numbers, SOHC and DOHC, all markets; buildable from this repository (`src_b559/`) |
-| B4F3 | 3 | 1994 | Later revisions (rev D of 4874154 and 4874156, export automatic) |
-| B4C2 | 1 | 1994 | Rev C of 4874154; not listed in the spreadsheet |
+| B4F3 | 3 | 1994 | Later revisions (rev D of 4874154 and 4874156, export automatic); buildable (`src_b4f3/`) |
+| B4C2 | 1 | 1994 | Rev C of 4874154; not listed in the spreadsheet; buildable (`src_b4c2/`) |
 | B4CC | 3 (+2 "enh") | 1994 | Mopar Performance SOHC/DOHC and 5269718 (rev B of 4874164); the code base of this repository |
 
 ## All images
@@ -105,3 +105,42 @@ decoded yet. [code]
 idle purge table and 2 after the EGR constants: B4CC addresses $C983-$CB36 are 4 higher in B559 and
 $CB37-$DFF7 are 6 higher. RAM is the same except the DRB RAM-program buffer, which moved from $021C to
 $021E to make room for `PurgeDelayTimer`. [code]
+
+## B4F3 and B4C2 compared with B4CC
+
+Both were ported the same way (`annotations/bases/B4F3/`, `annotations/bases/B4C2/`) and all their
+images rebuild byte-identically from `src_b4f3/` and `src_b4c2/`. Their RAM and calibration layouts
+are the same as B4CC's: every one of about 1,020 calibration references in the code points to the same
+address. [code]
+
+**B4F3 is B4CC plus the thirteen calls.** The only difference is in MainSubLoop, SubLoopA and SubLoopC:
+B4F3 has the same thirteen `jsr` instructions as B559 (39 bytes), so its OBD-II monitors, purge, cylinder
+trims, variable rev limit and sensor checks run. It does not have B559's three temperature features
+(purge delay, EGR temperature gate). [code]
+
+**B4C2 is B4F3 with two more differences:** [code]
+
+| Where | B4C2 | B559, B4F3, B4CC |
+|---|---|---|
+| J1979 PIDs $14 / $15 (O2 voltages) | Sends the raw A/D byte | Scales by $03ED/256 to 5 mV per bit, $FF from $41 up; B4C2 therefore shows about a quarter of the real voltage on a scan tool |
+| Companion chip status 6 (`AisDriveRoutine`) | Sets `BitFlags69` bit 1 unconditionally | Only when `BatteryVolts` is at least `BTVAIS` |
+
+## Feature summary
+
+| | B559 | B4C2 | B4F3 | B4CC |
+|---|---|---|---|---|
+| Images | 4874154-4874165, 5013113 | 5269646 (rev C) | 5269709, 5269712, 5269738 (rev D) | 5269718, 5007033, 5007034 |
+| Calibration layout | own (+4/+6 bytes) | as B4CC | as B4CC | reference |
+| OBD-II monitors, purge, cylinder trims, variable rev limit, sensor checks | yes | yes | yes | not called |
+| Purge delay and EGR temperature gate | yes | no | no | no |
+| O2 PIDs scaled to 5 mV | yes | no (raw) | yes | yes |
+| Battery check on companion status 6 | yes | no | yes | yes |
+
+The revision letters do not give the order of the code bases, so this table does not say which came
+first; it only shows that B4CC is the stripped-down one. [inferred]
+
+## B588 (1993)
+
+5293121 is a different generation. Its calibration is larger (code part 2 starts about $EB5E instead
+of $E229) and its header and vectors differ. A first alignment finds a counterpart for about 83 % of
+the B4CC code part 1 and 60 % of part 2, spread over some 2,000 pieces, so it is not ported yet. [code]

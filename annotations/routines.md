@@ -431,13 +431,13 @@ Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX
 ## 9C6A ControlPurgeSolenoid_MM
 Evaporative canister purge solenoid control. [from name]
 
-Not called in B4CC; B559 calls it from MainSubLoop. In B4CC nothing reaches this
+Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In B4CC nothing reaches this
 routine, so the purge solenoid is only driven by the DRB actuator tests. [reviewed]
 
 ## 9F68 DetermineIndividualInjectorTrims_MM
 Individual cylinder fuel trims (CL1PTR..CLTRP4). [from name]
 
-Not called in B4CC; B559 calls it from MainSubLoop. [reviewed]
+Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. [reviewed]
 
 ## A677 ControlPTU_MM
 Torque converter lock-up (part-throttle unlock, PTU) control for automatic transmissions. [from name]
@@ -515,7 +515,7 @@ Throttle position processing: minimum-throttle learning (MINTHR), idle / WOT det
 Variable rev limiter (rev limit that depends on vehicle speed / TPS / MAP state). [from name]
 
 Writes VariableRevLimit from vehicle speed, baro (VarRevLimitBaroFactor) and the TPS table
-RevLimitFromTPSOverMinThr. Not called in B4CC; B559 calls it from MainSubLoop. In B4CC VariableRevLimit keeps the value $FF
+RevLimitFromTPSOverMinThr. Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop. In B4CC VariableRevLimit keeps the value $FF
 set at reset, so the fuel cut-off checks against it never trigger and only the fixed rev limits act. [reviewed]
 
 ## 552D ActuatorTestMode_MM
@@ -622,7 +622,7 @@ OBD-II monitor. Misfire (P0300-P0304). Evaluates blocks of 100 crank events coun
 Status byte ObdMonStatus_Misfire: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## E9C5 ObdMonitorScheduler
-Runs the ten OBD-II monitors from the table at $E939. Called from MainSubLoop in B559; not called in B4CC. [reviewed]
+Runs the ten OBD-II monitors from the table at $E939. Called from MainSubLoop in B559, B4F3 and B4C2; not called in B4CC. [reviewed]
 
 Table: 10 records of 14 bytes from $E939 to $E9C4: +0 monitor routine, +2 status byte in RAM
 ($010E-$0119), +4 pointer to a scheduling mask ($E931-$E937, tested against Counter_MainLoop), +6
@@ -964,14 +964,14 @@ Charge-warning lamp control when CONFIG2 bit 5 is clear (OutputBits2 bit 4). [re
 
 Despite the original name this drives the charge lamp, not the MIL. The lamp output follows
 KeyOnOrEngineRunningTime, BitFlags71 bit 7 and the charging fault flags (IPL2 bit 7,
-SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559 calls it from MainSubLoop.
+SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 
 ## 5DB7 CheckIfCheckEngineLightShouldBeOn_B_MM
 Charge-warning lamp control when CONFIG2 bit 5 is set (OutputBits2 bit 4). [reviewed]
 
 Same job as the A routine for the other configuration: a start-up phase (also switching
 LinkReg48Data bit 4) that ends when KeyOnOrEngineRunningTime or engine speed passes a fixed limit
-(BitFlags6D bit 1 marks the end), then the lamp follows the charging fault flags (IPL2 bit 7, SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559 calls it from
+(BitFlags6D bit 1 marks the end), then the lamp follows the charging fault flags (IPL2 bit 7, SystemStatusFlag_4b6 bit 0). Not called in B4CC; B559, B4F3 and B4C2 call it from
 MainSubLoop.
 
 ## 68BE EmmissionMaintenanceRemider1_MM
@@ -987,14 +987,14 @@ Plausibility check of the ambient / battery temperature sensor (fault code 23). 
 
 Runs when BitFlags71 bit 7 is set and none of the related IPL fault bits is set. When AmbientAirTemp is below $58 and close
 to CoolantTemp (within LE019) but differs from ChargeTemp by more than LE019, it reports
-ErrBytes_CODE23_b. Not called in B4CC; B559 calls it from MainSubLoop.
+ErrBytes_CODE23_b. Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 
 ## 32B0 DecrementDSO2SensorDiagnosticCounter_MM
 Downstream O2 sensor diagnostic counter (rich-signal timing). [reviewed]
 
 When BitFlags049E bit 4 is set and the upstream O2 voltage (O2SensorVolts) is at or above LCCEB, counts
 DiagCounter_DSO2SensorDiagnostics down; at zero it reloads it from DSO2NT and steps
-DiagCounter_DSO2SensorSigned by LCCE9 (saturating at $80). Not called in B4CC; B559 calls it from
+DiagCounter_DSO2SensorSigned by LCCE9 (saturating at $80). Not called in B4CC; B559, B4F3 and B4C2 call it from
 MainSubLoop.
 
 ## 9BAB VerifyOperationOfDownstreamO2Sensor_MM
@@ -1002,7 +1002,7 @@ Downstream O2 sensor check (fault code 21, the ErrBytes_CODE21_f descriptor). [r
 
 Once the engine is warm, compares the downstream O2 voltage with LCCD0/LCCD1 while the upstream
 sensor is clearly rich (above O2HIGH) or lean (below O2LOW). If the downstream sensor does not follow
-for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559 calls it from MainSubLoop.
+for LCCCB x LCCCA counts it reports the fault. Not called in B4CC; B559, B4F3 and B4C2 call it from MainSubLoop.
 
 ## 6180 CheckErrorMaskingAndSetCodes_MM
 Filters cruise distance pulse width and TPS (FaultMask_01D2/01D6) and runs a speed-related check. [from name]
@@ -1025,4 +1025,4 @@ Knock sensor signal check (fault code 16). [reviewed]
 
 With the engine running and IPL1 bit 2 set, counts DiagCounter_KnockSensorActive while KnockVolts is
 outside the LE020 window and reports code 16 when it reaches LE022; a voltage inside the window
-clears the counter. Not called in B4CC; B559 calls it from SubLoopC.
+clears the counter. Not called in B4CC; B559, B4F3 and B4C2 call it from SubLoopC.
