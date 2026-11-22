@@ -40,6 +40,16 @@ checked against the code.
   the tooth period after the edge, and `Isr_TOC4_KnockSample` reads the knock sensor when it expires.
 - **Sensor signals** (scope captures at idle, about 880 rpm; one from the project owner's car, one
   published reference capture):
+
+  ![Crank and cam signals, owner's car](../images/crank_cam_scope_owner.jpg)
+  *Owner's car at idle: CH1 crank, CH2 cam, 10 ms/div.*
+
+  ![Reference capture](../images/crank_cam_reference_capture.jpg)
+  *Published reference capture: red crank, blue cam, green ignition/injector reference.*
+
+  ![Crankshaft and camshaft sequence chart](../images/crank_cam_sequence_chart.jpg)
+  *Chrysler sequence chart for the 2.0 SOHC (420A/420H), annotated by Dex (neon-club.ru).*
+
   - **Crank:** one group of four pulses every 180 degrees of crankshaft (one group per cylinder
     event, about 34 ms apart at idle). Inside a group the rising edges are about 3.8 ms apart, which
     is roughly 20 degrees. In every second group the first pulse is wide (it starts about 60 degrees
@@ -59,8 +69,11 @@ checked against the code.
     1-3-4-2. All of this agrees with the scope measurements above.
   - With phase 0 = first slot of the group (the edge after the long gap), the phases are
     **0 = 69, 1 = 49, 2 = 29, 3 = 9 degrees BTDC**. Phase 3, where MAP is sampled and the knock window
-    is armed, is the 9 degree BTDC slot. Still to confirm: the signal polarity at the HC11 pins (the
-    input buffer may invert it, which would make IC1 see the other edge of each slot).
+    is armed, is the 9 degree BTDC slot.
+  - **Verification needed:** the signal polarity at the HC11 pins. The input buffer may invert the
+    sensor signal, which would make IC1 see the other edge of each slot and shift the phase angles by
+    the slot width. Checking it means probing the CPU pins, which requires opening the controller
+    (the board is potted in soft compound), so it has not been done yet.
 
 ## Input coordinates
 

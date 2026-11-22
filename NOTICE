@@ -13,6 +13,12 @@ Original disassembly
   Calibration table definitions come from the MP Tune definition files by Robert Lloyd and
   Morris Terveen. All credit for that work belongs to them.
 
+Images in docs/images
+  crank_cam_scope_owner.jpg - oscilloscope photo from the project owner's car.
+  crank_cam_reference_capture.jpg - reference crank/cam capture published online (author unknown).
+  crank_cam_sequence_chart.jpg - Chrysler service manual sequence chart, annotated by Dex
+  (neon-club.ru).
+
 Project contributions
   The restructured source layout, the code/data analysis, the build and generation tools, added
   analysis, comments and documentation are released under the MIT license (see LICENSE).
