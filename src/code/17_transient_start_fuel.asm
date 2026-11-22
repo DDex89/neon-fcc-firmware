@@ -12,10 +12,16 @@
 ;---------------------------------------------------------------------------------------------------
 ; CalculatePartThrottleTransientFuel  ($6D87)
 ;
-; Transient fuel: accelerator-pump style enrichment and deceleration lean-out. [from name]
+; Transient fuel: accelerator-pump style enrichment and deceleration lean-out. [reviewed - data
+; flow]
 ;
-; MAP-based and TPS-based "pump shot" (MAPTRG/MAPMAX/AESLOP, POSTRG/THRMAX/POSSLP) on tip-in,
-; lean-out on closing throttle or falling MAP (LOTTHR, DECEL, LOTIME ...). See docs/en/fuel.md.
+; Runs in the main loop. Compares MAP and TPS with their filtered averages (time constants AETIME,
+; THRTCN, LMAPTC, LOTIME vs coolant). A rise above MAPTRG / POSTRG (limited by MAPMAX / THRMAX)
+; gives an additive pulse Pulsewidth_PartThrottleEnrichment_HB = delta x AESLOP or POSSLP (vs
+; coolant). A fall gives the lean-out factors (LOTTHR, NEGSL2, triggers LOTTRG/LOTRG2/DECTRG with
+; hysteresis, minimum RPM LOTRPM) and inhibits the O2 controller for DCELTM afterwards. AIS motor
+; steps also produce a small enrichment or enleanment pulse (AISPL1/AISPL2/AISNLC) so idle mixture
+; follows the air change.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -326,12 +332,15 @@ L6F7E:
 ;---------------------------------------------------------------------------------------------------
 ; CalculateInjectorPulsewidthForStarting_MM  ($6F7F)
 ;
-; Cranking fuel: pulse width from coolant temperature, number of engine revolutions and baro.
-; [from name]
+; Cranking fuel: pulse width from coolant temperature, engine position pulses, RPM and baro.
+; [reviewed - data flow]
 ;
-; Uses STRTFL, STFTMP/STFTM2, EPPMUL and STFBAR (see the calibration reference): start fuel =
-; [STRTFL^2 x (1 - STFBAR - STFTMP) x EPPMUL + BATOFF x 4] x 4 us. Also handles the "clear flood"
-; case when the throttle is floored while cranking (ThrottleFlooredWhileStarting_Unload).
+; Runs in the main loop. Uses STRTFL (vs coolant, limited by STRLMT), STFTMP/STFTM2, EPPMUL (vs
+; engine position pulses since start), STFBAR (baro) and the RPM factors STFLID (closed throttle)
+; / STFLOI (open throttle): start fuel = [STRTFL^2 x (1 - STFBAR - STFTMP) x EPPMUL + BATOFF x 4]
+; x 4 us. It also sets Factor_StartFuelDecayIntoRunFuel from SFDCAY, applies the heat-soak
+; correction (AllowForHeatSoakAfterStall) and cuts fuel while the throttle is opened more than
+; UNLOAD above MINTHR ("clear flood", ThrottleFlooredWhileStarting_UnloadFuel).
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -355,7 +364,7 @@ L6F9D:
         jmp     >ThrottleFlooredWhileStarting_UnloadFuel
 
 L6FA0:
-        jsr     >AllowForHeatSoakAfterStall
+        jsr     >AllowForHeatSoakAfterStall          ; Raises the effective coolant temperature after a short stall (RUNTMP vs time stopped, limi
         brset   <BitFlags65,#$80,L6FAF
         cmpa    >STRLMT_ColdestTempAllowedAtClosedThrottle ; STRLMT: Coldest temperature accepted as input to STRTFL table - anything below
         bcc     L6FAF
@@ -439,7 +448,7 @@ L7033:
 ThrottleFlooredWhileStarting_UnloadFuel:
         ldd     #$0000
 L703B:
-        jsr     >TweakInjectorPW
+        jsr     >TweakInjectorPW                     ; Diagnostic override of the injector pulse width.
         std     <InjectorPulsewidth_HB
         cli
         ldx     #SFDCAY_FuelStartDecayIntoRun        ; SFDCAY: Start fuel uSec = [ STRTFL * STRTFL * (1 - STFBAR - STFTMP) * EPPMUL +

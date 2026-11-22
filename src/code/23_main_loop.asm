@@ -110,7 +110,7 @@ MainSubLoop:
         jsr     >EmmissionMaintenanceRemider2_MM
         jsr     >CheckThrottleRoutine_MM             ; Throttle position processing: minimum-throttle learning (MINTHR), idle / WOT detection, TP
         jsr     >HandleBaroReadRequirement_MM        ; Barometric pressure update: reads MAP as baro at key-on and at wide open throttle, low RPM
-        jsr     >CalculateInjectorPulsewidthForStarting_MM ; Cranking fuel: pulse width from coolant temperature, number of engine revolutions and baro
+        jsr     >CalculateInjectorPulsewidthForStarting_MM ; Cranking fuel: pulse width from coolant temperature, engine position pulses, RPM and baro.
         jsr     >SomethingWithAIS_MM
         jsr     >ResetAverageValues_MM
         jsr     >RescaleEngineRPM_MM                 ; Converts engine RPM to the 3D-table column coordinate through RPMSCL (RPMRescaledfor3D).
@@ -123,11 +123,11 @@ MainSubLoop:
         jsr     >ControlAIS_MM                       ; Idle air control: positions the AIS stepper motor to hold the target idle speed.
         jsr     >ControlAsdRelay_MM                  ; Auto shutdown (ASD) relay: powers fuel pump, injectors and coils while the engine turns.
         jsr     >CalculateSparkAdvance_MM            ; Spark advance calculation.
-        jsr     >CalculatePartThrottleEnrichmentAndLatency_MM ; Part-throttle / WOT enrichment factor (PTEADJ, WOTENR) and its transition timing.
+        jsr     >CalculatePartThrottleEnrichmentAndLatency_MM ; Throttle enrichment factor (part throttle / WOT) and injector latency.
         jsr     >HandleAmTimer_MM
         jsr     >HandleO2Processing_MM               ; Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller.
         jsr     >ModifyO2FeedbackCountVarToMaintainStoich_MM
-        jsr     >AdaptiveMemory_DetermineWhichCellApplies_MM
+        jsr     >AdaptiveMemory_DetermineWhichCellApplies_MM ; Selects the adaptive memory cell for the current operating point.
         jsr     >ClearO2SensorFeedbackCounterSigned_MM
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         jsr     >AdaptiveMemory_UpdateCellIfRequired ; Adaptive (learned) fuel correction: updates the current RPM/MAP cell (AutoCalCell0-12).

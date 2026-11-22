@@ -200,6 +200,12 @@ L6896:
 ;---------------------------------------------------------------------------------------------------
 ; TweakInjectorPW  ($689B)
 ;
+; Diagnostic override of the injector pulse width. [reviewed]
+;
+; If calibration byte $D03E is non-zero and DebugRAM bit 2 is set (through the diagnostic link),
+; the computed pulse width is replaced by DebugTemp1 (a word, or a byte times 256 if bit 3 is set,
+; then halved). Normally the routine returns the value unchanged.
+;
 ; Called from: IncludeInjectorLatency, ThrottleFlooredWhileStarting_UnloadFuel
 ;---------------------------------------------------------------------------------------------------
 TweakInjectorPW:

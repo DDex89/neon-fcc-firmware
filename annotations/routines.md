@@ -216,6 +216,10 @@ then produces the injector pulses itself. The AIS-related enrichment/enleanment 
 ## 8A95 CalculateInjectorPulsewidthForEngineRunning
 Running fuel: base injector pulse width from MAP and RPM, then all multiplicative corrections. [reviewed]
 
+Not called: execution falls into this code from the end of CrankInterrupt_CalculateFuel, so the
+running pulse width is computed once per cylinder event, at the 9 degree BTDC slot, from factors
+that the main loop prepares every 10.75 ms.
+
 Speed-density calculation:
 1. MAP is rescaled through MAPHI to the row coordinate of the 3D tables (MAPRescaledfor3D).
 2. Temp5 = (MAP - MAPMIN) x DFPART / 2: air mass proportional to manifold pressure.
@@ -229,11 +233,14 @@ Speed-density calculation:
 Injector latency (BATOFF vs battery voltage) is added afterwards in IncludeInjectorLatency.
 
 ## 6F7F CalculateInjectorPulsewidthForStarting_MM
-Cranking fuel: pulse width from coolant temperature, number of engine revolutions and baro. [from name]
+Cranking fuel: pulse width from coolant temperature, engine position pulses, RPM and baro. [reviewed - data flow]
 
-Uses STRTFL, STFTMP/STFTM2, EPPMUL and STFBAR (see the calibration reference): start fuel =
-[STRTFL^2 x (1 - STFBAR - STFTMP) x EPPMUL + BATOFF x 4] x 4 us. Also handles the "clear flood" case
-when the throttle is floored while cranking (ThrottleFlooredWhileStarting_Unload).
+Runs in the main loop. Uses STRTFL (vs coolant, limited by STRLMT), STFTMP/STFTM2, EPPMUL (vs engine
+position pulses since start), STFBAR (baro) and the RPM factors STFLID (closed throttle) / STFLOI
+(open throttle): start fuel = [STRTFL^2 x (1 - STFBAR - STFTMP) x EPPMUL + BATOFF x 4] x 4 us. It also
+sets Factor_StartFuelDecayIntoRunFuel from SFDCAY, applies the heat-soak correction
+(AllowForHeatSoakAfterStall) and cuts fuel while the throttle is opened more than UNLOAD above MINTHR
+("clear flood", ThrottleFlooredWhileStarting_UnloadFuel).
 
 ## 76A1 CalculateSumOfAllFuelModifiers_MM
 Product of all slow fuel corrections, stored in SumOfFuelModifiers. [reviewed - partially]
@@ -244,13 +251,23 @@ enrichment BARENR x BARMAP x BARRPM, charge-air temperature enrichment AIRTMP x 
 and the closed-loop/adaptive factor.
 
 ## 6D87 CalculatePartThrottleTransientFuel
-Transient fuel: accelerator-pump style enrichment and deceleration lean-out. [from name]
+Transient fuel: accelerator-pump style enrichment and deceleration lean-out. [reviewed - data flow]
 
-MAP-based and TPS-based "pump shot" (MAPTRG/MAPMAX/AESLOP, POSTRG/THRMAX/POSSLP) on tip-in,
-lean-out on closing throttle or falling MAP (LOTTHR, DECEL, LOTIME ...). See docs/en/fuel.md.
+Runs in the main loop. Compares MAP and TPS with their filtered averages (time constants AETIME,
+THRTCN, LMAPTC, LOTIME vs coolant). A rise above MAPTRG / POSTRG (limited by MAPMAX / THRMAX) gives an
+additive pulse Pulsewidth_PartThrottleEnrichment_HB = delta x AESLOP or POSSLP (vs coolant). A fall
+gives the lean-out factors (LOTTHR, NEGSL2, triggers LOTTRG/LOTRG2/DECTRG with hysteresis, minimum
+RPM LOTRPM) and inhibits the O2 controller for DCELTM afterwards. AIS motor steps also produce a
+small enrichment or enleanment pulse (AISPL1/AISPL2/AISNLC) so idle mixture follows the air change.
 
 ## 72F8 CalculatePartThrottleEnrichmentAndLatency_MM
-Part-throttle / WOT enrichment factor (PTEADJ, WOTENR) and its transition timing. [from name]
+Throttle enrichment factor (part throttle / WOT) and injector latency. [reviewed - data flow]
+
+Runs in the main loop. Chooses between the part-throttle map PTEADJ (RPM x MAPPTE) and the WOT map
+WOTENR (RPM x MAPWOT) using the RPMMAP switch point, and moves ThrottleEnrichmentFactor towards the
+target in steps (PTENRP / PTENRN engine pulses per step, PTENRD step size, PTENUM before returning to
+the part-throttle spark map). It also looks up the injector latency InjectorLatencyPW from BATOFF vs
+battery voltage.
 
 ## 704C ControlEngineCutout_MM
 Fuel cut-off decisions: rev limiter, speed limiter, overboost/MAP and limp-mode limits. [from name]
@@ -258,6 +275,47 @@ Fuel cut-off decisions: rev limiter, speed limiter, overboost/MAP and limp-mode 
 Uses REVLMT5/REVLMT6 (normal rev limiter cut/restore), SPDLMH/SPDLML (speed limiter) and the limp-in
 rev limits for a failed MAP or TPS sensor. The cut is applied per revolution
 (ShutOffEngineForThisRotation).
+
+## 8B38 HandleTransitionFromStartToRun
+Blends cranking fuel into running fuel after the engine starts. [reviewed]
+
+While the start flag (BitFlasg71 bit 4) is set, the larger of the running pulse width and the
+decaying start pulse width (InjectorPulsewidth_HB minus Factor_StartFuelDecayIntoRunFuel) is used.
+When the decaying start pulse falls below the running value the flag is cleared and only running fuel
+remains. Falls through into IncludeInjectorLatency.
+
+## 689B TweakInjectorPW
+Diagnostic override of the injector pulse width. [reviewed]
+
+If calibration byte $D03E is non-zero and DebugRAM bit 2 is set (through the diagnostic link), the
+computed pulse width is replaced by DebugTemp1 (a word, or a byte times 256 if bit 3 is set, then
+halved). Normally the routine returns the value unchanged.
+
+## 3997 DecideToUseDecelFuelCut
+Decides whether deceleration fuel cut-off is allowed. [reviewed - data flow]
+
+Requires closed-throttle deceleration with RPM between the DCLRPL / DCLRPH limits relative to the
+target idle speed, coolant above DCLMCT and running time above DCLMER; sets the decel flags used by the
+fuel code. Called from the AIS decel logic.
+
+## 7832 AllowForHeatSoakAfterStall
+Raises the effective coolant temperature after a short stall (RUNTMP vs time stopped, limited by RUNLMT). [reviewed]
+
+## 4C69 DetermineRampCellFromRPMandMAP
+Selects the O2 ramp cell: 3 RPM bands x 3 MAP bands, or the idle cell. [reviewed]
+
+Closed throttle (neither BitFlags66 bit 6 nor BitFlags65 bit 7 set) selects the idle entry. Otherwise
+two RPM breakpoints and two MAP breakpoints stored in the ramp table give cells 0-8; the result is
+the offset of the cell's (rich kick, lean kick) pair in PRIRMP or SECRMP.
+
+## 4D8B AdaptiveMemory_DetermineWhichCellApplies_MM
+Selects the adaptive memory cell for the current operating point. [reviewed]
+
+- Closed throttle and RPM below target idle + IDLOFS (+ HYTRPM hysteresis when already in an idle
+  cell): idle cell 12, or cell 13 when BitFlags_AIS bit 3 is set (a second idle load state).
+- Otherwise: six MAP bands separated by MP1..MP5 (hysteresis DLTMAP) times two RPM bands separated by
+  R1 (hysteresis DLTRPM) give cells 0-11.
+When the cell changes, L0037 bit 7 is set so the controller restarts its averaging.
 
 ## A74B CalculateSparkAdvance_MM
 Spark advance calculation. [reviewed]
@@ -305,7 +363,7 @@ fault descriptor at $D4F3 (code 53, internal controller failure); the engine kee
 16-bit sum of RAM $0005-$0036 and $0100-$014D, used to validate RAM on a warm start. [reviewed]
 
 ## 48E7 HandleO2Processing_MM
-Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller. [from name]
+Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller. [reviewed - data flow]
 
 The controller kicks the mixture rich or lean (PRIRMP/SECRMP kick tables per RPM x MAP cell) until
 the O2 sensor toggles; the secondary ramp also updates the adaptive memory cells. See

@@ -12,8 +12,8 @@
 ;---------------------------------------------------------------------------------------------------
 ; HandleO2Processing_MM  ($48E7)
 ;
-; Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller. [from
-; name]
+; Narrow-band O2 feedback: open/closed loop decision and the rich/lean ramp controller. [reviewed
+; - data flow]
 ;
 ; The controller kicks the mixture rich or lean (PRIRMP/SECRMP kick tables per RPM x MAP cell)
 ; until the O2 sensor toggles; the secondary ramp also updates the adaptive memory cells. See
@@ -380,7 +380,7 @@ L4B77:
 ;---------------------------------------------------------------------------------------------------
 WorkWithPrimaryRamp:
         ldx     #PRIRMP_PrimaryRamp                  ; PRIRMP: Lower RPM Boundary - RPM/32
-        jsr     >DetermineRampCellFromRPMandMAP
+        jsr     >DetermineRampCellFromRPMandMAP      ; Selects the O2 ramp cell: 3 RPM bands x 3 MAP bands, or the idle cell.
 L4B81:
         ldab    <Timer_OutOfClosedLoopMode
         addb    $00,x
@@ -470,7 +470,7 @@ L4BFF:
 ;---------------------------------------------------------------------------------------------------
 WorkWithSecondaryRamp:
         ldx     #SECRMP_SecondaryRamp                ; SECRMP: Lower RPM Boundary - RPM/32
-        bsr     DetermineRampCellFromRPMandMAP
+        bsr     DetermineRampCellFromRPMandMAP       ; Selects the O2 ramp cell: 3 RPM bands x 3 MAP bands, or the idle cell.
 L4C09:
         sei
         ldaa    <Timer_O2ToggleDuration
@@ -557,6 +557,12 @@ DontUpdateO2FeedbackCount:
 
 ;---------------------------------------------------------------------------------------------------
 ; DetermineRampCellFromRPMandMAP  ($4C69)
+;
+; Selects the O2 ramp cell: 3 RPM bands x 3 MAP bands, or the idle cell. [reviewed]
+;
+; Closed throttle (neither BitFlags66 bit 6 nor BitFlags65 bit 7 set) selects the idle entry.
+; Otherwise two RPM breakpoints and two MAP breakpoints stored in the ramp table give cells 0-8;
+; the result is the offset of the cell's (rich kick, lean kick) pair in PRIRMP or SECRMP.
 ;
 ; Called from: WorkWithPrimaryRamp, WorkWithSecondaryRamp
 ;---------------------------------------------------------------------------------------------------
@@ -749,6 +755,15 @@ L4D8A:
 
 ;---------------------------------------------------------------------------------------------------
 ; AdaptiveMemory_DetermineWhichCellApplies_MM  ($4D8B)
+;
+; Selects the adaptive memory cell for the current operating point. [reviewed]
+;
+; - Closed throttle and RPM below target idle + IDLOFS (+ HYTRPM hysteresis when already in an
+;   idle cell): idle cell 12, or cell 13 when BitFlags_AIS bit 3 is set (a second idle load
+;   state).
+; - Otherwise: six MAP bands separated by MP1..MP5 (hysteresis DLTMAP) times two RPM bands
+;   separated by R1 (hysteresis DLTRPM) give cells 0-11. When the cell changes, L0037 bit 7 is set
+;   so the controller restarts its averaging.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------

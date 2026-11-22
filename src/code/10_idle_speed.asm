@@ -878,7 +878,7 @@ L3860:
 ; AIS_Sub5  ($3864)
 ;---------------------------------------------------------------------------------------------------
 AIS_Sub5:
-        jsr     >DecideToUseDecelFuelCut
+        jsr     >DecideToUseDecelFuelCut             ; Decides whether deceleration fuel cut-off is allowed.
         jsr     >CalculateAisPosition1
         jsr     >CalculateAisPosition2
         jsr     >IncDecAISACCompensationCounter
@@ -940,7 +940,7 @@ L38CB:
 ; AIS_Sub9  ($38CE)
 ;---------------------------------------------------------------------------------------------------
 AIS_Sub9:
-        jsr     >DecideToUseDecelFuelCut
+        jsr     >DecideToUseDecelFuelCut             ; Decides whether deceleration fuel cut-off is allowed.
         jsr     >CalculateAisPosition1
         jsr     >CalculateAisPosition2
         jsr     >IncDecAISACCompensationCounter
@@ -1034,6 +1034,12 @@ L3996:
 
 ;---------------------------------------------------------------------------------------------------
 ; DecideToUseDecelFuelCut  ($3997)
+;
+; Decides whether deceleration fuel cut-off is allowed. [reviewed - data flow]
+;
+; Requires closed-throttle deceleration with RPM between the DCLRPL / DCLRPH limits relative to
+; the target idle speed, coolant above DCLMCT and running time above DCLMER; sets the decel flags
+; used by the fuel code. Called from the AIS decel logic.
 ;
 ; Called from: AIS_Sub5, AIS_Sub9
 ;---------------------------------------------------------------------------------------------------

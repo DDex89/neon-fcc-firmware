@@ -94,58 +94,86 @@ changed the low end of `RPMSCL`, which moves the first columns of every RPM x MA
 
 ## Fuel
 
-### Running (`CalculateInjectorPulsewidthForEngineRunning`)
+### Where it is computed
 
-Speed-density:
+| When | Routine | Result |
+|---|---|---|
+| Main loop, every 10.75 ms | `CalculateSumOfAllFuelModifiers_MM` | `SumOfFuelModifiers`: cold, after-start, baro, charge-air and closed-loop factors |
+| Main loop | `CalculatePartThrottleEnrichmentAndLatency_MM` | `ThrottleEnrichmentFactor` (part throttle / WOT) and `InjectorLatencyPW` |
+| Main loop | `CalculatePartThrottleTransientFuel` | additive pump-shot pulse, decel lean-out factors, AIS step enrichment |
+| Main loop | `CalculateInjectorPulsewidthForStarting_MM` | cranking pulse width and the start-to-run decay rate |
+| Main loop | `HandleO2Processing_MM` | O2 controller and adaptive memory |
+| Crank event, phase 3 (9 deg BTDC) | `CrankInterrupt_CalculateFuel` -> `CalculateInjectorPulsewidthForEngineRunning` -> `HandleTransitionFromStartToRun` -> `IncludeInjectorLatency` | final pulse width, written to the injector registers of the I/O device |
+
+So the slow factors are refreshed every 10.75 ms, while the final pulse width uses the MAP value
+sampled at the same crank angle and is computed once per cylinder event.
+
+### Running
 
 ```
 air      = (MAP - MAPMIN) x DFPART / 2
 base_pw  = air + air x PRTTBL(rpm, map) / 256
 pw       = base_pw x throttle_enrichment x SumOfFuelModifiers  (+ knock enrichment)
-pw_total = pw + latency(BATOFF, battery voltage)
+         + pump-shot pulse
+pw       = max(pw, decaying start pulse)        while the start flag is set
+pw_total = pw x fuel-pressure factor + InjectorLatencyPW x 4      (microseconds)
 ```
 
 - `PRTTBL` is the main fuel map: a correction over the MAP-proportional base, similar to a
   volumetric-efficiency table.
-- The throttle enrichment factor blends part throttle and wide-open-throttle enrichment
-  (`PTEADJ`, `WOTENR`, `WOTMUL`; `CalculatePartThrottleEnrichmentAndLatency_MM`).
-- `SumOfFuelModifiers` (`CalculateSumOfAllFuelModifiers_MM`) is the product of the slow corrections:
+- **Throttle enrichment** (`CalculatePartThrottleEnrichmentAndLatency_MM`): part-throttle map
+  `PTEADJ` (RPM x `MAPPTE`) or WOT map `WOTENR` (RPM x `MAPWOT`), selected with the `RPMMAP` switch
+  point. The factor moves towards its target in steps (`PTENRP`, `PTENRN`, `PTENRD`), so enrichment
+  ramps in and out instead of jumping.
+- **`SumOfFuelModifiers`** (`CalculateSumOfAllFuelModifiers_MM`) is the product of:
   - cold-engine enrichment `CLDLDP` / `CLDLDI` (coolant x load, off idle / idle);
-  - after-start enrichment `CURV3D` (coolant x time since start), with a heat-soak correction after
-    a stall (`RUNTMP`);
+  - after-start enrichment `CURV3D` (coolant x time since start), with a heat-soak correction after a
+    short stall (`RUNTMP`, `RUNLMT`);
   - barometric compensation `BAROCP` and enrichment `BARENR x BARMAP x BARRPM`;
   - charge-air temperature enrichment `AIRTMP x AIRMAP x AIRRPM`;
   - the O2 closed-loop and adaptive memory factor.
 - `KNNRCH` / `MAXKNR` add fuel in proportion to the total knock retard.
+- `TweakInjectorPW` lets the diagnostic link override the pulse width (enabled by calibration byte
+  `$D03E`); it is inactive in normal operation.
 
-### Cranking (`CalculateInjectorPulsewidthForStarting_MM`) *(from names)*
+### Cranking (`CalculateInjectorPulsewidthForStarting_MM`)
 
 ```
 start_pw = [STRTFL^2 x (1 - STFBAR - STFTMP) x EPPMUL + BATOFF x 4] x 4 us
 ```
 
-`STRTFL` vs coolant temperature, reduced for altitude (`STFBAR`) and as the engine warms
-(`STFTMP`); `EPPMUL` tapers the fuel with the number of engine position pulses. Flooring the throttle
-while cranking cuts the fuel ("clear flood", `UNLOAD`). After start, `SFDCAY` blends the start fuel
-into the running fuel.
+`STRTFL` vs coolant temperature (not colder than `STRLMT`), reduced for altitude (`STFBAR`) and as
+the engine warms (`STFTMP`, `STFTM2`). `EPPMUL` tapers the fuel with the number of engine position
+pulses since cranking began, and `STFLID` / `STFLOI` scale it with RPM for closed / open throttle.
+Opening the throttle more than `UNLOAD` above the learned minimum cuts cranking fuel ("clear flood").
+After start, `HandleTransitionFromStartToRun` keeps the larger of the running pulse and the start
+pulse decaying at the `SFDCAY` rate, then switches to running fuel only.
 
-### Transient fuel (`CalculatePartThrottleTransientFuel`) *(from names)*
+### Transient fuel (`CalculatePartThrottleTransientFuel`)
 
-- **Tip-in:** extra fuel when MAP or TPS rises faster than its filtered average: MAP pump shot
-  `MAPTRG`, `MAPMAX`, `AESLOP`; TPS pump shot `POSTRG`, `THRMAX`, `POSSLP`.
-- **Tip-out:** lean-out when TPS or MAP falls: `LOTTHR`, `LOTTRG`, `LOTIME`, `DECEL`, `DECTRG`, ...
-- **Deceleration fuel shut-off:** above an RPM threshold with a closed throttle and a warm engine
-  (`DCLRPH`, `DCLRPL`, `DCLMCT`, `DFRPM*`).
+- **Tip-in:** MAP and TPS are compared with filtered averages (time constants `AETIME`, `THRTCN`
+  vs coolant). A rise above `MAPTRG` / `POSTRG`, limited by `MAPMAX` / `THRMAX`, gives an additive
+  pulse of `delta x AESLOP` or `delta x POSSLP` (vs coolant).
+- **Tip-out:** a fall gives lean-out factors (`LOTTHR`, `NEGSL2`, triggers `LOTTRG`, `LOTRG2`,
+  `DECTRG` with hysteresis, time constants `LMAPTC`, `LOTIME`, minimum RPM `LOTRPM`) and holds the O2
+  controller for `DCELTM` afterwards.
+- **AIS steps:** opening or closing the idle air motor adds a small enrichment or enleanment pulse
+  (`AISPL1`, `AISPL2`, `AISNLC`), so the idle mixture follows the air change.
+- **Deceleration fuel cut-off** (`DecideToUseDecelFuelCut`): closed throttle, RPM between `DCLRPL`
+  and `DCLRPH` relative to the target idle speed, coolant above `DCLMCT`, running time above `DCLMER`.
 
-### Closed loop and adaptive memory (`HandleO2Processing_MM`) *(from names)*
+### Closed loop and adaptive memory (`HandleO2Processing_MM`)
 
-- Narrow-band O2. The controller kicks the mixture rich or lean in steps from `PRIRMP` (primary ramp)
-  and `SECRMP` (secondary ramp) until the sensor toggles. Kick sizes depend on an RPM x MAP cell.
-- The secondary ramp also teaches the **adaptive memory**: 12 cells over RPM (`R1`) and MAP
-  (`MP1`..`MP5`), plus an idle cell, held in RAM `AutoCalCell0`..`AutoCalCell12idle`. They survive
-  warm restarts.
-- `MAPLIM`, `MAPDEC`, `RPMLIM`, `PWMIN` define where the cells are not updated (open loop at high
-  load); `O2LIMH`/`O2LIML` and `AMLIMH`/`AMLIML` set the authority.
+- Narrow-band O2. The controller kicks the mixture rich or lean in steps until the sensor toggles.
+  The kick sizes come from `PRIRMP` (primary ramp) and `SECRMP` (secondary ramp), per **ramp cell**:
+  3 RPM bands x 3 MAP bands (`DetermineRampCellFromRPMandMAP`), plus an idle cell.
+- The secondary ramp also teaches the **adaptive memory** (`AdaptiveMemory_*`): **cells 0-11** =
+  six MAP bands (`MP1`..`MP5`, hysteresis `DLTMAP`) x two RPM bands (`R1`, hysteresis `DLTRPM`), plus
+  **idle cells 12 and 13** for closed throttle below target idle + `IDLOFS` (cell 13 when a second
+  idle load state is active). The cells are in RAM `AutoCalCell0`..`AutoCalCellEnd` and survive warm
+  restarts.
+- `MAPLIM`, `MAPDEC`, `RPMLIM`, `PWMIN` define where cells are not updated (open loop at high load);
+  `O2LIMH`/`O2LIML` and `AMLIMH`/`AMLIML` limit the correction.
 
 ## Spark (`CalculateSparkAdvance_MM`)
 

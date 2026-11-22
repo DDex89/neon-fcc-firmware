@@ -12,7 +12,13 @@
 ;---------------------------------------------------------------------------------------------------
 ; CalculatePartThrottleEnrichmentAndLatency_MM  ($72F8)
 ;
-; Part-throttle / WOT enrichment factor (PTEADJ, WOTENR) and its transition timing. [from name]
+; Throttle enrichment factor (part throttle / WOT) and injector latency. [reviewed - data flow]
+;
+; Runs in the main loop. Chooses between the part-throttle map PTEADJ (RPM x MAPPTE) and the WOT
+; map WOTENR (RPM x MAPWOT) using the RPMMAP switch point, and moves ThrottleEnrichmentFactor
+; towards the target in steps (PTENRP / PTENRN engine pulses per step, PTENRD step size, PTENUM
+; before returning to the part-throttle spark map). It also looks up the injector latency
+; InjectorLatencyPW from BATOFF vs battery voltage.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -621,7 +627,7 @@ L770E:
         ldx     #TIMESC_TimeEngineRunningRescaledFor3D ; TIMESC: Output is used as the input to the 3D tables
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         psha
-        jsr     >AllowForHeatSoakAfterStall
+        jsr     >AllowForHeatSoakAfterStall          ; Raises the effective coolant temperature after a short stall (RUNTMP vs time stopped, limi
         tab
         pula
         ldx     #CURV3D_CurveABC_3DTable             ; CURV3D: Fuel Modifier from coolant temp and time.
@@ -772,6 +778,9 @@ L7822:
 
 ;---------------------------------------------------------------------------------------------------
 ; AllowForHeatSoakAfterStall  ($7832)
+;
+; Raises the effective coolant temperature after a short stall (RUNTMP vs time stopped, limited by
+; RUNLMT). [reviewed]
 ;
 ; Called from: CalculateInjectorPulsewidthForStarting_MM, CalculateSumOfAllFuelModifiers_MM
 ;---------------------------------------------------------------------------------------------------

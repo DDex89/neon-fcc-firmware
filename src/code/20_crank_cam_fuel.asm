@@ -2502,6 +2502,10 @@ L8A93:
 ; Running fuel: base injector pulse width from MAP and RPM, then all multiplicative corrections.
 ; [reviewed]
 ;
+; Not called: execution falls into this code from the end of CrankInterrupt_CalculateFuel, so the
+; running pulse width is computed once per cylinder event, at the 9 degree BTDC slot, from factors
+; that the main loop prepares every 10.75 ms.
+;
 ; Speed-density calculation:
 ; 1. MAP is rescaled through MAPHI to the row coordinate of the 3D tables (MAPRescaledfor3D).
 ; 2. Temp5 = (MAP - MAPMIN) x DFPART / 2: air mass proportional to manifold pressure.
@@ -2612,6 +2616,13 @@ LOAD_MAX_INJ_PULSEWIDTH:
 
 ;---------------------------------------------------------------------------------------------------
 ; HandleTransitionFromStartToRun  ($8B38)
+;
+; Blends cranking fuel into running fuel after the engine starts. [reviewed]
+;
+; While the start flag (BitFlasg71 bit 4) is set, the larger of the running pulse width and the
+; decaying start pulse width (InjectorPulsewidth_HB minus Factor_StartFuelDecayIntoRunFuel) is
+; used. When the decaying start pulse falls below the running value the flag is cleared and only
+; running fuel remains. Falls through into IncludeInjectorLatency.
 ;---------------------------------------------------------------------------------------------------
 HandleTransitionFromStartToRun:
         brclr   <BitFlasg71,#$10,IncludeInjectorLatency
@@ -2649,7 +2660,7 @@ IncludeInjectorLatency:
         ldaa    >FuelPressureFactor
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         xgdy
-        jsr     >TweakInjectorPW
+        jsr     >TweakInjectorPW                     ; Diagnostic override of the injector pulse width.
         std     <InjectorPulsewidth_HB
         ldd     <Pulsewidth_AISEnrichment_HB
         subb    >AISEnleanmentPW
