@@ -2594,11 +2594,16 @@ L4289:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorCatalyst  ($428A)
 ;
-; OBD-II monitor: catalyst efficiency (P0422). Status byte ObdMonStatus_Catalyst. [reviewed -
-; table entry]
+; OBD-II monitor. Catalyst efficiency (P0422). Needs coolant LCB61 and an estimated warm catalyst
+; (CatWarmupEstimate builds up with driving above LCB6E, hysteresis LCB71/LCB73 in IPL1 bit 1),
+; MAP and RPM inside the LCB64/LCB68 windows, closed loop. Forces OutputDriverBits bit 5 (purge
+; off), settles for LCB6C, measures for LCB74 and compares the result with LCB76[fail count]. Fail
+; counts in CatFailCounts, passing trips for MIL healing in CatPassTrips (LCB7C). [reviewed - data
+; flow]
 ;
-; Entry 5 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_Catalyst: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorCatalyst:
         ldy     #$0111
@@ -2627,7 +2632,7 @@ L42B2:
         asld
         cmpa    >LCB6E                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcs     L42D9
-        ldaa    >MonCatalyst_0442
+        ldaa    >CatWarmupEstimate
         ldab    <Counter_MainLoop
         bne     L42E9
         adda    >LCB70                               ; SCRMP1 (SecondaryRampSubtractor1)
@@ -2637,18 +2642,18 @@ L42B2:
 L42D1:
         ldaa    >LCB6F                               ; SCRMP1 (SecondaryRampSubtractor1)
 L42D4:
-        staa    >MonCatalyst_0442
+        staa    >CatWarmupEstimate
         bra     L42E9
 
 L42D9:
-        ldaa    >MonCatalyst_0442
+        ldaa    >CatWarmupEstimate
         ldab    <Counter_MainLoop
         bne     L42E9
         suba    >LCB72                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcc     L42E6
         clra
 L42E6:
-        staa    >MonCatalyst_0442
+        staa    >CatWarmupEstimate
 L42E9:
         brclr   <IPL1,#$02,L42F7
         cmpa    >LCB73                               ; SCRMP1 (SecondaryRampSubtractor1)
@@ -2692,7 +2697,7 @@ L4342:
         ldy     #$0111
         ldx     #$043D
         brset   $00,x,#$08,L4364
-        ldaa    >MonCatalyst_010F
+        ldaa    >CatFailCounts
         anda    #$0F
         inca
         cmpa    >LCB83                               ; SCRMP1 (SecondaryRampSubtractor1)
@@ -2700,24 +2705,24 @@ L4342:
         bset    $00,x,#$08
         bclr    $00,x,#$01
         ldd     #$0000
-        std     >MonCatalyst_0440
+        std     >CatSettleTimer
 L4364:
         brset   $00,x,#$01,L4383
         bset    $00,y,#$04
         bset    <OutputDriverBits,#$20
-        ldd     >MonCatalyst_0440
+        ldd     >CatSettleTimer
         addd    #$0001
         beq     L4380
-        std     >MonCatalyst_0440
+        std     >CatSettleTimer
         cpd     >LCB6C                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcs     L4394
 L4380:
         bset    $00,x,#$01
 L4383:
-        ldd     >MonCatalyst_043E
+        ldd     >CatTestTimer
         addd    #$0001
         beq     L4397
-        std     >MonCatalyst_043E
+        std     >CatTestTimer
         cpd     >LCB74                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcc     L4397
 L4394:
@@ -2729,7 +2734,7 @@ L4397:
         ldy     #$0443
         jsr     >CalculateVehicleSpeedOrEngineRpms
         ldx     #LCB76                               ; SCRMP1 (SecondaryRampSubtractor1)
-        ldab    >MonCatalyst_010F
+        ldab    >CatFailCounts
         andb    #$0F
         cmpb    #$02
         bls     L43B2
@@ -2749,7 +2754,7 @@ L43B2:
         ldx     #$0111
         brclr   $00,x,#$20,L43FD
         xgdy
-        ldab    >MonCatalyst_0110
+        ldab    >CatPassTrips
         cmpb    #$03
         bcc     L43FD
         ldx     #LCB7C                               ; SCRMP1 (SecondaryRampSubtractor1)
@@ -2758,42 +2763,42 @@ L43B2:
         xgdy
         cpd     $00,x
         bls     L43EC
-        clr     >MonCatalyst_0110
+        clr     >CatPassTrips
         bra     L442E
 
 L43EC:
         ldy     #$0111
         bset    $00,y,#$40
-        ldaa    >MonCatalyst_0110
+        ldaa    >CatPassTrips
         inca
         beq     L43FD
-        staa    >MonCatalyst_0110
+        staa    >CatPassTrips
 L43FD:
         ldy     #$0111
         bset    $00,y,#$40
         bra     L447C
 
 L4407:
-        ldaa    >MonCatalyst_0110
+        ldaa    >CatPassTrips
         cmpa    #$03
         bcc     L4411
-        clr     >MonCatalyst_0110
+        clr     >CatPassTrips
 L4411:
-        ldaa    >MonCatalyst_010F
+        ldaa    >CatFailCounts
         anda    #$0F
         inca
         cmpa    #$0F
         bcc     L443C
         cmpa    >LE01E                               ; BATVLT (BatteryVoltsTable)
         bcc     L443C
-        ldab    >MonCatalyst_010F
+        ldab    >CatFailCounts
         andb    #$F0
-        stab    >MonCatalyst_010F
-        oraa    >MonCatalyst_010F
-        staa    >MonCatalyst_010F
+        stab    >CatFailCounts
+        oraa    >CatFailCounts
+        staa    >CatFailCounts
 L442E:
         ldd     #$0000
-        std     >MonCatalyst_043E
+        std     >CatTestTimer
         std     >Var_0443
         std     >Var_0445
         bra     L449E
@@ -2802,13 +2807,13 @@ L443C:
         ldy     #$0111
         bset    $00,y,#$08
         bset    $00,y,#$40
-        ldab    >MonCatalyst_010F
+        ldab    >CatFailCounts
         andb    #$F0
-        stab    >MonCatalyst_010F
+        stab    >CatFailCounts
         andb    #$F0
         addb    #$10
         bcs     L4462
-        stab    >MonCatalyst_010F
+        stab    >CatFailCounts
         lsrb
         lsrb
         lsrb
@@ -2820,10 +2825,10 @@ L4462:
         bset    $00,y,#$01
         ldx     #$011A
         brset   $00,x,#$02,L4484
-        ldab    >MonCatalyst_010F
+        ldab    >CatFailCounts
         andb    #$0F
-        stab    >MonCatalyst_010F
-        clr     >MonCatalyst_0110
+        stab    >CatFailCounts
+        clr     >CatPassTrips
 L447C:
         ldy     #$0111
         bclr    $00,y,#$80
@@ -2831,7 +2836,7 @@ L4484:
         ldy     #$0111
         bclr    $00,y,#$04
         ldd     #$0000
-        std     >MonCatalyst_0440
+        std     >CatSettleTimer
         ldx     #$043D
         bclr    $00,x,#$01
         bclr    $00,x,#$10

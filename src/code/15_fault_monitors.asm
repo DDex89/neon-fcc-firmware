@@ -220,7 +220,7 @@ L5891:
 ; $48 ($00EC, 0), and LinkRequestFlags bit 6 is set. Original name
 ; ErrorCodeProcessingSomething_MM.
 ;
-; Called from: L97D9, MainSubLoop, ShutDownSubroutineA
+; Called from: MainSubLoop, O2LoadTestSample, ShutDownSubroutineA
 ;---------------------------------------------------------------------------------------------------
 LinkRegisterUpdate:
         brclr   <LinkStatusFlags,#$40,L58C1
@@ -713,7 +713,7 @@ L5B83:
         pshy
         bsr     L5BDD
         puly
-        clr     >Var_0035
+        clr     >WarmupCycleCount
         ldx     #$0135
         ldd     $04,y
         abx

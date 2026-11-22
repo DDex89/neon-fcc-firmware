@@ -463,9 +463,9 @@ L9EFF:
         ldx     #$0463
         brclr   $00,x,#$80,L9F2B
         brclr   $00,x,#$40,L9F28
-        cmpb    >Var_020B
+        cmpb    >EvapPurgeDuty
         bcc     L9F23
-        ldab    >Var_020B
+        ldab    >EvapPurgeDuty
         ldaa    <Counter_MainLoop
         bita    #$03
         bne     L9F21
@@ -473,7 +473,7 @@ L9EFF:
         bcc     L9F1E
         clrb
 L9F1E:
-        stab    >Var_020B
+        stab    >EvapPurgeDuty
 L9F21:
         bra     L9F2B
 
@@ -482,7 +482,7 @@ L9F23:
         bra     L9F2B
 
 L9F28:
-        ldab    >Var_020B
+        ldab    >EvapPurgeDuty
 L9F2B:
         stab    <Var_00E4
         brclr   <OutputBits2,#$80,L9F3C
@@ -794,11 +794,14 @@ LA115:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorEvapPurgeFlow  ($A118)
 ;
-; OBD-II monitor: EVAP purge flow (P0441). Status byte ObdMonStatus_EvapPurge. [reviewed - table
-; entry]
+; OBD-II monitor. EVAP purge flow (P0441). At idle in adaptive cell LCD39 with stable battery
+; volts and AIS loads, stores the O2 trim, RPM and AIS position, then ramps the purge duty
+; (EvapPurgeDuty, LCD31 per step). Passes when the AIS position (LCD32), O2 trim (LCD33) or RPM
+; (LCD34) moves enough; fails when the duty reaches LCD35 without a change. [reviewed - data flow]
 ;
-; Entry 4 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_EvapPurge: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorEvapPurgeFlow:
         ldx     #$0116
@@ -845,17 +848,17 @@ LA15E:
         oraa    #$10
         staa    >MonEvap_0463
         ldaa    >LCD3A
-        staa    >MonEvap_0202
+        staa    >EvapStartDelay
         ldaa    >LCD30
-        staa    >MonEvap_0203
+        staa    >EvapBaselineTime
         ldaa    >MonEvap_020C
-        staa    >MonEvap_0205
+        staa    >EvapBaseO2Trim
         ldd     <EngineRpm_HB
-        std     >MonEvap_0206
+        std     >EvapBaseRpm
         ldaa    >Var_0183
-        staa    >MonEvap_0469
+        staa    >EvapStartVar0183
         ldaa    <BatteryVolts
-        staa    >MonEvap_0468
+        staa    >EvapStartBattVolts
 LA193:
         ldaa    >ObdStatusFlags
         bita    #$01
@@ -864,14 +867,14 @@ LA193:
 
 LA19D:
         ldaa    >Var_0183
-        suba    >MonEvap_0469
+        suba    >EvapStartVar0183
         bcc     LA1A6
         nega
 LA1A6:
         cmpa    >LCD41
         bhi     LA1C0
         ldaa    <BatteryVolts
-        suba    >MonEvap_0468
+        suba    >EvapStartBattVolts
         bcc     LA1B3
         nega
 LA1B3:
@@ -885,21 +888,21 @@ LA1C0:
         jmp     >CODEa344
 
 LA1C3:
-        ldaa    >MonEvap_0202
+        ldaa    >EvapStartDelay
         beq     LA1D6
         brset   <Counter_MainLoop,#$FF,LA1CF
         jmp     >LA335
 
 LA1CF:
         deca
-        staa    >MonEvap_0202
+        staa    >EvapStartDelay
         jmp     >LA335
 
 LA1D6:
         ldaa    >ObdMonStatus_EvapPurge
         oraa    #$04
         staa    >ObdMonStatus_EvapPurge
-        ldaa    >MonEvap_0203
+        ldaa    >EvapBaselineTime
         beq     LA249
         ldaa    >LCD2F
         ldab    >MonEvap_020C
@@ -907,7 +910,7 @@ LA1D6:
         adca    #$00
         psha
         ldaa    >MonEvap_0201
-        ldab    >MonEvap_0205
+        ldab    >EvapBaseO2Trim
         mul
         adca    #$00
         pulb
@@ -915,20 +918,20 @@ LA1D6:
         bcc     LA1FC
         ldaa    #$FF
 LA1FC:
-        staa    >MonEvap_0205
+        staa    >EvapBaseO2Trim
         ldaa    >LCD2F
         ldy     <EngineRpm_HB
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
         ldaa    >MonEvap_0201
-        ldy     >MonEvap_0206
+        ldy     >EvapBaseRpm
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         sty     <Temp0
         pula
         pulb
         addd    <Temp0
-        std     >MonEvap_0206
-        ldaa    >MonEvap_0203
+        std     >EvapBaseRpm
+        ldaa    >EvapBaselineTime
         beq     LA249
         brset   <Counter_MainLoop,#$FF,LA22A
         jmp     >LA335
@@ -936,16 +939,16 @@ LA1FC:
 LA22A:
         deca
         bne     LA243
-        ldab    >MonEvap_0205
-        stab    >MonEvap_0208
-        ldx     >MonEvap_0206
-        stx     >MonEvap_0209
+        ldab    >EvapBaseO2Trim
+        stab    >EvapTestO2Trim
+        ldx     >EvapBaseRpm
+        stx     >EvapTestRpm
         ldab    <CurrentAisPosition
-        stab    >MonEvap_0204
+        stab    >EvapBaseAisPos
         ldab    <Var_00E4
-        stab    >Var_020B
+        stab    >EvapPurgeDuty
 LA243:
-        staa    >MonEvap_0203
+        staa    >EvapBaselineTime
         jmp     >LA335
 
 LA249:
@@ -955,14 +958,14 @@ LA249:
         ldaa    <Counter_MainLoop
         bita    #$03
         bne     LA264
-        ldaa    >Var_020B
+        ldaa    >EvapPurgeDuty
         adda    >LCD31
         bcc     LA261
         ldaa    #$FF
 LA261:
-        staa    >Var_020B
+        staa    >EvapPurgeDuty
 LA264:
-        ldaa    >Var_020B
+        ldaa    >EvapPurgeDuty
         cmpa    >LCD35
         bcs     LA26F
         jmp     >CODEa373
@@ -974,7 +977,7 @@ LA26F:
         adca    #$00
         psha
         ldaa    >MonEvap_0201
-        ldab    >MonEvap_0208
+        ldab    >EvapTestO2Trim
         mul
         adca    #$00
         pulb
@@ -982,33 +985,33 @@ LA26F:
         bcc     LA288
         ldaa    #$FF
 LA288:
-        staa    >MonEvap_0208
+        staa    >EvapTestO2Trim
         ldaa    >LCD2F
         ldy     <EngineRpm_HB
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
         ldaa    >MonEvap_0201
-        ldy     >MonEvap_0209
+        ldy     >EvapTestRpm
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         sty     <Temp0
         pula
         pulb
         addd    <Temp0
-        std     >MonEvap_0209
-        ldaa    >MonEvap_0204
+        std     >EvapTestRpm
+        ldaa    >EvapBaseAisPos
         suba    <CurrentAisPosition
         bcs     LA2B6
         cmpa    >LCD32
         bhi     LA2EA
 LA2B6:
-        ldaa    >MonEvap_0205
-        suba    >MonEvap_0208
+        ldaa    >EvapBaseO2Trim
+        suba    >EvapTestO2Trim
         bcs     LA2C3
         cmpa    >LCD33
         bhi     LA2EA
 LA2C3:
-        ldaa    >MonEvap_0206
-        suba    >MonEvap_0209
+        ldaa    >EvapBaseRpm
+        suba    >EvapTestRpm
         bcs     LA2D0
         cmpa    >LCD34
         bhi     LA2EA
@@ -1070,16 +1073,21 @@ LA330:
 LA335:
         rts
 
+
+FuelSysHealLimit:
         dc.b    $1D
 
 ;---------------------------------------------------------------------------------------------------
 ; MonitorFuelSystemRich  ($A337)
 ;
-; OBD-II monitor: fuel system rich (P0172). Status byte ObdMonStatus_FuelRich. [reviewed - table
-; entry]
+; OBD-II monitor. Fuel system rich (P0172). Combined trim (short-term / 2 + adaptive / 2) against
+; TABLEcd00(coolant) with hysteresis LCD29; rich for LCD2A passes sets the suspected bit, then the
+; per-cylinder trims are checked against CylTrimTable3. Healing under similar conditions (record
+; $012D) after FuelSysHealLimit ($1D at $A336) counts. [reviewed - data flow]
 ;
-; Entry 7 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_FuelRich: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorFuelSystemRich:
         ldab    >ObdMonStatus_FuelRich
@@ -1112,7 +1120,7 @@ LA366:
         ldab    >ObdStatusFlags
         bitb    #$01
         bne     LA387
-        ldab    >Var_045A
+        ldab    >ObdTrimSettleTimer
         beq     LA375
         jmp     >LA55E
 
@@ -1143,7 +1151,7 @@ LA399:
         asrb
         ldx     #$00F4
         jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
-        std     >MonFuelSys_0188
+        std     >FuelSysTrimSum
         ldaa    <CoolantTemp
         ldx     #TABLEcd00
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -1155,21 +1163,21 @@ LA3B5:
         clra
         asld
         std     <Temp0
-        cpd     >MonFuelSys_0188
+        cpd     >FuelSysTrimSum
         bhi     LA404
         ldx     #$012D
         brset   $03,x,#$80,LA401
         brclr   $02,x,#$80,LA401
         brclr   $02,x,#$20,LA401
-        jsr     >LECD7
+        jsr     >ObdSimilarConditions                ; OBD-II "similar conditions" test against the record at X: sets bit 6 of X+2 if MAP is with
         ldx     #$012D
         brclr   $02,x,#$40,LA3FE
-        ldaa    >MonFuelSys_04B0
+        ldaa    >FuelSysHealCounter
         inca
         beq     LA3E1
-        staa    >MonFuelSys_04B0
+        staa    >FuelSysHealCounter
 LA3E1:
-        cmpa    >$A336
+        cmpa    >FuelSysHealLimit
         bcs     LA401
         ldaa    $03,x
         anda    #$7F
@@ -1185,20 +1193,20 @@ LA3F1:
         bra     LA401
 
 LA3FE:
-        clr     >MonFuelSys_04B0
+        clr     >FuelSysHealCounter
 LA401:
         jmp     >LA546
 
 LA404:
         ldx     #$012D
         brclr   $02,x,#$20,LA40E
-        clr     >MonFuelSys_04B0
+        clr     >FuelSysHealCounter
 LA40E:
         ldaa    >MonFuelSys_0187
         oraa    #$08
         staa    >MonFuelSys_0187
-        inc     >MonFuelSys_018B
-        ldaa    >MonFuelSys_018B
+        inc     >FuelSysRichCount
+        ldaa    >FuelSysRichCount
         cmpa    >LCD2A
         bcs     LA42F
         ldaa    >ObdMonStatus_FuelRich
@@ -1206,15 +1214,15 @@ LA40E:
         staa    >ObdMonStatus_FuelRich
         clra
         staa    <Counter_O2SensorFeedbackCount_Signed
-        staa    >MonFuelSys_018B
+        staa    >FuelSysRichCount
 LA42F:
         jmp     >LA55E
 
 LA432:
-        ldaa    >MonFuelSys_018B
+        ldaa    >FuelSysRichCount
         inca
         beq     LA43B
-        staa    >MonFuelSys_018B
+        staa    >FuelSysRichCount
 LA43B:
         ldab    <Cyl2_InjPWTrim
         ldaa    <PointerIntoAdaptiveMemory
@@ -1258,14 +1266,14 @@ LA477:
 LA480:
         asrb
         jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
-        std     >MonFuelSys_0188
+        std     >FuelSysTrimSum
         ldaa    <CoolantTemp
         ldx     #CylTrimTable3
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         clra
         asld
         std     <Temp0
-        cpd     >MonFuelSys_0188
+        cpd     >FuelSysTrimSum
         bls     LA4A7
         ldaa    >MonFuelSys_0462
         inca
@@ -1275,7 +1283,7 @@ LA4A2:
         cmpa    >LCD2C
         bcc     LA4E8
 LA4A7:
-        ldaa    >MonFuelSys_018B
+        ldaa    >FuelSysRichCount
         cmpa    >LCD2B
         bcc     LA4B2
         jmp     >LA55E
@@ -1285,7 +1293,7 @@ LA4B2:
         brset   $03,x,#$80,LA4E6
         brclr   $02,x,#$80,LA4E6
         brclr   $02,x,#$20,LA4E6
-        jsr     >LECD7
+        jsr     >ObdSimilarConditions                ; OBD-II "similar conditions" test against the record at X: sets bit 6 of X+2 if MAP is with
         ldx     #$012D
         brclr   $02,x,#$40,LA4E3
         ldaa    $03,x
@@ -1302,7 +1310,7 @@ LA4D6:
         bra     LA4E6
 
 LA4E3:
-        clr     >MonFuelSys_04B0
+        clr     >FuelSysHealCounter
 LA4E6:
         bra     LA538
 
@@ -1313,11 +1321,11 @@ LA4E8:
         ldx     #$012D
         brset   $02,x,#$10,LA50E
         clra
-        staa    >MonFuelSys_04B0
-        staa    >MonFuelSys_0130
+        staa    >FuelSysHealCounter
+        staa    >FuelSysCondCount
         ldx     #$012D
         brset   $02,x,#$80,LA50E
-        jsr     >LED05
+        jsr     >ObdSaveConditions                   ; Stores the current RPM, MAP and closed-loop state in the similar-conditions record at X.
         bset    $02,x,#$80
         bset    $02,x,#$20
 LA50E:
@@ -1331,7 +1339,7 @@ LA515:
         ldx     #$012D
         brclr   $02,x,#$20,LA529
         ldab    #$80
-        stab    >MonFuelSys_0130
+        stab    >FuelSysCondCount
 LA529:
         ldab    >ObdStatusFlags
         bitb    #$02
@@ -1351,7 +1359,7 @@ LA546:
         anda    #$FB
         staa    >ObdMonStatus_FuelRich
         ldaa    #$00
-        staa    >MonFuelSys_018B
+        staa    >FuelSysRichCount
         staa    >MonFuelSys_0462
         ldaa    >MonFuelSys_0187
         anda    #$F7
@@ -1363,11 +1371,12 @@ LA55E:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorFuelSystemLean  ($A55F)
 ;
-; OBD-II monitor: fuel system lean (P0171). Status byte ObdMonStatus_FuelLean. [reviewed - table
-; entry]
+; OBD-II monitor. Fuel system lean (P0171). As the rich monitor with TABLEcd1e, hysteresis LCD27
+; and LCD28 passes. [reviewed - data flow]
 ;
-; Entry 8 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_FuelLean: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorFuelSystemLean:
         ldaa    >ObdMonStatus_FuelLean
@@ -1405,7 +1414,7 @@ LA591:
         asrb
         ldx     #$00F4
         jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
-        std     >MonFuelSys_0188
+        std     >FuelSysTrimSum
         ldaa    <CoolantTemp
         ldx     #TABLEcd1e
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -1417,21 +1426,21 @@ LA5AE:
         clra
         asld
         std     <Temp0
-        cpd     >MonFuelSys_0188
+        cpd     >FuelSysTrimSum
         bls     LA5FC
         ldx     #$012D
         brset   $03,x,#$80,LA5FA
         brclr   $02,x,#$80,LA5FA
         brclr   $02,x,#$10,LA5FA
-        jsr     >LECD7
+        jsr     >ObdSimilarConditions                ; OBD-II "similar conditions" test against the record at X: sets bit 6 of X+2 if MAP is with
         ldx     #$012D
         brclr   $02,x,#$40,LA5F7
-        ldaa    >MonFuelSys_04B0
+        ldaa    >FuelSysHealCounter
         inca
         beq     LA5DA
-        staa    >MonFuelSys_04B0
+        staa    >FuelSysHealCounter
 LA5DA:
-        cmpa    >$A336
+        cmpa    >FuelSysHealLimit
         bcs     LA5FA
         ldaa    $03,x
         anda    #$7F
@@ -1447,21 +1456,21 @@ LA5EA:
         bra     LA5FA
 
 LA5F7:
-        clr     >MonFuelSys_04B0
+        clr     >FuelSysHealCounter
 LA5FA:
         bra     LA669
 
 LA5FC:
         ldx     #$012D
         brclr   $02,x,#$10,LA606
-        clr     >MonFuelSys_04B0
+        clr     >FuelSysHealCounter
 LA606:
         ldaa    >MonFuelSys_0187
         oraa    #$02
         staa    >MonFuelSys_0187
 LA60E:
-        inc     >MonFuelSys_018A
-        ldaa    >MonFuelSys_018A
+        inc     >FuelSysLeanCount
+        ldaa    >FuelSysLeanCount
         cmpa    >LCD28
         bcs     LA676
         ldaa    >ObdMonStatus_FuelLean
@@ -1475,11 +1484,11 @@ CODEa68d:
         ldx     #$012D
         brset   $02,x,#$20,LA63F
         clra
-        staa    >MonFuelSys_04B0
-        staa    >MonFuelSys_0130
+        staa    >FuelSysHealCounter
+        staa    >FuelSysCondCount
         ldx     #$012D
         brset   $02,x,#$80,LA63F
-        jsr     >LED05
+        jsr     >ObdSaveConditions                   ; Stores the current RPM, MAP and closed-loop state in the similar-conditions record at X.
         bset    $02,x,#$80
         bset    $02,x,#$10
 LA63F:
@@ -1493,7 +1502,7 @@ LA646:
         ldx     #$012D
         brclr   $02,x,#$10,LA65A
         ldab    #$80
-        stab    >MonFuelSys_0130
+        stab    >FuelSysCondCount
 LA65A:
         ldab    >ObdStatusFlags
         bitb    #$02
@@ -1504,7 +1513,7 @@ LA661:
         staa    >ObdMonStatus_FuelLean
 LA669:
         ldaa    #$00
-        staa    >MonFuelSys_018A
+        staa    >FuelSysLeanCount
         ldaa    >MonFuelSys_0187
         anda    #$FD
         staa    >MonFuelSys_0187

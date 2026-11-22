@@ -79,7 +79,7 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - Byte-identical rebuild of both variants, checked in CI.
 - 20,075 instructions identified. All code reached through pointer tables is now traced; only 7
   instructions in four unreferenced fragments remain, marked as dead code.
-- 617 routine headers with call graph; 167 routines described by hand, 132 of them checked (fully or partly) against the
+- 617 routine headers with call graph; 179 routines described by hand, 143 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
 - 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
 - RAM map with readers and writers of every address; every directly accessed address is named.

@@ -58,7 +58,7 @@ the likely places are the two AN4 inputs that are read but never used.
 | Input | Where the code reads it | Pin | |
 |---|---|---|---|
 | Switch byte from the companion chip (reply decoded as register `$48`) | `SwitchInputs` ($00ED). Bit 6 is used by the idle speed target, the AIS state choice, the rev limiter, speed control and the CCD switch message, so it is the park / neutral switch. Bit 5 is used by speed control and the AIS; its meaning is not known | 50 (bit 6) | [inferred] |
-| Second input word from the companion chip (reply decoded as register `$50`) | `LinkInputWordHi/Lo` ($00F0/$00F1); bits 0 and 3 are used by the shutdown routine and the O2 heater test | ? | [code] |
+| Second input word from the companion chip (reply decoded as register `$50`) | `LinkInputWordHi/Lo` ($00F0/$00F1); bits 0 and 3 confirm `OutputBits2` bits 0 and 3 during the key-off O2 heater test | ? | [code] |
 | `$0409` bit 1 | Alternate speed control switch input, used when CONFIG2 bit 5 is set | ? | [code] |
 | `$0409` bit 2 | Debounced input in `CODEe74f_MM` (polarity set by CONFIG2 bit 5) and in the idle speed check | ? | [code] |
 | `$0400` bit 6 | Read by the shutdown routine (`GetControlFeedback_DetermineIfShutdownRequired_MM`) | ? | [code] |
@@ -122,12 +122,12 @@ the outputs may be active low.
 
 | Bit | Output | Pin | |
 |---|---|---|---|
-| 3 | O2 sensor heater relay (toggled by the O2 heater voltage test) | — | [inferred] |
+| 0 | Power hold after key-off for the O2 heater test (confirmed by `LinkInputWordHi` bit 0) | — | [inferred] |
+| 3 | Load switch on the O2 sensor lines for the heater test (confirmed by `LinkInputWordHi` bit 3) | — | [inferred] |
 | 4 | Charge indicator lamp (driven by charging-system faults through `$0070` bit 7) | 37 | [inferred] |
 | 5 | TCC / PTU solenoid (`PTU_SetPTUBits`, ATM tests `$0F`, `$17`) | 17 | [code] |
 | 6 | Check-engine lamp (toggled to blink flash codes) | 36 | [inferred] |
 | 7 | Output driven by `$9C6A` (`ControlPurgeSolenoid_MM` in the original disassembly) and DRB override target 1 | ? | |
-| 0 | Switched by the ASD / O2 heater checks | ? | |
 
 ## Other outputs and supplies
 

@@ -324,7 +324,7 @@ L9019:
 L9065:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <CoolantTemp
-        staa    >Var_01AA
+        staa    >StartCoolantTemp
         staa    >CoolantTempVolts
         ldaa    >LastChargeTempVolts
         ldx     #TMPTL1_TempForColdScaleA2D          ; TMPTL1 (TempForColdScaleFromA2D)

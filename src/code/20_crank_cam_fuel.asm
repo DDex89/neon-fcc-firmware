@@ -1662,9 +1662,9 @@ L8481:
 L848D:
         bset    <IPL2,#$04
 L8490:
-        ldaa    >Var_045A
+        ldaa    >ObdTrimSettleTimer
         beq     L8498
-        dec     >Var_045A
+        dec     >ObdTrimSettleTimer
 L8498:
         brclr   <BitFlags69,#$08,L84A5
         ldaa    >Counter_FuelEngRunning_0450
@@ -1798,22 +1798,22 @@ L8576:
         ldaa    >MapRpm_01A5
         bne     L859E
         brset   <BitFlagsE5,#$08,L85A2
-        ldab    >Misfire_019D
+        ldab    >MisfireEventCount
         incb
         bne     L8586
         decb
 L8586:
-        stab    >Misfire_019D
-        ldaa    >Misfire_012B
+        stab    >MisfireEventCount
+        ldaa    >MisfireCondFlags
         anda    #$C0
         cmpa    #$C0
         bne     L85A2
-        ldab    >Misfire_01A1
+        ldab    >MisfireHealEvents
         incb
         bne     L8599
         decb
 L8599:
-        stab    >Misfire_01A1
+        stab    >MisfireHealEvents
         bra     L85A2
 
 L859E:
@@ -1853,59 +1853,59 @@ L85C4:
         asld
         cpd     <Temp5
         bcc     L85C1
-        ldab    >Misfire_019E
+        ldab    >MisfireCount100
         subb    >MapRpm_0458
         bcs     L85EA
-        stab    >Misfire_019E
+        stab    >MisfireCount100
         bra     L85F8
 
 L85EA:
-        clr     >Misfire_019E
+        clr     >MisfireCount100
         negb
-        ldaa    >Misfire_01A0
+        ldaa    >MisfireSum500
         sba
         bcc     L85F5
         clra
 L85F5:
-        staa    >Misfire_01A0
+        staa    >MisfireSum500
 L85F8:
-        ldaa    >Misfire_012B
+        ldaa    >MisfireCondFlags
         anda    #$40
         beq     L8640
-        ldab    >Misfire_01A2
+        ldab    >MisfireHealCount
         subb    >MapRpm_0458
         bcs     L860C
 L8607:
-        stab    >Misfire_01A2
+        stab    >MisfireHealCount
         bra     L861A
 
 L860C:
-        clr     >Misfire_01A2
+        clr     >MisfireHealCount
 L860F:
         negb
 L8610:
-        ldaa    >Misfire_01A4
+        ldaa    >MisfireHealSum
         sba
         bcc     L8617
         clra
 L8617:
-        staa    >Misfire_01A4
+        staa    >MisfireHealSum
 L861A:
-        ldaa    >Misfire_01A1
+        ldaa    >MisfireHealEvents
         ldab    >MapRpm_0458
 L8620:
         lsrb
         sba
         bcs     L8629
-        staa    >Misfire_01A1
+        staa    >MisfireHealEvents
         bra     L8640
 
 L8629:
-        clr     >Misfire_01A1
-        ldab    >Misfire_01A3
+        clr     >MisfireHealEvents
+        ldab    >MisfireHealBlocks
         beq     L8640
         decb
-        stab    >Misfire_01A3
+        stab    >MisfireHealBlocks
         nega
         tab
         ldaa    #$64
@@ -1913,15 +1913,15 @@ L8629:
         bcc     L863D
         clra
 L863D:
-        staa    >Misfire_01A1
+        staa    >MisfireHealEvents
 L8640:
-        ldaa    >Misfire_019E
+        ldaa    >MisfireCount100
         bne     L8648
-        bclr    <Misfire_00E6,#$F0
+        bclr    <MisfireCylBits,#$F0
 L8648:
-        ldaa    >Misfire_01A0
+        ldaa    >MisfireSum500
         bne     L8650
-        bclr    <Misfire_00E6,#$0F
+        bclr    <MisfireCylBits,#$0F
 L8650:
         ldab    >LCBD4
         cmpb    >MapRpm_01A5
@@ -2111,57 +2111,57 @@ L87AC:
         addd    #$0001
         cpd     <Temp5
         blt     L882A
-        ldab    >Misfire_019E
+        ldab    >MisfireCount100
         subb    >LCBE7
         bcs     L87CE
-        stab    >Misfire_019E
+        stab    >MisfireCount100
         bra     L87DC
 
 L87CE:
-        clr     >Misfire_019E
+        clr     >MisfireCount100
         negb
-        ldaa    >Misfire_01A0
+        ldaa    >MisfireSum500
         sba
         bcc     L87D9
         clra
 L87D9:
-        staa    >Misfire_01A0
+        staa    >MisfireSum500
 L87DC:
         ldaa    >LCBDE
         staa    >MapRpm_01A5
-        ldaa    >Misfire_012B
+        ldaa    >MisfireCondFlags
         anda    #$40
         beq     L882A
-        ldab    >Misfire_01A2
+        ldab    >MisfireHealCount
         subb    >LCBE7
         bcs     L87F6
-        stab    >Misfire_01A2
+        stab    >MisfireHealCount
         bra     L8804
 
 L87F6:
-        clr     >Misfire_01A2
+        clr     >MisfireHealCount
         negb
-        ldaa    >Misfire_01A4
+        ldaa    >MisfireHealSum
         sba
         bcc     L8801
         clra
 L8801:
-        staa    >Misfire_01A4
+        staa    >MisfireHealSum
 L8804:
-        ldaa    >Misfire_01A1
+        ldaa    >MisfireHealEvents
         ldab    >LCBE7
         lsrb
         sba
         bcs     L8813
-        staa    >Misfire_01A1
+        staa    >MisfireHealEvents
         bra     L882A
 
 L8813:
-        clr     >Misfire_01A1
-        ldab    >Misfire_01A3
+        clr     >MisfireHealEvents
+        ldab    >MisfireHealBlocks
         beq     L882A
         decb
-        stab    >Misfire_01A3
+        stab    >MisfireHealBlocks
         nega
         tab
         ldaa    #$64
@@ -2169,7 +2169,7 @@ L8813:
         bcc     L8827
         clra
 L8827:
-        staa    >Misfire_01A1
+        staa    >MisfireHealEvents
 L882A:
         brclr   <SyncFlags74,#$01,L8836
         ldaa    >MapRpm_0475
@@ -2195,29 +2195,29 @@ L8838:
         bra     L88B2
 
 L8858:
-        ldaa    >Misfire_012B
+        ldaa    >MisfireCondFlags
         tab
         anda    #$80
         beq     L886F
         andb    #$40
         beq     L8877
-        ldaa    >Misfire_01A2
+        ldaa    >MisfireHealCount
         inca
         beq     L8877
-        staa    >Misfire_01A2
+        staa    >MisfireHealCount
         bra     L8877
 
 L886F:
-        ldaa    >Misfire_019E
+        ldaa    >MisfireCount100
         bne     L8877
         bset    <BitFlagsE5,#$80
 L8877:
         ldd     <Temp5
         std     >MapRpm_01A8
-        ldaa    >Misfire_019E
+        ldaa    >MisfireCount100
         inca
         beq     L8885
-        staa    >Misfire_019E
+        staa    >MisfireCount100
 L8885:
         ldaa    >MapRpm_0458
         inca
@@ -2232,9 +2232,9 @@ L8898:
         andb    #$03
         ldx     #$8271
         abx
-        ldaa    <Misfire_00E6
+        ldaa    <MisfireCylBits
         oraa    $00,x
-        staa    <Misfire_00E6
+        staa    <MisfireCylBits
         ldaa    >LCBDD
         staa    >MapRpm_0475
         ldaa    >LCBE4

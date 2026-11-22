@@ -80,7 +80,8 @@ fault descriptor it reports and three calibration pointers for its enable condit
 
 **Nothing calls `ObdMonitorScheduler` in this code base.** There is no JSR, JMP or pointer to $E9C5 anywhere
 in the ROM, so in 5269718 and 5007033 none of these monitors runs, although most of their fault descriptors
-are enabled. [code] This is the main piece of work for an OBD-II "Enhanced Edition": the monitors exist,
+are enabled. [code] The one exception is the O2 heater test, which runs from the key-off sequence;
+its result is stored but never processed into a code. This is the main piece of work for an OBD-II "Enhanced Edition": the monitors exist,
 they only need to be scheduled, checked against the calibration and tested.
 
 | # | Routine | Address | Monitor | Fault | Status byte |
@@ -95,6 +96,47 @@ they only need to be scheduled, checked against the calibration and tested.
 | 7 | `MonitorFuelSystemRich` | $A337 | Fuel system rich | P0172 | `$0117` |
 | 8 | `MonitorFuelSystemLean` | $A55F | Fuel system lean | P0171 | `$0118` |
 | 9 | `MonitorMisfire` | $AE3F | Misfire | P0300-P0304 | `$0119` |
+
+### How the OBD-II executive works
+
+Each monitor's status byte uses the same bits: 7 enabled this trip, 6 completed, 4 failed once
+(pending), 5 confirmed, 3 failed this trip, 2 test running, 0 fault to report. [code]
+
+- **Scheduling.** `ObdMonitorScheduler` runs a monitor when its status bit 7 is set and its mask at
+  `$E931` allows this main-loop pass. Before each monitor it evaluates three condition lists from the
+  calibration (`EvalConditionList`): the first suspends the monitor while the MIL is on, the other
+  two set `ObdStatusFlags` bits 0 and 1 for the monitor to use.
+- **Two-trip confirmation** (`ObdProcessMonitorResult`). A first failure sets the pending bit and
+  stores a freeze frame with priority 1 (2 for misfire and fuel system). A second failure on a later
+  trip turns the MIL on (`ObdStatusFlags` bit 7), stores the code through `ThrowNonCriticalError` and
+  a freeze frame with priority 3 (4).
+- **Similar conditions.** Misfire and fuel system faults keep the RPM, MAP and closed-loop state of
+  the failure (records at `$0129` and `$012D`). They heal only when the engine runs under similar
+  conditions again (`ObdSimilarConditions`: MAP within `$18`, RPM within `$0C`).
+- **Warm-up cycles.** A trip counts as a warm-up cycle when coolant has risen by `$16` from the start
+  value and reached `$C7` (`ObdWarmupCycleCheck`). After 40 warm-up cycles without the MIL the codes
+  are erased (`ObdAutoClearCodes`).
+- **MIL off.** After 3 good trips without a pending misfire or fuel system fault, the MIL goes off
+  (`ObdMisfireMilLogic`). A catalyst-damaging misfire sets `ObdStatusFlags` bit 3 (blink).
+- **Readiness.** `ObdUpdateReadiness` keeps `ObdMonitorsComplete` in J1979 PID `$01` order and clears
+  a bit when its monitor completes.
+
+### The monitors
+
+| Monitor | Runs when | Method | Verdict |
+|---|---|---|---|
+| O2 heaters (P0135, P0141) | After key-off, power held (`ShutDownSubroutineA`) | ASD on to heat the sensors; samples both sensors with and without a load switched onto the lines (`O2LoadTestSample`) | Passes when the readings rise by `LCCA0`/`LCCA1`. This test **does run** at each key-off; its result is never reported because the scheduler is dormant |
+| O2 response (P0133) | Warm engine, time at speed, adaptive cell `LCCB4`, closed loop, steady state, RPM window | Counts large voltage steps (`LCCC1`) and lean/rich switches | Pass on `LCCC2` steps or `LCCC4` switches; fail when `LCCC5` elapses first |
+| Catalyst (P0422) | Warm engine, catalyst warm estimate (driving above `LCB6E`), MAP/RPM windows, closed loop | Purge forced off, settle `LCB6C`, measure `LCB74` | Result against `LCB76` (stricter after earlier fails) |
+| EGR flow (P0401) | Warm engine, speed, closed loop, steady state, vacuum and MAP/TPS/RPM windows | Short-term fuel trim averaged with EGR normal, then with EGR switched | Difference inside the window at `$CB59/$CB5A` = flow; fault after `LCB5B` fails |
+| EVAP purge flow (P0441) | Idle in adaptive cell `LCD39`, stable battery and AIS loads | Purge duty ramped up from closed | Change in AIS position, O2 trim or RPM = flow; no change by duty `LCD35` = fail |
+| Fuel system rich / lean (P0172, P0171) | Closed loop, steady state | (short-term + adaptive trim) / 2 against coolant-dependent limits `TABLEcd00` / `TABLEcd1e`; per-cylinder trims | Fail after `LCD2A` / `LCD28` passes beyond the limit; heals under similar conditions |
+| Misfire (P0300-P0304) | Not during a cold start | Crank-synchronous code counts misfires per 100 crank events | More than `LCBD2` per 100 = catalyst damaging (blink); more than `LCBD3` per 500 = emission failure |
+| Secondary air (P0411) | CONFIG2 bit 7 clear | State machine at `POINTER2f3a` | Descriptor disabled on the Neon |
+
+The variables of each monitor are named in the [RAM map](ram_map.md) (`Cat…`, `Evap…`, `Egr…`,
+`O2Resp…`, `FuelSys…`, `Misfire…`). Thresholds are calibration bytes in the `$CB44`-`$CD41` range;
+most have no MP Tune name yet.
 
 ## ISO 9141 / SAE J1979 (generic OBD-II)
 

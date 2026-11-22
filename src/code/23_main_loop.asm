@@ -295,11 +295,13 @@ SubLoopH:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorO2HeaterUp  ($9449)
 ;
-; OBD-II monitor: upstream O2 sensor heater (P0135). Status byte ObdMonStatus_O2HeaterUp.
-; [reviewed - table entry]
+; OBD-II monitor. Upstream O2 heater (P0135). The test itself runs after key-off in
+; ShutDownSubroutineA; this routine only disables the monitor (status bit 7) while related faults
+; are stored and the MIL is on. [reviewed - data flow]
 ;
-; Entry 0 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_O2HeaterUp: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorO2HeaterUp:
         ldy     #$0113
@@ -313,11 +315,12 @@ MonitorO2HeaterUp:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorO2HeaterDown  ($945E)
 ;
-; OBD-II monitor: downstream O2 sensor heater (P0141). Status byte ObdMonStatus_O2HeaterDown.
-; [reviewed - table entry]
+; OBD-II monitor. Downstream O2 heater (P0141). As MonitorO2HeaterUp, for the downstream sensor.
+; [reviewed - data flow]
 ;
-; Entry 1 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_O2HeaterDown: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorO2HeaterDown:
         ldy     #$0114
@@ -336,6 +339,16 @@ L947A:
 
 ;---------------------------------------------------------------------------------------------------
 ; ShutDownSubroutineA  ($947B)
+;
+; After-key-off sequence, including the O2 heater test. [reviewed - data flow]
+;
+; Holds the controller powered (OutputBits2 bit 0, confirmed by LinkInputWordHi bit 0), turns the
+; ASD relay on (it powers the O2 heaters), waits LCC97, samples the sensors (O2LoadTestSample),
+; waits up to LCC99 and samples again. A heater passes when the reading rose by at least LCCA0
+; (upstream) / LCCA1 (downstream); the result goes to the status bytes $0113/$0114. Called from
+; GetControlFeedback_DetermineIfShutdownRequired_MM, so this test does run at every key-off when
+; the heater monitors are enabled, but only the dormant scheduler would turn its result into a
+; code.
 ;
 ; Called from: GetControlFeedback_DetermineIfShutdownRequired_MM
 ;---------------------------------------------------------------------------------------------------
@@ -449,7 +462,7 @@ L9576:
         jmp     >L97D2
 
 L9579:
-        jsr     >L97D9
+        jsr     >O2LoadTestSample                    ; Samples both O2 sensors twice for the after-key-off O2 heater test: once with OutputBits2
         ldaa    >Shutdown_0109
         anda    #$0F
         cmpa    #$03
@@ -471,7 +484,7 @@ L9593:
         anda    #$F0
         oraa    #$03
         staa    >Shutdown_0109
-        jsr     >L97D9
+        jsr     >O2LoadTestSample                    ; Samples both O2 sensors twice for the after-key-off O2 heater test: once with OutputBits2
         ldd     <Temp0
         sba
         bcc     L95AE
@@ -729,11 +742,19 @@ L97D8:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L97D9  ($97D9)
+; O2LoadTestSample  ($97D9)
+;
+; Samples both O2 sensors twice for the after-key-off O2 heater test: once with OutputBits2 bit 3
+; set and once with it cleared, waiting for the companion chip to confirm through LinkInputWordHi
+; bit 3. [reviewed]
+;
+; Results: upstream in Temp1/Temp0, downstream in Temp3/Temp2, battery volts in Shutdown_010C. Bit
+; 3 most likely switches a load onto the sensor lines; a hot sensor has a low internal resistance
+; and moves less under load.
 ;
 ; Called from: ShutDownSubroutineA
 ;---------------------------------------------------------------------------------------------------
-L97D9:
+O2LoadTestSample:
         ldx     #$0400
         bset    $00,x,#$01
         bclr    $00,x,#$02
@@ -806,16 +827,22 @@ L9878:
 L987F:
         rts
 
+
+O2RespRateMask:
         dc.b    $3F
 
 ;---------------------------------------------------------------------------------------------------
 ; MonitorO2Response  ($9881)
 ;
-; OBD-II monitor: upstream O2 sensor response (P0133). Status byte ObdMonStatus_O2Response.
-; [reviewed - table entry]
+; OBD-II monitor. Upstream O2 response (P0133). Enabled after a time at speed (LCCAD/LCCAE),
+; engine time LCCAB, coolant LCCAC, in adaptive cell LCCB4, closed loop, steady state, RPM inside
+; LCCB2-LCCB1 and the cell's trim inside LCCB0-LCCAF. Counts O2 voltage steps larger than LCCC1
+; and lean/rich switches; passes on LCCC2 steps or LCCC4 switches, fails when LCCC5 elapses first.
+; Sample rate mask O2RespRateMask ($3F at $9880). [reviewed - data flow]
 ;
-; Entry 2 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_O2Response: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorO2Response:
         clr     >Temp0
@@ -836,7 +863,7 @@ L9897:
         beq     L98AB
         brset   <BitFlags_AIS,#$08,L98AB
         bclr    <BitFlagsFF,#$40
-        clr     >MonO2Resp_01F0
+        clr     >O2RespSpeedTimer
         jmp     >L9B23
 
 L98AB:
@@ -848,14 +875,14 @@ L98AB:
         cmpa    >LCCAD
         bcs     L98CE
         ldaa    <Counter_MainLoop
-        bita    >$9880
+        bita    >O2RespRateMask
         bne     L98CE
-        ldab    >MonO2Resp_01F0
+        ldab    >O2RespSpeedTimer
         incb
         beq     L98D1
         cmpb    >LCCAE
         bcc     L98D1
-        stab    >MonO2Resp_01F0
+        stab    >O2RespSpeedTimer
 L98CE:
         jmp     >L98D1_9BAA
 
@@ -873,13 +900,13 @@ L98E4:
         jmp     >L99BA
 
 L98E7:
-        ldaa    >MonO2Resp_01F0
+        ldaa    >O2RespSpeedTimer
         beq     L98FE
         ldab    <Counter_MainLoop
-        bitb    >$9880
+        bitb    >O2RespRateMask
         bne     L98F7
         deca
-        staa    >MonO2Resp_01F0
+        staa    >O2RespSpeedTimer
 L98F7:
         bne     L98FB
         bra     L98FE
@@ -904,7 +931,7 @@ L98FE:
         beq     L992C
         brset   <BitFlagsFF,#$04,L992C
         ldaa    >LCCB3
-        staa    >MonO2Resp_01F0
+        staa    >O2RespSpeedTimer
         bra     L98FB
 
 L992C:
@@ -918,12 +945,12 @@ L992C:
         blt     L98FB
         inc     >Temp0
         ldy     #$0400
-        ldaa    >MonO2Resp_0459
+        ldaa    >O2RespAcDelay
         beq     L9956
         ldaa    <Counter_MainLoop
-        bita    >$9880
+        bita    >O2RespRateMask
         bne     L98FB
-        dec     >MonO2Resp_0459
+        dec     >O2RespAcDelay
         bne     L98FB
 L9956:
         ldaa    >OutputDriverBits
@@ -932,7 +959,7 @@ L9956:
         brclr   <BitFlagsFF,#$08,L996F
 L9961:
         ldaa    >LCCC9
-        staa    >MonO2Resp_0459
+        staa    >O2RespAcDelay
         bra     L98FB
 
 L9969:
@@ -988,7 +1015,7 @@ L99CA:
         ldaa    >Var_0128
         bita    #$80
         bne     L99EA
-        ldaa    >MonO2Resp_01F2
+        ldaa    >O2RespElapsed
         lsra
         lsra
         staa    >Var_0128
@@ -999,43 +1026,43 @@ L99EA:
         brset   <BitFlagsFF,#$10,L99F9
         bset    <BitFlagsFF,#$10
         ldaa    <O2SensorVolts
-        staa    >MonO2Resp_01FA
+        staa    >O2RespLastVolts
         jmp     >L9B61
 
 L99F9:
         ldaa    <Counter_MainLoop
-        bita    >$9880
+        bita    >O2RespRateMask
         bne     L9A61
         ldab    #$01
-        ldaa    >MonO2Resp_01F1
+        ldaa    >O2RespSampleCount
         inca
         beq     L9A33
-        staa    >MonO2Resp_01F1
+        staa    >O2RespSampleCount
         cmpa    >LCCC0
         bcs     L9A61
         bhi     L9A33
         bset    <BitFlagsFF,#$20
-        ldd     >MonO2Resp_01F5
-        addd    >MonO2Resp_01F7
+        ldd     >O2RespSteps
+        addd    >O2RespStepsTotal
         bcc     L9A20
         ldd     #$FFFF
 L9A20:
-        std     >MonO2Resp_01F7
-        ldab    >MonO2Resp_01F4
-        addb    >MonO2Resp_01F9
+        std     >O2RespStepsTotal
+        ldab    >O2RespSwitches
+        addb    >O2RespSwitchesTotal
         bcc     L9A2D
         ldab    #$FF
 L9A2D:
-        stab    >MonO2Resp_01F9
+        stab    >O2RespSwitchesTotal
         ldab    >LCCC0
 L9A33:
-        addb    >MonO2Resp_01F2
+        addb    >O2RespElapsed
         bcc     L9A3A
         ldab    #$FF
 L9A3A:
-        stab    >MonO2Resp_01F2
+        stab    >O2RespElapsed
         brset   <BitFlags6D,#$20,L9A61
-        ldaa    >MonO2Resp_01F2
+        ldaa    >O2RespElapsed
         cmpa    >LCCC5
         bcs     L9A61
         ldaa    >Var_0128
@@ -1053,48 +1080,48 @@ L9A5E:
 
 L9A61:
         ldaa    <O2SensorVolts
-        suba    >MonO2Resp_01FA
+        suba    >O2RespLastVolts
         bpl     L9A69
         nega
 L9A69:
         cmpa    >LCCC1
         bcs     L9A8D
-        ldx     >MonO2Resp_01F5
+        ldx     >O2RespSteps
         inx
         beq     L9A77
-        stx     >MonO2Resp_01F5
+        stx     >O2RespSteps
 L9A77:
         brclr   <BitFlagsFF,#$20,L9A8D
         ldaa    #$0C
         staa    <Temp0
-        ldx     >MonO2Resp_01F7
+        ldx     >O2RespStepsTotal
         inx
         beq     L9AF6
-        stx     >MonO2Resp_01F7
+        stx     >O2RespStepsTotal
         cpx     >LCCC2
         bcc     L9AF6
 L9A8D:
         ldaa    <O2SensorVolts
-        staa    >MonO2Resp_01FA
+        staa    >O2RespLastVolts
         ldab    >Var_01F3
         beq     L9AB9
         clr     >Var_01F3
-        ldab    >MonO2Resp_01F4
+        ldab    >O2RespSwitches
         incb
         beq     L9AA3
-        stab    >MonO2Resp_01F4
+        stab    >O2RespSwitches
 L9AA3:
         brclr   <BitFlagsFF,#$20,L9AB9
         ldaa    #$0D
         staa    <Temp0
-        ldab    >MonO2Resp_01F9
+        ldab    >O2RespSwitchesTotal
         incb
         beq     L9AF6
-        stab    >MonO2Resp_01F9
+        stab    >O2RespSwitchesTotal
         cmpb    >LCCC4
         bcc     L9AF6
 L9AB9:
-        ldaa    >MonO2Resp_01F2
+        ldaa    >O2RespElapsed
         cmpa    >LCCC5
         bcc     L9AC4
         jmp     >L98D1_9BAA
@@ -1127,7 +1154,7 @@ L9AF6:
         ldaa    >ISO_ErrorBitRegisterStored4
         bita    #$80
         bne     L9B0C
-        ldaa    >MonO2Resp_01F2
+        ldaa    >O2RespElapsed
         lsra
         lsra
         staa    >ISO_ErrorBitRegisterStored4
@@ -1135,7 +1162,7 @@ L9AF6:
         oraa    #$40
         staa    >ISO_ErrorBitRegisterStored4
 L9B0C:
-        ldaa    >MonO2Resp_01F2
+        ldaa    >O2RespElapsed
         cmpa    #$1E
         bcc     L9B16
 L9B13:
@@ -1147,10 +1174,10 @@ L9B16:
         bset    $00,x,#$40
         bclr    $00,x,#$80
 L9B23:
-        clr     >MonO2Resp_01F2
+        clr     >O2RespElapsed
         ldd     #$0000
-        std     >MonO2Resp_01F7
-        clr     >MonO2Resp_01F9
+        std     >O2RespStepsTotal
+        clr     >O2RespSwitchesTotal
         ldaa    >ISO_ErrorBitRegisterStored4
         anda    #$7F
         staa    >ISO_ErrorBitRegisterStored4
@@ -1176,10 +1203,10 @@ L9B5B:
         bclr    <BitFlagsFF,#$10
 L9B61:
         bclr    <BitFlagsFF,#$20
-        clr     >MonO2Resp_01F1
+        clr     >O2RespSampleCount
         ldd     #$0000
-        std     >MonO2Resp_01F5
-        clr     >MonO2Resp_01F4
+        std     >O2RespSteps
+        clr     >O2RespSwitches
         ldaa    >OutputDriverBits
         bita    #$01
         bne     L9B7C
@@ -1209,6 +1236,6 @@ L9B99:
         beq     L98D1_9BAA
 L9BA4:
         ldaa    >LCCB3
-        staa    >MonO2Resp_01F0
+        staa    >O2RespSpeedTimer
 L98D1_9BAA:
         rts

@@ -476,7 +476,7 @@ LFB2A:
         rts
 
 LFB30:
-        jsr     >ShutDownSubroutineA
+        jsr     >ShutDownSubroutineA                 ; After-key-off sequence, including the O2 heater test.
         sei
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         jsr     >CaculateChecksum                    ; ROM self test: 8-bit sum of $1200-$B5FF and $B800-$FFFF must equal the byte at $B805.
@@ -562,7 +562,7 @@ LFBCB:
 ;
 ; Kicks the COP watchdog (writes $55, $AA to COPRST). [from name]
 ;
-; Called from: CaculateChecksum, CrankInterrupt_FallingEdge, GetControlFeedback_DetermineIfShutdownRequired_MM, L97D9, MainSubLoop, ResetInterrupt, ShutDownSubroutineA, StoreMAPVoltsAndCalcMAPValue ... (16 total)
+; Called from: CaculateChecksum, CrankInterrupt_FallingEdge, GetControlFeedback_DetermineIfShutdownRequired_MM, MainSubLoop, O2LoadTestSample, ResetInterrupt, ShutDownSubroutineA, StoreMAPVoltsAndCalcMAPValue ... (16 total)
 ;---------------------------------------------------------------------------------------------------
 ResetCOPTimer:
         ldaa    >IODev_0409

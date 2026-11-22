@@ -147,7 +147,7 @@ LE9C9:
         tst     $00,x
         beq     LE9F7
         pshy
-        bsr     CalculateSomething
+        bsr     EvalConditionList                    ; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation)
         puly
         beq     LE9F7
         ldx     $02,y
@@ -157,7 +157,7 @@ LE9F7:
         tst     $00,x
         beq     LEA0E
         pshy
-        bsr     CalculateSomething
+        bsr     EvalConditionList                    ; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation)
         puly
         beq     LEA0E
         ldx     #$011A
@@ -172,7 +172,7 @@ LEA14:
         tst     $00,x
         beq     LEA2B
         pshy
-        bsr     CalculateSomething
+        bsr     EvalConditionList                    ; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation)
         puly
         beq     LEA2B
         ldx     #$011A
@@ -191,7 +191,7 @@ LEA31:
         brclr   $00,x,#$40,LEA4B
         bset    $00,x,#$02
         pshy
-        jsr     >LEABA
+        jsr     >ObdProcessMonitorResult             ; Two-trip handling of a finished monitor (record at Y).
         puly
 LEA4B:
         ldab    #$0E
@@ -201,21 +201,28 @@ LEA4B:
         jmp     >LE9C9
 
 LEA58:
-        jsr     >LED24
-        jsr     >LEDAD
-        jsr     >LEDD0
-        jsr     >LEED3
-        jsr     >LEE14
-        jsr     >LEFD1
+        jsr     >ObdMisfireMilLogic                  ; MIL handling for misfire: sets ObdStatusFlags bit 3 (blink) while a catalyst-damaging misf
+        jsr     >ObdWarmupCycleCheck                 ; Counts an OBD-II warm-up cycle once per trip: coolant at least $C7 and at least $16 above
+        jsr     >ObdAutoClearCodes                   ; After 40 warm-up cycles without the MIL, erases the codes, the confirmed bits of all monit
+        jsr     >ObdTripEndLogic                     ; End-of-trip logic: once the engine has run long enough ($2C) and the O2 response and secon
+        jsr     >ObdUpdateReadiness                  ; Maintains ObdMonitorsComplete ($0100) in J1979 PID $01 byte D order: a bit is cleared when
+        jsr     >ObdEvalBitFlags69                   ; Sets or clears BitFlags69 bit 5 from three condition lists at $EFAA, $EFBB and $EFCC (Eval
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
-; CalculateSomething  ($EA6B)
+; EvalConditionList  ($EA6B)
 ;
-; Called from: LEFD1, ObdMonitorScheduler
+; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation) and
+; returns Z clear if all hold. [reviewed]
+;
+; Operations by LEA94: 0 TestAToXPlus3, 1 ToggleBitsAbyXPlus3, 2 SetAllLessThanXPlus3, 3
+; SetAllGrtrThanXPlus3. Used by ObdMonitorScheduler for the three per-monitor condition lists and
+; by ObdEvalBitFlags69. Original name CalculateSomething.
+;
+; Called from: ObdEvalBitFlags69, ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-CalculateSomething:
+EvalConditionList:
         ldab    $00,x
         bne     LEA71
         clra
@@ -300,11 +307,20 @@ LEAB7:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LEABA  ($EABA)
+; ObdProcessMonitorResult  ($EABA)
+;
+; Two-trip handling of a finished monitor (record at Y). [reviewed - data flow]
+;
+; Status bit 3 = failed this trip. First failure: sets status bit 4 (pending) and captures a
+; freeze frame with priority 1 (2 for the misfire / fuel system records). A failure while pending
+; (or a one-trip monitor, mask bit 6): sets ObdStatusFlags bit 7 (MIL), status bit 5 (confirmed),
+; clears WarmupCycleCount, stores LastEmissionFault, captures a freeze frame with priority 3 (4)
+; and calls ThrowNonCriticalError with the record's descriptor. A pass goes to LEC18 (pass /
+; healing).
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LEABA:
+ObdProcessMonitorResult:
         ldx     $02,y
         brset   $00,x,#$08,LEAC4
         jmp     >LEBA7
@@ -334,12 +350,12 @@ LEAF0:
         puly
         cpy     #$E9B7
         bne     LEB11
-        ldab    >MonMisfire_00E7
+        ldab    >MisfireCylConfirmed
         andb    #$F0
         bne     LEB11
-        ldab    >MonMisfire_00E7
+        ldab    >MisfireCylConfirmed
         andb    #$F0
-        stab    >MonMisfire_00E7
+        stab    >MisfireCylConfirmed
 LEB11:
         ldx     $04,y
         brset   $00,x,#$40,LEB1B
@@ -354,7 +370,7 @@ LEB29:
         ldx     #$011A
         brset   $00,x,#$02,LEBA4
         bset    $00,x,#$80
-        clr     >Var_0035
+        clr     >WarmupCycleCount
         ldx     $04,y
         brclr   $00,x,#$80,LEB5A
         ldx     $06,y
@@ -436,7 +452,7 @@ LEBDB:
 LEBE8:
         cmpb    #$01
         bcc     LEBF3
-        ldaa    >MonMisfire_011B
+        ldaa    >ObdGoodTripCount
         cmpa    #$50
         bcs     LEC11
 LEBF3:
@@ -462,7 +478,7 @@ LEC17:
 ;---------------------------------------------------------------------------------------------------
 ; LEC18  ($EC18)
 ;
-; Called from: LEABA, LEED3
+; Called from: ObdProcessMonitorResult, ObdTripEndLogic
 ;---------------------------------------------------------------------------------------------------
 LEC18:
         ldx     #$011A
@@ -470,10 +486,10 @@ LEC18:
         cmpa    >LastEmissionFault
         bne     LEC30
         bset    $00,x,#$04
-        ldaa    >MonMisfire_011B
+        ldaa    >ObdGoodTripCount
         inca
         beq     LEC30
-        staa    >MonMisfire_011B
+        staa    >ObdGoodTripCount
 LEC30:
         rts
 
@@ -481,27 +497,27 @@ LEC30:
 ;---------------------------------------------------------------------------------------------------
 ; LEC31  ($EC31)
 ;
-; Called from: LEABA, ThrowNonCriticalError
+; Called from: ObdProcessMonitorResult, ThrowNonCriticalError
 ;---------------------------------------------------------------------------------------------------
 LEC31:
         ldx     #$011A
         bset    $00,x,#$04
-        clr     >MonMisfire_011B
+        clr     >ObdGoodTripCount
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
 ; LEC3B  ($EC3B)
 ;
-; Called from: LEABA
+; Called from: ObdProcessMonitorResult
 ;---------------------------------------------------------------------------------------------------
 LEC3B:
-        ldab    >MonMisfire_00E7
+        ldab    >MisfireCylConfirmed
         lsrb
         lsrb
         lsrb
         lsrb
-        orab    >MonMisfire_00E7
+        orab    >MisfireCylConfirmed
         andb    #$0F
         pshb
         clra
@@ -539,7 +555,7 @@ LEC59:
 LEC7E:
         ldy     #ErrBytes_CODE43_e
 LEC82:
-        clr     >MonMisfire_00E7
+        clr     >MisfireCylConfirmed
         rts
 
 
@@ -553,7 +569,7 @@ LEC82:
 ; counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, EngineRpm_HB and
 ; VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
 ;
-; Called from: LEABA, ThrowNonCriticalError
+; Called from: ObdProcessMonitorResult, ThrowNonCriticalError
 ;---------------------------------------------------------------------------------------------------
 CaptureFreezeFrame:
         ldx     #$011E
@@ -586,7 +602,7 @@ LECBB:
 ;---------------------------------------------------------------------------------------------------
 ; EraseErorrCodes  ($ECBC)
 ;
-; Called from: LEABA, LEDD0, LEED3
+; Called from: ObdAutoClearCodes, ObdProcessMonitorResult, ObdTripEndLogic
 ;---------------------------------------------------------------------------------------------------
 EraseErorrCodes:
         ldx     #$011E
@@ -605,11 +621,14 @@ EraseErorrCodes:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LECD7  ($ECD7)
+; ObdSimilarConditions  ($ECD7)
+;
+; OBD-II "similar conditions" test against the record at X: sets bit 6 of X+2 if MAP is within $18
+; and RPM within $0C of the stored values and the closed-loop state matches. [reviewed]
 ;
 ; Called from: MonitorFuelSystemLean, MonitorFuelSystemRich, MonitorMisfire
 ;---------------------------------------------------------------------------------------------------
-LECD7:
+ObdSimilarConditions:
         ldaa    $01,x
         suba    <MapValue
         bcc     LECDE
@@ -642,11 +661,14 @@ LED04:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LED05  ($ED05)
+; ObdSaveConditions  ($ED05)
+;
+; Stores the current RPM, MAP and closed-loop state in the similar-conditions record at X.
+; [reviewed]
 ;
 ; Called from: CODEa68d, MonitorFuelSystemRich, MonitorMisfire
 ;---------------------------------------------------------------------------------------------------
-LED05:
+ObdSaveConditions:
         ldaa    <MapValue
         staa    $01,x
         ldaa    <EngineRpm_HB
@@ -665,7 +687,7 @@ LED1A:
 ;---------------------------------------------------------------------------------------------------
 ; ClearXtoXPlus3  ($ED1B)
 ;
-; Called from: CODE600e_SM, LEABA, LEED3
+; Called from: CODE600e_SM, ObdProcessMonitorResult, ObdTripEndLogic
 ;---------------------------------------------------------------------------------------------------
 ClearXtoXPlus3:
         clra
@@ -678,11 +700,18 @@ LED23:
         dc.b    $2F
 
 ;---------------------------------------------------------------------------------------------------
-; LED24  ($ED24)
+; ObdMisfireMilLogic  ($ED24)
+;
+; MIL handling for misfire: sets ObdStatusFlags bit 3 (blink) while a catalyst-damaging misfire is
+; present, and turns the MIL off after enough good trips. [inferred]
+;
+; Uses the misfire similar-conditions record at $0129 and a timer from TABLEcc79(RPM). The MIL
+; (ObdStatusFlags bit 7) is cleared when ObdGoodTripCount >= 3 and neither the misfire nor the
+; fuel system record has a pending fault.
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LED24:
+ObdMisfireMilLogic:
         clra
         clrb
         ldx     #$011A
@@ -733,13 +762,13 @@ LED73:
         ldaa    >MonMisfire_0438
         bita    #$80
         bne     LEDA4
-        ldaa    >MonMisfire_011B
+        ldaa    >ObdGoodTripCount
         cmpa    #$03
         bcs     LEDA9
-        ldaa    >Misfire_012B
+        ldaa    >MisfireCondFlags
         bita    #$02
         bne     LEDA9
-        ldaa    >MonMisfire_012F
+        ldaa    >FuelSysCondFlags
         bita    #$02
         bne     LEDA9
         bclr    $00,x,#$80
@@ -756,42 +785,49 @@ LEDAC:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LEDAD  ($EDAD)
+; ObdWarmupCycleCheck  ($EDAD)
+;
+; Counts an OBD-II warm-up cycle once per trip: coolant at least $C7 and at least $16 above
+; StartCoolantTemp. Sets ObdStatusFlags bit 5 and increments WarmupCycleCount. [reviewed]
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LEDAD:
+ObdWarmupCycleCheck:
         ldx     #$011A
         brset   $00,x,#$20,LEDCF
         ldaa    <CoolantTemp
         cmpa    #$C7
         bcs     LEDCF
-        suba    >Var_01AA
+        suba    >StartCoolantTemp
         bcs     LEDCF
         cmpa    #$16
         bcs     LEDCF
         bset    $00,x,#$20
-        ldaa    >Var_0035
+        ldaa    >WarmupCycleCount
         inca
         beq     LEDCF
-        staa    >Var_0035
+        staa    >WarmupCycleCount
 LEDCF:
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
-; LEDD0  ($EDD0)
+; ObdAutoClearCodes  ($EDD0)
+;
+; After 40 warm-up cycles without the MIL, erases the codes, the confirmed bits of all monitors,
+; the fault list $001B-$0022 and the bitmap $0135-$0148. Runs only with the engine stopped.
+; [reviewed]
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LEDD0:
+ObdAutoClearCodes:
         brclr   <BitFlags71,#$80,LEE13
         ldx     #$011A
         brset   $00,x,#$80,LEE13
-        ldaa    >Var_0035
+        ldaa    >WarmupCycleCount
         cmpa    #$28
         bcs     LEE13
-        clr     >Var_0035
+        clr     >WarmupCycleCount
         jsr     >EraseErorrCodes
         ldy     #ObdMonitorTable
         ldab    #$0E
@@ -819,11 +855,17 @@ LEE13:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LEE14  ($EE14)
+; ObdUpdateReadiness  ($EE14)
+;
+; Maintains ObdMonitorsComplete ($0100) in J1979 PID $01 byte D order: a bit is cleared when its
+; monitor has completed. [reviewed]
+;
+; Bit 0 catalyst, 2 EVAP, 3 secondary air, 5 O2 sensor, 6 O2 heater (both heater monitors), 7 EGR.
+; Bits 1 and 4 (heated catalyst, A/C) are always cleared.
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LEE14:
+ObdUpdateReadiness:
         ldx     #$0100
         ldaa    $00,x
         bne     LEE1E
@@ -896,7 +938,7 @@ LEEB8:
 ;---------------------------------------------------------------------------------------------------
 ; LEEB9  ($EEB9)
 ;
-; Called from: LEE14
+; Called from: ObdUpdateReadiness
 ;---------------------------------------------------------------------------------------------------
 LEEB9:
         ldx     $02,y
@@ -920,11 +962,19 @@ LEED2:
 
 
 ;---------------------------------------------------------------------------------------------------
-; LEED3  ($EED3)
+; ObdTripEndLogic  ($EED3)
+;
+; End-of-trip logic: once the engine has run long enough ($2C) and the O2 response and secondary
+; air monitors are no longer enabled, marks the trip complete (ObdStatusFlags bit 6). [reviewed -
+; data flow]
+;
+; Then re-reports the last emission fault where needed, clears pending flags of the misfire and
+; fuel system monitors after ObdGoodTripCount >= $50 and erases a freeze frame that belongs to a
+; healed misfire or fuel system fault.
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LEED3:
+ObdTripEndLogic:
         ldx     #$011A
         brset   $00,x,#$40,LEEFE
         ldaa    >EngineRunningTimeMaxFF
@@ -970,7 +1020,7 @@ LEF31:
         ldaa    >LastEmissionFault
         jsr     >LEC18
 LEF37:
-        ldaa    >MonMisfire_011B
+        ldaa    >ObdGoodTripCount
         cmpa    #$50
         bcs     LEFA9
         ldy     #$0119
@@ -1021,15 +1071,18 @@ BYTESEFAA:
         dc.b    $00,$20,$00,$00,$7A,$06,$50
 
 ;---------------------------------------------------------------------------------------------------
-; LEFD1  ($EFD1)
+; ObdEvalBitFlags69  ($EFD1)
+;
+; Sets or clears BitFlags69 bit 5 from three condition lists at $EFAA, $EFBB and $EFCC
+; (EvalConditionList). [reviewed]
 ;
 ; Called from: ObdMonitorScheduler
 ;---------------------------------------------------------------------------------------------------
-LEFD1:
+ObdEvalBitFlags69:
         ldx     #$EFCC
         tst     $00,x
         beq     LEFE2
-        jsr     >CalculateSomething
+        jsr     >EvalConditionList                   ; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation)
         beq     LEFE2
         bclr    <BitFlags69,#$20
         bra     LEFFD
@@ -1038,12 +1091,12 @@ LEFE2:
         ldx     #BYTESEFAA
         tst     $00,x
         beq     LEFFD
-        jsr     >CalculateSomething
+        jsr     >EvalConditionList                   ; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation)
         beq     LEFFD
         ldx     #$EFBB
         tst     $00,x
         beq     LEFFA
-        jsr     >CalculateSomething
+        jsr     >EvalConditionList                   ; Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation)
         beq     LEFFD
 LEFFA:
         bset    <BitFlags69,#$20

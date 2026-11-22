@@ -1029,14 +1029,14 @@ EraseErrorCodes:
         staa    <ErrorCodeUpdateKeyOnCount2
         staa    <ErrorCodeUpdateKeyOnCount3
         staa    >ObdStatusFlags
-        staa    >MonCatalyst_010F
-        staa    >MonCatalyst_0110
-        staa    >MonMisfire_011B
+        staa    >CatFailCounts
+        staa    >CatPassTrips
+        staa    >ObdGoodTripCount
         staa    >LastEmissionFault
         staa    >ISO_ErrBitStatus
         staa    >MonSecAir_0149
         staa    >ObdDtcCount
-        staa    <Var_0035
+        staa    <WarmupCycleCount
         staa    >ISO_ErrorBitRegisterStored4
         staa    >Var_0128
         ldx     #$0135

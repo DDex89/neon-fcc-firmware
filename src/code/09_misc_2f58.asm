@@ -12,11 +12,14 @@
 ;---------------------------------------------------------------------------------------------------
 ; MonitorSecondaryAir  ($2F58)
 ;
-; OBD-II monitor: secondary air system (P0411). Status byte ObdMonStatus_SecondaryAir. [reviewed -
-; table entry]
+; OBD-II monitor. Secondary air (P0411). State machine (MonSecAir_04A5, table POINTER2f3a); runs
+; only with CONFIG2 bit 7 clear. Drives OutputDriverBits bit 5, which is the purge solenoid on
+; cars without secondary air. The descriptor is disabled in both Neon images. [reviewed - data
+; flow]
 ;
-; Entry 3 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_SecondaryAir: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorSecondaryAir:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.

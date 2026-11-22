@@ -472,10 +472,17 @@ L6A21:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorEgrFlow  ($6A22)
 ;
-; OBD-II monitor: EGR flow (P0401). Status byte ObdMonStatus_Egr. [reviewed - table entry]
+; OBD-II monitor. EGR flow (P0401). Needs engine time LCB44, coolant LCB5E, speed above
+; LCB5F/LCB60, closed loop, steady state, vacuum LCB45 and MAP / TPS / RPM windows (EGR9, EGR15,
+; EGR18; second phase LCB50, EGR17a, EGR16). Averages the short-term trim with EGR in its normal
+; state (EGR_Temp_1) and with EGR switched (EGR_Temp_2); passes when the difference falls inside
+; the window at $CB59/$CB5A (MP Tune names EGR15a / SCRMP1, which do not fit this use), fails
+; after EGR19 samples, fault after LCB5B fails. DRB override target 4 suspends it. [reviewed -
+; data flow]
 ;
-; Entry 6 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_Egr: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0
+; fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it,
+; and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorEgrFlow:
         ldaa    >DrbOverrideTarget
@@ -535,7 +542,7 @@ L6A86:
         bcs     L6AF1
         cmpa    >LCB45                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcs     L6AF1
-        ldx     >MonEgr_0178
+        ldx     >EgrMonSampleCount
         ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     L6ADE
@@ -555,9 +562,9 @@ L6A86:
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         cmpa    >LCB4E                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
         bge     L6AF1
-        ldx     >MonEgr_0178
+        ldx     >EgrMonSampleCount
         inx
-        stx     >MonEgr_0178
+        stx     >EgrMonSampleCount
         ldab    >LCB4F                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
         suba    >EGR_Temp_1
         bvc     L6AE0
@@ -602,7 +609,7 @@ L6AF0:
         pulx
 L6AF1:
         ldd     #$0000
-        std     >MonEgr_0178
+        std     >EgrMonSampleCount
         bclr    <EGRVar2,#$10
         ldaa    >ObdMonStatus_Egr
         anda    #$FB
@@ -634,7 +641,7 @@ CODE6b1d:
         bcc     CODE6b91
 L6B22:
         inx
-        stx     >MonEgr_0178
+        stx     >EgrMonSampleCount
         ldaa    <MapValue
         ldx     #LCB50                               ; EGR16 (ExhGasRecircConstLoLimit16)
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
@@ -680,11 +687,11 @@ L6B6B:
         blt     L6BC2
         cmpa    >SCRMP1_SecondaryRampSubtractor1     ; SCRMP1 (SecondaryRampSubtractor1)
         bgt     L6BC2
-        ldx     >MonEgr_0178
+        ldx     >EgrMonSampleCount
         cpx     >EGR19_ExhGasRecircConstLoLimit19    ; EGR15A (ExhGasRecircConstFromRPMHiLimit15a)
         bcs     L6BC2
         ldaa    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
-        staa    >Var_045A
+        staa    >ObdTrimSettleTimer
         ldaa    >ObdMonStatus_Egr
         anda    #$FB
         anda    #$7F
@@ -698,15 +705,15 @@ L6B6B:
 ;---------------------------------------------------------------------------------------------------
 CODE6b91:
         ldd     #$0000
-        std     >MonEgr_0178
+        std     >EgrMonSampleCount
         ldaa    >ObdMonStatus_Egr
-        ldab    >MonEgr_04AF
+        ldab    >EgrMonFailCount
         incb
-        stab    >MonEgr_04AF
+        stab    >EgrMonFailCount
         cmpb    >LCB5B                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcs     L6BBD
         ldab    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
-        stab    >Var_045A
+        stab    >ObdTrimSettleTimer
         oraa    #$48
         bita    #$10
         beq     L6BBB

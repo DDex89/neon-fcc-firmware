@@ -563,64 +563,54 @@ counter (short-term trim), ValueFromAdaptiveMemory (long-term trim), $0219, Engi
 VehicleSpeed_HB. The priority is kept in ISO_ErrBitStatus. EraseErorrCodes clears the frame.
 
 ## 9449 MonitorO2HeaterUp
-OBD-II monitor: upstream O2 sensor heater (P0135). Status byte ObdMonStatus_O2HeaterUp. [reviewed - table entry]
+OBD-II monitor. Upstream O2 heater (P0135). The test itself runs after key-off in ShutDownSubroutineA; this routine only disables the monitor (status bit 7) while related faults are stored and the MIL is on. [reviewed - data flow]
 
-Entry 0 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_O2HeaterUp: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## 945E MonitorO2HeaterDown
-OBD-II monitor: downstream O2 sensor heater (P0141). Status byte ObdMonStatus_O2HeaterDown. [reviewed - table entry]
+OBD-II monitor. Downstream O2 heater (P0141). As MonitorO2HeaterUp, for the downstream sensor. [reviewed - data flow]
 
-Entry 1 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_O2HeaterDown: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## 9881 MonitorO2Response
-OBD-II monitor: upstream O2 sensor response (P0133). Status byte ObdMonStatus_O2Response. [reviewed - table entry]
+OBD-II monitor. Upstream O2 response (P0133). Enabled after a time at speed (LCCAD/LCCAE), engine time LCCAB, coolant LCCAC, in adaptive cell LCCB4, closed loop, steady state, RPM inside LCCB2-LCCB1 and the cell's trim inside LCCB0-LCCAF. Counts O2 voltage steps larger than LCCC1 and lean/rich switches; passes on LCCC2 steps or LCCC4 switches, fails when LCCC5 elapses first. Sample rate mask O2RespRateMask ($3F at $9880). [reviewed - data flow]
 
-Entry 2 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_O2Response: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## 2F58 MonitorSecondaryAir
-OBD-II monitor: secondary air system (P0411). Status byte ObdMonStatus_SecondaryAir. [reviewed - table entry]
+OBD-II monitor. Secondary air (P0411). State machine (MonSecAir_04A5, table POINTER2f3a); runs only with CONFIG2 bit 7 clear. Drives OutputDriverBits bit 5, which is the purge solenoid on cars without secondary air. The descriptor is disabled in both Neon images. [reviewed - data flow]
 
-Entry 3 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_SecondaryAir: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## A118 MonitorEvapPurgeFlow
-OBD-II monitor: EVAP purge flow (P0441). Status byte ObdMonStatus_EvapPurge. [reviewed - table entry]
+OBD-II monitor. EVAP purge flow (P0441). At idle in adaptive cell LCD39 with stable battery volts and AIS loads, stores the O2 trim, RPM and AIS position, then ramps the purge duty (EvapPurgeDuty, LCD31 per step). Passes when the AIS position (LCD32), O2 trim (LCD33) or RPM (LCD34) moves enough; fails when the duty reaches LCD35 without a change. [reviewed - data flow]
 
-Entry 4 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_EvapPurge: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## 428A MonitorCatalyst
-OBD-II monitor: catalyst efficiency (P0422). Status byte ObdMonStatus_Catalyst. [reviewed - table entry]
+OBD-II monitor. Catalyst efficiency (P0422). Needs coolant LCB61 and an estimated warm catalyst (CatWarmupEstimate builds up with driving above LCB6E, hysteresis LCB71/LCB73 in IPL1 bit 1), MAP and RPM inside the LCB64/LCB68 windows, closed loop. Forces OutputDriverBits bit 5 (purge off), settles for LCB6C, measures for LCB74 and compares the result with LCB76[fail count]. Fail counts in CatFailCounts, passing trips for MIL healing in CatPassTrips (LCB7C). [reviewed - data flow]
 
-Entry 5 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_Catalyst: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## 6A22 MonitorEgrFlow
-OBD-II monitor: EGR flow (P0401). Status byte ObdMonStatus_Egr. [reviewed - table entry]
+OBD-II monitor. EGR flow (P0401). Needs engine time LCB44, coolant LCB5E, speed above LCB5F/LCB60, closed loop, steady state, vacuum LCB45 and MAP / TPS / RPM windows (EGR9, EGR15, EGR18; second phase LCB50, EGR17a, EGR16). Averages the short-term trim with EGR in its normal state (EGR_Temp_1) and with EGR switched (EGR_Temp_2); passes when the difference falls inside the window at $CB59/$CB5A (MP Tune names EGR15a / SCRMP1, which do not fit this use), fails after EGR19 samples, fault after LCB5B fails. DRB override target 4 suspends it. [reviewed - data flow]
 
-Entry 6 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_Egr: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## A337 MonitorFuelSystemRich
-OBD-II monitor: fuel system rich (P0172). Status byte ObdMonStatus_FuelRich. [reviewed - table entry]
+OBD-II monitor. Fuel system rich (P0172). Combined trim (short-term / 2 + adaptive / 2) against TABLEcd00(coolant) with hysteresis LCD29; rich for LCD2A passes sets the suspected bit, then the per-cylinder trims are checked against CylTrimTable3. Healing under similar conditions (record $012D) after FuelSysHealLimit ($1D at $A336) counts. [reviewed - data flow]
 
-Entry 7 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_FuelRich: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## A55F MonitorFuelSystemLean
-OBD-II monitor: fuel system lean (P0171). Status byte ObdMonStatus_FuelLean. [reviewed - table entry]
+OBD-II monitor. Fuel system lean (P0171). As the rich monitor with TABLEcd1e, hysteresis LCD27 and LCD28 passes. [reviewed - data flow]
 
-Entry 8 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_FuelLean: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## AE3F MonitorMisfire
-OBD-II monitor: misfire (P0300-P0304). Status byte ObdMonStatus_Misfire. [reviewed - table entry]
+OBD-II monitor. Misfire (P0300-P0304). Evaluates blocks of 100 crank events counted by the crank-synchronous code (MisfireEventCount, MisfireCount100): more than LCBD2 misfires in 100 events is catalyst damaging (ObdStatusFlags bit 4, MIL blink), more than LCBD3 in 500 events is an emission failure. Cylinders in the high nibbles of MisfireCylBits / MisfireCylConfirmed. Not run during a cold start (StartCoolantTemp below LCBE0, until coolant rises LCBDF). [reviewed - data flow]
 
-Entry 9 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+Status byte ObdMonStatus_Misfire: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it, and nothing calls the scheduler in this code base.
 
 ## E9C5 ObdMonitorScheduler
 Runs the ten OBD-II monitors from the table at $E939. Not called anywhere in this code base. [reviewed]
@@ -889,4 +879,73 @@ Called with A = previous MAP volts (averaged with MapVolts). Keeps the last thre
 RpmHistory0-2 and the previous period in CrankPeriodPrev, which the (dormant) misfire monitor uses.
 RPM = RpmScaleA/B (or calibration $CB94/$CB96 when SyncFlags74 bit 0 is set) divided by the period.
 Original name GET_AVERAGE_MAP_READING.
+
+## EA6B EvalConditionList
+Evaluates a condition list at X (count, then 4-byte entries: RAM pointer, mask, operation) and returns Z clear if all hold. [reviewed]
+
+Operations by LEA94: 0 TestAToXPlus3, 1 ToggleBitsAbyXPlus3, 2 SetAllLessThanXPlus3, 3
+SetAllGrtrThanXPlus3. Used by ObdMonitorScheduler for the three per-monitor condition lists and
+by ObdEvalBitFlags69. Original name CalculateSomething.
+
+## EABA ObdProcessMonitorResult
+Two-trip handling of a finished monitor (record at Y). [reviewed - data flow]
+
+Status bit 3 = failed this trip. First failure: sets status bit 4 (pending) and captures a freeze
+frame with priority 1 (2 for the misfire / fuel system records). A failure while pending (or a
+one-trip monitor, mask bit 6): sets ObdStatusFlags bit 7 (MIL), status bit 5 (confirmed),
+clears WarmupCycleCount, stores LastEmissionFault, captures a freeze frame with priority 3 (4)
+and calls ThrowNonCriticalError with the record's descriptor. A pass goes to LEC18 (pass /
+healing).
+
+## ED24 ObdMisfireMilLogic
+MIL handling for misfire: sets ObdStatusFlags bit 3 (blink) while a catalyst-damaging misfire is present, and turns the MIL off after enough good trips. [inferred]
+
+Uses the misfire similar-conditions record at $0129 and a timer from TABLEcc79(RPM). The MIL
+(ObdStatusFlags bit 7) is cleared when ObdGoodTripCount >= 3 and neither the misfire nor the fuel
+system record has a pending fault.
+
+## EDAD ObdWarmupCycleCheck
+Counts an OBD-II warm-up cycle once per trip: coolant at least $C7 and at least $16 above StartCoolantTemp. Sets ObdStatusFlags bit 5 and increments WarmupCycleCount. [reviewed]
+
+## EDD0 ObdAutoClearCodes
+After 40 warm-up cycles without the MIL, erases the codes, the confirmed bits of all monitors, the fault list $001B-$0022 and the bitmap $0135-$0148. Runs only with the engine stopped. [reviewed]
+
+## EED3 ObdTripEndLogic
+End-of-trip logic: once the engine has run long enough ($2C) and the O2 response and secondary air monitors are no longer enabled, marks the trip complete (ObdStatusFlags bit 6). [reviewed - data flow]
+
+Then re-reports the last emission fault where needed, clears pending flags of the misfire and
+fuel system monitors after ObdGoodTripCount >= $50 and erases a freeze frame that belongs to a
+healed misfire or fuel system fault.
+
+## EE14 ObdUpdateReadiness
+Maintains ObdMonitorsComplete ($0100) in J1979 PID $01 byte D order: a bit is cleared when its monitor has completed. [reviewed]
+
+Bit 0 catalyst, 2 EVAP, 3 secondary air, 5 O2 sensor, 6 O2 heater (both heater monitors), 7 EGR.
+Bits 1 and 4 (heated catalyst, A/C) are always cleared.
+
+## EFD1 ObdEvalBitFlags69
+Sets or clears BitFlags69 bit 5 from three condition lists at $EFAA, $EFBB and $EFCC (EvalConditionList). [reviewed]
+
+## ECD7 ObdSimilarConditions
+OBD-II "similar conditions" test against the record at X: sets bit 6 of X+2 if MAP is within $18 and RPM within $0C of the stored values and the closed-loop state matches. [reviewed]
+
+## ED05 ObdSaveConditions
+Stores the current RPM, MAP and closed-loop state in the similar-conditions record at X. [reviewed]
+
+## 97D9 O2LoadTestSample
+Samples both O2 sensors twice for the after-key-off O2 heater test: once with OutputBits2 bit 3 set and once with it cleared, waiting for the companion chip to confirm through LinkInputWordHi bit 3. [reviewed]
+
+Results: upstream in Temp1/Temp0, downstream in Temp3/Temp2, battery volts in Shutdown_010C.
+Bit 3 most likely switches a load onto the sensor lines; a hot sensor has a low internal
+resistance and moves less under load.
+
+## 947B ShutDownSubroutineA
+After-key-off sequence, including the O2 heater test. [reviewed - data flow]
+
+Holds the controller powered (OutputBits2 bit 0, confirmed by LinkInputWordHi bit 0), turns the
+ASD relay on (it powers the O2 heaters), waits LCC97, samples the sensors (O2LoadTestSample), waits
+up to LCC99 and samples again. A heater passes when the reading rose by at least LCCA0
+(upstream) / LCCA1 (downstream); the result goes to the status bytes $0113/$0114. Called from
+GetControlFeedback_DetermineIfShutdownRequired_MM, so this test does run at every key-off when the
+heater monitors are enabled, but only the dormant scheduler would turn its result into a code.
 

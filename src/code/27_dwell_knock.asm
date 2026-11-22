@@ -384,11 +384,16 @@ LAE31:
 ;---------------------------------------------------------------------------------------------------
 ; MonitorMisfire  ($AE3F)
 ;
-; OBD-II monitor: misfire (P0300-P0304). Status byte ObdMonStatus_Misfire. [reviewed - table
-; entry]
+; OBD-II monitor. Misfire (P0300-P0304). Evaluates blocks of 100 crank events counted by the
+; crank-synchronous code (MisfireEventCount, MisfireCount100): more than LCBD2 misfires in 100
+; events is catalyst damaging (ObdStatusFlags bit 4, MIL blink), more than LCBD3 in 500 events is
+; an emission failure. Cylinders in the high nibbles of MisfireCylBits / MisfireCylConfirmed. Not
+; run during a cold start (StartCoolantTemp below LCBE0, until coolant rises LCBDF). [reviewed -
+; data flow]
 ;
-; Entry 9 of the OBD-II monitor table at $E939, run only by ObdMonitorScheduler. In this code base
-; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
+; Status byte ObdMonStatus_Misfire: bit 7 enabled, 6 completed this trip, 3 failed, 2 test
+; running, 0 fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler
+; would run it, and nothing calls the scheduler in this code base.
 ;---------------------------------------------------------------------------------------------------
 MonitorMisfire:
         ldaa    <BitFlagsE5
@@ -405,7 +410,7 @@ LAE50:
         bne     LAE5A
         bclr    <BitFlagsE5,#$20
 LAE5A:
-        ldaa    >Var_01AA
+        ldaa    >StartCoolantTemp
         cmpa    >LCBE0
         bcc     LAE65
         bset    <BitFlagsE5,#$04
@@ -418,121 +423,121 @@ LAE6C:
         bcc     LAE73
         bclr    <BitFlagsE5,#$04
 LAE73:
-        ldaa    >Misfire_019D
+        ldaa    >MisfireEventCount
         cmpa    #$64
         bcc     LAE7D
         jmp     >LAF21
 
 LAE7D:
-        ldaa    >Misfire_019E
+        ldaa    >MisfireCount100
         cmpa    >LCBD2
         bls     LAEBB
         bset    <BitFlagsE5,#$01
         sei
-        ldaa    <Misfire_00E6
+        ldaa    <MisfireCylBits
         anda    #$F0
-        oraa    <MonMisfire_00E7
-        staa    <MonMisfire_00E7
+        oraa    <MisfireCylConfirmed
+        staa    <MisfireCylConfirmed
         ldaa    >ObdMonStatus_Misfire
         oraa    #$49
         staa    >ObdMonStatus_Misfire
         ldaa    >ObdStatusFlags
         oraa    #$10
         staa    >ObdStatusFlags
-        ldaa    >Misfire_012B
+        ldaa    >MisfireCondFlags
         oraa    #$80
-        staa    >Misfire_012B
+        staa    >MisfireCondFlags
         ldaa    #$80
-        staa    >MonMisfire_012C
+        staa    >MisfireCondCount
         clra
-        staa    >Misfire_01A1
-        staa    >Misfire_01A2
-        staa    >Misfire_01A3
-        staa    >Misfire_01A4
+        staa    >MisfireHealEvents
+        staa    >MisfireHealCount
+        staa    >MisfireHealBlocks
+        staa    >MisfireHealSum
 LAEBB:
-        bclr    <Misfire_00E6,#$F0
-        ldaa    >Misfire_01A0
-        adda    >Misfire_019E
+        bclr    <MisfireCylBits,#$F0
+        ldaa    >MisfireSum500
+        adda    >MisfireCount100
         bcc     LAEC8
         ldaa    #$FF
 LAEC8:
-        staa    >Misfire_01A0
+        staa    >MisfireSum500
         cli
-        ldab    >MonMisfire_019F
+        ldab    >MisfireBlockCount
         incb
-        stab    >MonMisfire_019F
+        stab    >MisfireBlockCount
         cmpb    #$05
         bcs     LAF1A
         cmpa    >LCBD3
         bls     LAF11
         sei
-        ldaa    <Misfire_00E6
-        oraa    <MonMisfire_00E7
-        staa    <MonMisfire_00E7
+        ldaa    <MisfireCylBits
+        oraa    <MisfireCylConfirmed
+        staa    <MisfireCylConfirmed
         ldaa    >ObdMonStatus_Misfire
         oraa    #$48
-        ldab    >MonMisfire_012C
+        ldab    >MisfireCondCount
         andb    #$80
         brclr   <BitFlagsE5,#$20,LAEF5
         oraa    #$01
         orab    #$80
 LAEF5:
         staa    >ObdMonStatus_Misfire
-        stab    >MonMisfire_012C
-        ldaa    >Misfire_012B
+        stab    >MisfireCondCount
+        ldaa    >MisfireCondFlags
         oraa    #$80
-        staa    >Misfire_012B
+        staa    >MisfireCondFlags
         cli
         clra
-        staa    >Misfire_01A1
-        staa    >Misfire_01A2
-        staa    >Misfire_01A3
-        staa    >Misfire_01A4
+        staa    >MisfireHealEvents
+        staa    >MisfireHealCount
+        staa    >MisfireHealBlocks
+        staa    >MisfireHealSum
 LAF11:
         clra
-        staa    <Misfire_00E6
-        staa    >MonMisfire_019F
-        staa    >Misfire_01A0
+        staa    <MisfireCylBits
+        staa    >MisfireBlockCount
+        staa    >MisfireSum500
 LAF1A:
         clra
-        staa    >Misfire_019D
-        staa    >Misfire_019E
+        staa    >MisfireEventCount
+        staa    >MisfireCount100
 LAF21:
-        ldaa    >Misfire_012B
+        ldaa    >MisfireCondFlags
         anda    #$80
         bne     LAF2B
         jmp     >LAF9D
 
 LAF2B:
-        ldaa    >MonMisfire_012C
+        ldaa    >MisfireCondCount
         cmpa    #$80
         bne     LAF35
         jmp     >LAFAA
 
 LAF35:
-        ldaa    >Misfire_01A1
+        ldaa    >MisfireHealEvents
         cmpa    #$64
         bcs     LAF95
-        ldaa    >Misfire_01A2
+        ldaa    >MisfireHealCount
         cmpa    >LCBD2
         bls     LAF49
         ldab    #$80
-        stab    >MonMisfire_012C
+        stab    >MisfireCondCount
 LAF49:
-        inc     >Misfire_01A3
+        inc     >MisfireHealBlocks
         sei
-        ldaa    >Misfire_01A4
-        adda    >Misfire_01A2
+        ldaa    >MisfireHealSum
+        adda    >MisfireHealCount
         bcc     LAF57
         ldaa    #$FF
 LAF57:
-        staa    >Misfire_01A4
+        staa    >MisfireHealSum
         cli
-        ldaa    >Misfire_01A3
+        ldaa    >MisfireHealBlocks
         cmpa    #$05
         bcs     LAF8E
-        ldab    >MonMisfire_012C
-        ldaa    >Misfire_01A4
+        ldab    >MisfireCondCount
+        ldaa    >MisfireHealSum
         cmpa    >LCBD3
         bls     LAF71
         andb    #$80
@@ -549,23 +554,23 @@ LAF71:
         staa    >ObdMonStatus_Misfire
 LAF82:
         orab    #$80
-        stab    >MonMisfire_012C
+        stab    >MisfireCondCount
         clra
-        staa    >Misfire_01A3
-        staa    >Misfire_01A4
+        staa    >MisfireHealBlocks
+        staa    >MisfireHealSum
 LAF8E:
         clra
-        staa    >Misfire_01A1
-        staa    >Misfire_01A2
+        staa    >MisfireHealEvents
+        staa    >MisfireHealCount
 LAF95:
         ldx     #$0129
-        jsr     >LECD7
+        jsr     >ObdSimilarConditions                ; OBD-II "similar conditions" test against the record at X: sets bit 6 of X+2 if MAP is with
         bra     LAFAA
 
 LAF9D:
         brclr   <BitFlagsE5,#$80,LAFAA
         ldx     #$0129
-        jsr     >LED05
+        jsr     >ObdSaveConditions                   ; Stores the current RPM, MAP and closed-loop state in the similar-conditions record at X.
         bclr    <BitFlagsE5,#$80
 LAFAA:
         rts

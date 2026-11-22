@@ -51,7 +51,7 @@ and the use of each reply:
 
 | Header | Data sent | Reply used as |
 |---|---|---|
-| `$50` | `OutputBits2` and `$00EF`: lamps, TCC solenoid, O2 heater relay ([io_map.md](io_map.md#companion-chip-outputs-outputbits2-00ee)) | `LinkInputWordHi/Lo` ($00F0/$00F1) |
+| `$50` | `OutputBits2` and `$00EF`: lamps, TCC solenoid, O2 heater test switches ([io_map.md](io_map.md#companion-chip-outputs-outputbits2-00ee)) | `LinkInputWordHi/Lo` ($00F0/$00F1) |
 | `$58` | `$0176`/`$0177` | not used |
 | `$48` | `$00EC`, `$00` | `SwitchInputs` ($00ED) |
 

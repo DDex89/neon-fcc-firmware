@@ -39,7 +39,7 @@ LB1DF:
         ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     LB215
-        ldaa    >Var_01AA
+        ldaa    >StartCoolantTemp
         cmpa    >EGR27_ExhGasRecircConstFromCoolantTemp ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcc     LB1F4
         brset   <IPL1,#$10,LB218
