@@ -30,16 +30,16 @@ MonitorSecondaryAir:
 L2F6D:
         ldx     #LCCF0
         brclr   $00,x,#$01,L2FCC
-        ldaa    >L04AD
+        ldaa    >Var_04AD
         bne     L2FCC
-        brclr   <L006E,#$01,L2F88
+        brclr   <BitFlags6E,#$01,L2F88
         ldaa    >LCCF1
-        staa    >L04AD
-        bclr    <L006E,#$01
+        staa    >Var_04AD
+        bclr    <BitFlags6E,#$01
         bra     L2FCC
 
 L2F88:
-        ldaa    >L04A5
+        ldaa    >MonSecAir_04A5
         cmpa    #$05
         bls     L2F9D
         ldy     #$011A
@@ -52,7 +52,7 @@ L2F9D:
         bls     L2FA4
         jsr     >L2FCD
 L2FA4:
-        ldab    >L04A5
+        ldab    >MonSecAir_04A5
         aslb
         ldx     #POINTER2f3a
         abx
@@ -69,8 +69,8 @@ L2FB1:
         anda    #$EF
         staa    >BitFlags049E
         ldaa    #$06
-        staa    >L04A5
-        bset    <L006E,#$01
+        staa    >MonSecAir_04A5
+        bset    <BitFlags6E,#$01
 L2FCC:
         rts
 
@@ -82,7 +82,7 @@ L2FCC:
 ;---------------------------------------------------------------------------------------------------
 L2FCD:
         brset   <BitFlags71,#$80,L3007
-        ldaa    >L04AB
+        ldaa    >MonSecAir_04AB
         bne     L2FFF
         ldaa    >Timer_OffThrottleFuelEnrich
         bne     L2FFF
@@ -92,7 +92,7 @@ L2FCD:
         bne     L2FFF
         ldaa    >Factor_DecelLeanoutWhenMAPDecreasing_Temp
         bne     L2FFF
-        ldaa    >L01E3
+        ldaa    >Var_01E3
         bne     L2FFF
         ldd     <InjectorPulsewidth_HB
         subd    >PreviousInjectorPWMaybe
@@ -105,7 +105,7 @@ L2FF9:
 
 L2FFF:
         ldaa    #$06
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         jsr     >L308A
 L3007:
         rts
@@ -115,7 +115,7 @@ L3007:
 ; L3008  ($3008)
 ;---------------------------------------------------------------------------------------------------
 L3008:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         rts
 
 
@@ -123,15 +123,15 @@ L3008:
 ; L300C  ($300C)
 ;---------------------------------------------------------------------------------------------------
 L300C:
-        ldaa    >L01E7
+        ldaa    >Var_01E7
         beq     L3024
         cmpa    >LCCEE
         bhi     L3024
         ldd     #$0000
-        std     >$04A6
+        std     >MonSecAir_04A6
         ldd     <InjectorPulsewidth_HB
         std     >PreviousInjectorPWMaybe
-        inc     >L04A5
+        inc     >MonSecAir_04A5
 L3024:
         rts
 
@@ -143,20 +143,20 @@ L3025:
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD3
         bhi     L303D
-        ldd     >$04A6
+        ldd     >MonSecAir_04A6
         cpd     >LCCDD
         bhi     L3043
         addd    #$0001
-        std     >$04A6
+        std     >MonSecAir_04A6
         rts
 
 L303D:
         ldaa    #$05
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         rts
 
 L3043:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         rts
 
 
@@ -165,13 +165,13 @@ L3043:
 ;---------------------------------------------------------------------------------------------------
 L3047:
         ldaa    <KeyOnOrEngineRunningTime
-        cmpa    >L01E7
+        cmpa    >Var_01E7
         bcc     L304F
         rts
 
 L304F:
-        inc     >L04A5
-        clr     >$04A6
+        inc     >MonSecAir_04A5
+        clr     >MonSecAir_04A6
         rts
 
 
@@ -182,23 +182,23 @@ L3056:
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD3
         bhi     L3074
-        ldd     >$04A6
+        ldd     >MonSecAir_04A6
         cpd     >LCCDD
         bhi     L306E
         addd    #$0001
-        std     >$04A6
+        std     >MonSecAir_04A6
         rts
 
 L306E:
         ldaa    #$05
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         rts
 
 L3074:
         ldx     #$0112
         bset    $00,x,#$40
         bclr    $00,x,#$80
-        clr     >L04A5
+        clr     >MonSecAir_04A5
         rts
 
 
@@ -206,9 +206,9 @@ L3074:
 ; L3081  ($3081)
 ;---------------------------------------------------------------------------------------------------
 L3081:
-        inc     >L04AB
+        inc     >MonSecAir_04AB
         ldaa    #$06
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         rts
 
 
@@ -244,7 +244,7 @@ L30BC:
 
 L30C2:
         ldaa    #$06
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         bset    <OutputDriverBits,#$20
         ldaa    >ObdMonStatus_SecondaryAir
         anda    #$FB
@@ -261,11 +261,11 @@ L30DA:
 ;---------------------------------------------------------------------------------------------------
 L30DB:
         brclr   <OutputDriverBits,#$20,L30F7
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         ldd     #$0000
-        std     >L04A3
-        std     >$04A6
-        staa    >L04A8
+        std     >MonSecAir_04A3
+        std     >MonSecAir_04A6
+        staa    >MonSecAir_04A8
         ldaa    >DSO2NT_DS02DiagnosticCounterInit
         staa    >DiagCounter_DSO2SensorDiagnostics
         bclr    <IPL2,#$10
@@ -277,15 +277,15 @@ L30F7:
 ; L30F8  ($30F8)
 ;---------------------------------------------------------------------------------------------------
 L30F8:
-        ldx     >L04A3
+        ldx     >MonSecAir_04A3
         cpx     >LCCD5
         beq     L3105
         inx
-        stx     >L04A3
+        stx     >MonSecAir_04A3
         rts
 
 L3105:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         rts
 
 
@@ -308,22 +308,22 @@ L311F:
         ldaa    #$80
 L3121:
         staa    >DiagCounter_DSO2SensorSigned
-        ldaa    >L04A8
+        ldaa    >MonSecAir_04A8
         beq     L3132
-        staa    >L04A2
+        staa    >MonSecAir_04A2
         inca
-        staa    >L04A1
+        staa    >MonSecAir_04A1
         bra     L313E
 
 L3132:
         ldaa    >LCCEC
-        staa    >L04A2
+        staa    >MonSecAir_04A2
         ldaa    >LCCED
-        staa    >L04A1
+        staa    >MonSecAir_04A1
 L313E:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         ldd     #$0000
-        std     >L04A3
+        std     >MonSecAir_04A3
         rts
 
 
@@ -331,15 +331,15 @@ L313E:
 ; L3148  ($3148)
 ;---------------------------------------------------------------------------------------------------
 L3148:
-        ldx     >L04A3
+        ldx     >MonSecAir_04A3
         cpx     >LCCD7
         bcc     L3155
         inx
-        stx     >L04A3
+        stx     >MonSecAir_04A3
         rts
 
 L3155:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         rts
 
 
@@ -350,11 +350,11 @@ L3159:
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD2
         bls     L317E
-        ldd     >$04A6
+        ldd     >MonSecAir_04A6
         cpd     >LCCDB
         bhi     L3182
         addd    #$0001
-        std     >$04A6
+        std     >MonSecAir_04A6
         ldaa    >DiagCounter_DSO2SensorSigned
         staa    <Counter_O2SensorFeedbackCount_Signed
         ldaa    >BitFlags049E
@@ -363,14 +363,14 @@ L3159:
         rts
 
 L317E:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         rts
 
 L3182:
         ldaa    #$0D
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         ldd     #$0000
-        std     >L04A3
+        std     >MonSecAir_04A3
         rts
 
 
@@ -379,22 +379,22 @@ L3182:
 ;---------------------------------------------------------------------------------------------------
 L318E:
         bset    <IPL2,#$10
-        ldaa    >L04A2
+        ldaa    >MonSecAir_04A2
         inca
-        staa    >L04A2
-        staa    >L04A8
-        ldaa    >L04A1
+        staa    >MonSecAir_04A2
+        staa    >MonSecAir_04A8
+        ldaa    >MonSecAir_04A1
         adda    #$01
-        staa    >L04A1
+        staa    >MonSecAir_04A1
         cmpa    >LCCEF
         bcs     L31AB
         jmp     >L3263
 
 L31AB:
-        inc     >L04A5
+        inc     >MonSecAir_04A5
         ldd     #$0000
-        std     >$04A6
-        std     >L04A3
+        std     >MonSecAir_04A6
+        std     >MonSecAir_04A3
         rts
 
 
@@ -402,17 +402,17 @@ L31AB:
 ; L31B8  ($31B8)
 ;---------------------------------------------------------------------------------------------------
 L31B8:
-        ldx     >L04A3
+        ldx     >MonSecAir_04A3
         cpx     >LCCD7
         bcc     L31D8
         inx
-        stx     >L04A3
+        stx     >MonSecAir_04A3
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD2
         bls     L31D7
         bclr    <IPL2,#$10
         ldd     >LCCD7
-        std     >L04A3
+        std     >MonSecAir_04A3
         bra     L31D8
 
 L31D7:
@@ -422,11 +422,11 @@ L31D8:
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD2
         bls     L31FD
-        ldd     >$04A6
+        ldd     >MonSecAir_04A6
         cpd     >LCCF8
         bhi     L3203
         addd    #$0001
-        std     >$04A6
+        std     >MonSecAir_04A6
         ldaa    >DiagCounter_DSO2SensorSigned
         staa    <Counter_O2SensorFeedbackCount_Signed
         ldaa    >BitFlags049E
@@ -436,12 +436,12 @@ L31D8:
 
 L31FD:
         ldaa    #$0B
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         rts
 
 L3203:
         ldaa    #$0A
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         rts
 
 
@@ -453,24 +453,24 @@ L3209:
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD3
         bcs     L3221
-        ldx     >L04A3
+        ldx     >MonSecAir_04A3
         cpx     >LCCD9
         bcc     L3231
         inx
-        stx     >L04A3
+        stx     >MonSecAir_04A3
         rts
 
 L3221:
-        inc     >L04A5
-        clr     >$04A6
+        inc     >MonSecAir_04A5
+        clr     >MonSecAir_04A6
         ldaa    >BitFlags049E
         anda    #$EF
         staa    >BitFlags049E
         bra     L3241
 
 L3231:
-        inc     >L04A5
-        clr     >$04A6
+        inc     >MonSecAir_04A5
+        clr     >MonSecAir_04A6
         ldaa    >BitFlags049E
         anda    #$EF
         staa    >BitFlags049E
@@ -485,30 +485,30 @@ L3241:
         bclr    $00,x,#$80
         bset    $00,x,#$40
         bclr    <IPL2,#$10
-        clr     >L04AB
-        clr     >L0149
+        clr     >MonSecAir_04AB
+        clr     >MonSecAir_0149
         bset    <OutputDriverBits,#$20
         bclr    $00,x,#$04
         clra
-        staa    >L04A8
+        staa    >MonSecAir_04A8
         ldaa    #$06
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         rts
 
 L3263:
-        inc     >L04AB
-        ldaa    >L04AB
+        inc     >MonSecAir_04AB
+        ldaa    >MonSecAir_04AB
         cmpa    >LCCF2
         bcs     L32A0
         ldx     #$0112
         bset    $00,x,#$08
         bset    $00,x,#$40
         bclr    <IPL2,#$10
-        ldaa    >L0149
+        ldaa    >MonSecAir_0149
         cmpa    >LCCF3
         bcc     L328B
         inca
-        staa    >L0149
+        staa    >MonSecAir_0149
         bclr    $00,x,#$80
         bra     L32A0
 
@@ -520,12 +520,12 @@ L328B:
         bita    #$02
         bne     L32A0
         bclr    $00,x,#$80
-        clr     >L0149
+        clr     >MonSecAir_0149
 L32A0:
         ldaa    #$06
-        staa    >L04A5
+        staa    >MonSecAir_04A5
         clra
-        staa    >L04A8
+        staa    >MonSecAir_04A8
         bclr    $00,x,#$04
         bset    <OutputDriverBits,#$20
         rts

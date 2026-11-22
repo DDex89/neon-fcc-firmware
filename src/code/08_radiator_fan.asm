@@ -88,7 +88,7 @@ POINTER2a25:
 ; L2A65  ($2A65)
 ;---------------------------------------------------------------------------------------------------
 L2A65:
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0F
         cmpb    #$05
         beq     L2A72
@@ -122,7 +122,7 @@ L2A95:
 L2A96:
         jsr     >CODE2e08
         ldab    >LC8A2                               ; FANTMP6: Detailed Description3
-        stab    >L01FE
+        stab    >Fan_01FE
         inc     >CounterX
         rts
 
@@ -131,14 +131,14 @@ L2A96:
 ; L2AA3  ($2AA3)
 ;---------------------------------------------------------------------------------------------------
 L2AA3:
-        ldab    >L01FE
+        ldab    >Fan_01FE
         beq     L2AAB
         decb
         bne     L2AAE
 L2AAB:
         inc     >CounterX
 L2AAE:
-        stab    >L01FE
+        stab    >Fan_01FE
         rts
 
 
@@ -164,7 +164,7 @@ L2ACB:
         bra     L2AFF
 
 L2AD0:
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$0C
         cmpa    #$08
         bne     L2ADE
@@ -221,7 +221,7 @@ L2B19:
         bra     L2B49
 
 L2B1E:
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$0C
         cmpa    #$08
         bne     L2B3C
@@ -257,7 +257,7 @@ L2B50:
         ldd     <VehicleSpeed_HB
         cpd     >LC8B9                               ; FANTMP6: Detailed Description3
         bhi     CODE2b88
-        ldab    >L0473
+        ldab    >Fan_0473
         cmpb    >LC8B6                               ; FANTMP6: Detailed Description3
         bhi     CODE2b88
         ldab    <EngineRpm_HB
@@ -272,7 +272,7 @@ L2B50:
         ldaa    <Counter_MainLoop
         bita    #$3F
         bne     L2B81
-        inc     >L0473
+        inc     >Fan_0473
 L2B81:
         ldab    >CoolantTempStatusFlags
         andb    #$00
@@ -335,7 +335,7 @@ L2BC9:
 CODE2bca:
         jsr     >TurnOnCEL_C
         ldab    >LC8A1                               ; FANTMP6: Detailed Description3
-        stab    >L01FE
+        stab    >Fan_01FE
         inc     >CounterX
         rts
 
@@ -355,7 +355,7 @@ L2BE6:
         bra     L2C0C
 
 L2BEB:
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$0C
         cmpa    #$0C
         bne     L2BF9
@@ -395,7 +395,7 @@ L2C1D:
         bra     L2C7A
 
 L2C26:
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$0C
         cmpa    #$0C
         bne     L2C32
@@ -410,7 +410,7 @@ L2C3F:
         ldd     <VehicleSpeed_HB
         cpd     >LC8B9                               ; FANTMP6: Detailed Description3
         bls     L2C4A
-        clr     >L0473
+        clr     >Fan_0473
 L2C4A:
         cpd     >LC8B4                               ; FANTMP6: Detailed Description3
         bcc     L2C6F
@@ -425,7 +425,7 @@ L2C4A:
         bhi     L2C6F
         ldab    >CoolantTempStatusFlags
         andb    #$00
-        clr     >L0473
+        clr     >Fan_0473
         bra     L2C74
 
 L2C6F:
@@ -480,7 +480,7 @@ POINTER2c7b:
 CODE2cbb:
         jsr     >TurnOffCEL_C
         ldab    >LC8A3                               ; FANTMP6: Detailed Description3
-        stab    >L01FE
+        stab    >Fan_01FE
         inc     >CounterX
         rts
 
@@ -490,7 +490,7 @@ CODE2cbb:
 ;---------------------------------------------------------------------------------------------------
 CODE2cc8:
         brset   <b58_IPL1,#$02,L2CE4
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0C
         cmpb    #$0C
         beq     L2CE4
@@ -511,7 +511,7 @@ L2CE4:
 ;---------------------------------------------------------------------------------------------------
 CODE2ce5:
         brset   <b58_IPL1,#$02,L2D30
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0C
         cmpb    #$0C
         beq     L2D30
@@ -519,7 +519,7 @@ CODE2ce5:
         ldd     <VehicleSpeed_HB
         cpd     >LC8B9                               ; FANTMP6: Detailed Description3
         bls     L2D00
-        clr     >L0473
+        clr     >Fan_0473
 L2D00:
         cpd     >LC8B4                               ; FANTMP6: Detailed Description3
         bcc     L2D25
@@ -534,7 +534,7 @@ L2D00:
         bhi     L2D25
         ldab    >CoolantTempStatusFlags
         andb    #$00
-        clr     >L0473
+        clr     >Fan_0473
         bra     L2D2A
 
 L2D25:
@@ -573,7 +573,7 @@ POINTER2d31:
 CODE2d51:
         jsr     >TurnOffCEL_D
         ldab    >LC8A4                               ; FANTMP6: Detailed Description3
-        stab    >L01FE
+        stab    >Fan_01FE
         inc     >CounterX
         rts
 
@@ -583,7 +583,7 @@ CODE2d51:
 ;---------------------------------------------------------------------------------------------------
 CODE2d5e:
         brset   <b58_IPL1,#$02,L2D7A
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0C
         cmpb    #$0C
         beq     L2D7A
@@ -604,7 +604,7 @@ L2D7A:
 ;---------------------------------------------------------------------------------------------------
 CODE2d7b:
         brset   <b58_IPL1,#$02,L2DB5
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0C
         cmpb    #$0C
         beq     L2DB5
@@ -657,7 +657,7 @@ POINTER2db6:
 ; CODE2dd6  ($2DD6)
 ;---------------------------------------------------------------------------------------------------
 CODE2dd6:
-        ldab    >L01FE
+        ldab    >Fan_01FE
         beq     L2DDE
         decb
         bne     L2DEE
@@ -669,7 +669,7 @@ L2DDE:
         inc     >CounterX
         inc     >CounterX
 L2DEE:
-        stab    >L01FE
+        stab    >Fan_01FE
         rts
 
 
@@ -711,7 +711,7 @@ L2E10:
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     L2E1C
-        bclr    <L00EF,#$80
+        bclr    <OutputBits2Lo,#$80
         bra     L2E23
 
 L2E1C:
@@ -732,7 +732,7 @@ TurnOffCEL_C:
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     L2E33
-        bset    <L00EF,#$80
+        bset    <OutputBits2Lo,#$80
         bra     L2E3A
 
 L2E33:
@@ -956,7 +956,7 @@ L2F00:
 ; CODE2f01  ($2F01)
 ;---------------------------------------------------------------------------------------------------
 CODE2f01:
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0C
         cmpb    #$08
         bne     L2F0F
@@ -973,7 +973,7 @@ L2F12:
 ; L2F13  ($2F13)
 ;---------------------------------------------------------------------------------------------------
 L2F13:
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0C
         cmpb    #$08
         beq     L2F1F

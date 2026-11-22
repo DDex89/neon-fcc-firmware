@@ -67,7 +67,7 @@ L791A:
 L792A:
         brset   <SyncFlags75,#$20,L793E
         ldaa    #$FF
-        staa    >L014E
+        staa    >CrankActivityTimer
         clrb
         stab    <ATMOffset
         ldaa    <DRBPointer1
@@ -80,13 +80,13 @@ L793E:
 L7944:
         ldaa    #$10
         staa    $25,x
-        ldaa    <L00F3
+        ldaa    <Var_00F3
         tab
         andb    #$0F
         cmpb    #$04
         bcs     L7955
         suba    #$04
-        staa    <L00F3
+        staa    <Var_00F3
 L7955:
         rti
 
@@ -99,7 +99,7 @@ L7955:
 Isr_PAOV:
         ldx     #REGS
         brclr   $24,x,#$20,L7960                     ; TMSK2: Timer interrupt mask 2 (TOI, RTII, PAOVI, PAII, prescaler)
-        inc     >$047B
+        inc     >Crank_047B
 L7960:
         ldaa    #$20
         staa    $25,x
@@ -118,14 +118,14 @@ L7960:
 ;---------------------------------------------------------------------------------------------------
 Isr_TIC3:
         ldx     #REGS
-        clr     >$0478
+        clr     >Crank_0478
         ldaa    #$80
         staa    $25,x                                ; TFLG2: Timer interrupt flags 2
         bset    $24,x,#$80                           ; TMSK2: Timer interrupt mask 2 (TOI, RTII, PAOVI, PAII, prescaler)
         ldd     $0E,x                                ; TCNT: Free-running timer counter (16 bit)
         cpd     $14,x                                ; TIC3: Input capture 3 (16 bit)
         bcc     L797C
-        inc     >$0478
+        inc     >Crank_0478
 L797C:
         rti
 
@@ -143,7 +143,7 @@ Isr_TOF:
         ldaa    $0E,x                                ; TCNT: Free-running timer counter (16 bit)
         cmpa    #$3F
         bcc     L798D
-        inc     >$0478
+        inc     >Crank_0478
 L798D:
         rti
 
@@ -195,17 +195,17 @@ L79BC:
         brclr   <b5a_IPL3,#$08,L7A28
         brset   <SyncFlags75,#$20,L7A1A
         brclr   $22,x,#$01,L7A11
-        ldaa    >$0478
+        ldaa    >Crank_0478
         cmpa    #$03
         bhi     L7A0C
         ldd     $10,x
         subd    $14,x
         bcc     L79DE
-        dec     >$0478
+        dec     >Crank_0478
 L79DE:
-        tst     >$0478
+        tst     >Crank_0478
         bne     L79FD
-        cpd     >L0479
+        cpd     >Crank_0479
         bcc     L79FD
         bclr    <SyncFlags75,#$06
         bset    <SyncFlags75,#$21
@@ -216,13 +216,13 @@ L79DE:
         bra     L7A14
 
 L79FD:
-        lsr     >$0478
+        lsr     >Crank_0478
         rora
         rorb
-        lsr     >$0478
+        lsr     >Crank_0478
         rora
         rorb
-        std     >L0479
+        std     >Crank_0479
         bra     L7A14
 
 L7A0C:
@@ -273,10 +273,10 @@ L7A28:
 L7A4E:
         bset    <BitFlags71,#$02
         brset   $24,x,#$10,L7A58
-        bset    <L00F3,#$80
+        bset    <Var_00F3,#$80
 L7A58:
         bclr    <SyncFlags75,#$60
-        bclr    <L00F3,#$10
+        bclr    <Var_00F3,#$10
 L7A5E:
         bclr    <SyncFlags75,#$07
 L7A61:
@@ -293,10 +293,10 @@ L7A71:
         stab    $25,x
         bclr    $26,x,#$20
         bset    $24,x,#$10
-        bclr    <L00F3,#$10
+        bclr    <Var_00F3,#$10
         brset   <SyncFlags75,#$20,L7A95
         ldaa    #$FF
-        staa    >L014E
+        staa    >CrankActivityTimer
         clrb
         stab    <ATMOffset
         ldaa    <DRBPointer1
@@ -304,11 +304,11 @@ L7A71:
         bne     L7A95
         stab    <DRBPointer1
 L7A95:
-        ldaa    <L00F3
+        ldaa    <Var_00F3
         anda    #$0F
         cmpa    #$0C
         bhi     L7AA5
-        inc     >L00F3
+        inc     >Var_00F3
         bra     L7AA5
 
 L7AA2:
@@ -373,7 +373,7 @@ L7AED:
         ldaa    $27,x
         staa    <InjCylinderMask
         brclr   $25,x,#$20,L7B06
-        inc     >$047B
+        inc     >Crank_047B
         ldaa    $27,x
         staa    <InjCylinderMask
 L7B06:
@@ -384,30 +384,30 @@ L7B06:
         lsrd
         lsrd
         std     <Temp5
-        ldaa    >$047B
+        ldaa    >Crank_047B
         ldab    <InjCylinderMask
         subd    <Temp5
-        std     >$047B
+        std     >Crank_047B
         ldaa    #$20
         staa    $25,x
         bclr    $24,x,#$20
 L7B21:
         brclr   $22,x,#$01,L7B49
-        ldaa    >$0478
+        ldaa    >Crank_0478
         cmpa    #$03
         bhi     L7B42
         ldd     $10,x
         subd    $14,x
         bcc     L7B35
-        dec     >$0478
+        dec     >Crank_0478
 L7B35:
-        lsr     >$0478
+        lsr     >Crank_0478
         rora
         rorb
-        lsr     >$0478
+        lsr     >Crank_0478
         rora
         rorb
-        std     >L0479
+        std     >Crank_0479
 L7B42:
         bclr    $24,x,#$80
         ldaa    #$01
@@ -426,7 +426,7 @@ L7B49:
         clr     >Counter_TimerPastHalfwayBetweenCamPulses
         bset    <BitFlags76,#$01
         ldaa    <CalculatedSparkAdvance
-        ldab    <L00CA
+        ldab    <Var_00CA
         cmpb    <KnockRetardSum_AllCyls
         bcs     L7B70
         suba    <KnockRetardSum_AllCyls
@@ -464,7 +464,7 @@ L7B8B:
         ldab    <TimerOverflowsBetweenCamPulses
         beq     L7B9E
         bset    <BitFlags71,#$02
-        staa    <L00C4
+        staa    <Ign_00C4
         jmp     >L7CE8
 
 L7B9E:
@@ -476,7 +476,7 @@ L7B9E:
         bcs     L7BBD
         brclr   <BitFlags71,#$02,L7BB3
         clra
-        staa    <L00C4
+        staa    <Ign_00C4
 L7BB3:
         cmpb    >LB822                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bcs     L7BDA
@@ -484,11 +484,11 @@ L7BB3:
         bra     L7BDA
 
 L7BBD:
-        ldaa    <L00C4
+        ldaa    <Ign_00C4
         inca
         beq     L7BD7
 L7BC2:
-        staa    <L00C4
+        staa    <Ign_00C4
         ldab    <CoolantTemp
         cmpb    >LB826                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
         bls     L7BD2
@@ -639,12 +639,12 @@ L7CE8:
 L7CF3:
         stab    <MapVolts
         brclr   <BitFlags71,#$08,L7D5F
-        ldaa    >L017E
+        ldaa    >Ign_017E
         anda    #$0F
         inca
         cmpa    >LCED6                               ; MPDELX (DeltaMapThatChecksGoodX)
         bcc     L7D2A
-        inc     >L017E
+        inc     >Ign_017E
         jmp     >L7DBC
 
 
@@ -694,12 +694,12 @@ L7D7F:
         cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPVACD (AllowMapToTestGoodThisNearBaro)
         bcs     L7DB6
 L7D85:
-        ldab    >L017E
+        ldab    >Ign_017E
         addb    #$10
         bcc     L7D8E
         orab    #$F0
 L7D8E:
-        stab    >L017E
+        stab    >Ign_017E
         ldab    >LCED6                               ; MPDELX (DeltaMapThatChecksGoodX)
         ldx     #POINTER7d0a
         abx
@@ -710,10 +710,10 @@ L7D8E:
         abx
 L7DA1:
         ldaa    $00,x
-        cmpa    >L017E
+        cmpa    >Ign_017E
         bcc     L7DBC
         brset   <b58_IPL1,#$80,L7DB1
-        bset    <L005B,#$80
+        bset    <Var_005B,#$80
         bra     L7DB6
 
 L7DB1:
@@ -723,16 +723,16 @@ L7DB6:
         ldx     #$017E
         bclr    $00,x,#$F0
 L7DBC:
-        ldaa    >L045F
+        ldaa    >Var_045F
         inca
         beq     L7DC5
-        staa    >L045F
+        staa    >Var_045F
 L7DC5:
-        ldaa    <L0039
+        ldaa    <Var_0039
         beq     L7DD0
         cmpa    #$04
         bcc     L7DD0
-        inc     >L0039
+        inc     >Var_0039
 L7DD0:
         jmp     >L7F35
 
@@ -749,13 +749,13 @@ L7DD0:
 CrankInterrupt_HandleCamSensorRisingEdgeA:
         bclr    <SyncFlags75,#$08
         ldd     <LastDistributorFallingEdgeTime
-        std     <L0063
+        std     <Crank_0063
         brclr   $22,x,#$01,L7DF0
-        ldaa    >$0478
+        ldaa    >Crank_0478
         bne     L7DF0
         ldd     $10,x
         subd    $14,x
-        cpd     >L0479
+        cpd     >Crank_0479
         bls     L7DF0
         bclr    <SyncFlags75,#$20
 L7DF0:
@@ -763,7 +763,7 @@ L7DF0:
         bclr    $22,x,#$01
         ldaa    #$01
         staa    $23,x
-        ldd     <L0063
+        ldd     <Crank_0063
         subd    <LastCamFallingEdgeTime
         cpd     #$13F8
         bcs     L7E07
@@ -926,7 +926,7 @@ L7F32:
 L7F35:
         ldaa    #$01
         staa    <LastDistributorFallingEdgeTime
-        ldaa    >L0447
+        ldaa    >Crank_0447
         ldab    >CrankEventCounter
         ldx     #$822D
         abx
@@ -949,7 +949,7 @@ L7F56:
         tba
         oraa    <InjMaskCD
         staa    <InjMaskCD
-        ldaa    >L0447
+        ldaa    >Crank_0447
         bita    #$F0
         bne     L7F6F
         comb
@@ -1067,8 +1067,8 @@ L8005:
 L8007:
         brclr   <SyncFlags75,#$20,L8001
         brset   <SyncFlags74,#$80,L8020
-        brset   <L0039,#$04,L8020
-        ldaa    <L0039
+        brset   <Var_0039,#$04,L8020
+        ldaa    <Var_0039
         anda    #$07
         bne     L8001
         ldd     <InjectorPulsewidth_HB
@@ -1083,7 +1083,7 @@ L8026:
         bne     L802A
         subb    #$02
 L802A:
-        stab    >L044E
+        stab    >Var_044E
         ldx     #PointerToCylXInjectorPW
         abx
         ldx     $00,x
@@ -1131,7 +1131,7 @@ L806C:
         ldaa    #$10
         staa    $25,x
         bset    $24,x,#$10
-        bclr    <L00F3,#$10
+        bclr    <Var_00F3,#$10
         jmp     >L81D6
 
 L8083:
@@ -1169,7 +1169,7 @@ L80BB:
         cmpa    >LCC8A
         bcc     L809E
 L80C0:
-        ldaa    >$01E6
+        ldaa    >Var_01E6
         bpl     L80C6
         nega
 L80C6:
@@ -1188,22 +1188,22 @@ L80D3:
         ldaa    <KeyOnOrEngineRunningTime
         cmpa    >LCC8D
         bls     L809E
-        brset   <L00F3,#$80,L809E
+        brset   <Var_00F3,#$80,L809E
         ldaa    <b5a_IPL3
         anda    #$0D
         bne     L809E
         brset   <b59_IPL2,#$40,L809E
-        brset   <L00F3,#$10,L8109
-        bset    <L00F3,#$10
+        brset   <Var_00F3,#$10,L8109
+        bset    <Var_00F3,#$10
         bclr    $26,x,#$10
         bset    $26,x,#$20
         ldaa    #$FF
-        staa    >$047B
+        staa    >Crank_047B
 L8106:
         jmp     >L81D6
 
 L8109:
-        ldaa    >$047B
+        ldaa    >Crank_047B
         cmpa    #$FF
         bcc     L8106
         brset   $24,x,#$20,L8106
@@ -1216,10 +1216,10 @@ L8109:
         inca
         bne     L8126
 L810C:
-        clr     >L0101
+        clr     >Code8059_0101
 L8126:
         cli
-        ldd     >$047B
+        ldd     >Crank_047B
         asld
         asld
         asld
@@ -1236,12 +1236,12 @@ L813A:
         ldab    #$B4
         mul
         asld
-        staa    >L0477
+        staa    >Code8059_0477
         cmpa    >LCC87
         bhi     L81B4
         cmpa    >LCC86
         bcs     L81B4
-        ldaa    >L0101
+        ldaa    >Code8059_0101
         cmpa    >LCC88
         bhi     L8192
         brset   <BitFlags65,#$80,L81C5
@@ -1252,27 +1252,27 @@ L813A:
         ldaa    <BitFlags72
         bita    #$03
         bne     L818F
-        inc     >L0101
+        inc     >Code8059_0101
         ldaa    >EEPROM8
         tab
         subb    >LCC93
         bcc     L8171
         clrb
 L8171:
-        cmpb    >L0477
+        cmpb    >Code8059_0477
         bhi     L8182
         adda    >LCC93
         bcc     L817D
         ldaa    #$FF
 L817D:
-        cmpa    >L0477
+        cmpa    >Code8059_0477
         bcc     L818F
 L8182:
         bset    <BitFlags72,#$01
-        ldab    >L0477
+        ldab    >Code8059_0477
         ldaa    #$1D
         std     <DRBOffsetStored_HB
-        clr     >L0101
+        clr     >Code8059_0101
 L818F:
         cli
         bra     L81C5
@@ -1288,13 +1288,13 @@ L8192:
         bcc     L81A3
         clrb
 L81A3:
-        cmpb    >L0477
+        cmpb    >Code8059_0477
         bhi     L81B4
         adda    >LCC94
         bcc     L81AF
         ldaa    #$FF
 L81AF:
-        cmpa    >L0477
+        cmpa    >Code8059_0477
         bcc     L81C4
 L81B4:
         brset   <b5a_IPL3,#$01,L81C4
@@ -1306,31 +1306,31 @@ L81C4:
         cli
 L81C5:
         ldaa    #$FF
-        staa    >$047B
+        staa    >Crank_047B
         bra     L81D6
 
 L81CC:
-        bclr    <L00F3,#$10
+        bclr    <Var_00F3,#$10
         ldaa    #$20
         staa    $25,x
         bclr    $24,x,#$20
 L81D6:
-        brclr   <L00F3,#$80,L81ED
-        bclr    <L00F3,#$80
+        brclr   <Var_00F3,#$80,L81ED
+        bclr    <Var_00F3,#$80
         brset   <b59_IPL2,#$40,L81ED
         ldy     #ErrBytes_CODE_D9CB
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L81ED
         bset    <b59_IPL2,#$40
 L81ED:
-        ldaa    <L00F3
+        ldaa    <Var_00F3
         tab
         anda    #$0F
         cmpa    #$0C
         bls     L820E
         andb    #$F0
         orab    #$08
-        stab    <L00F3
+        stab    <Var_00F3
         brset   <b5a_IPL3,#$08,L8228
         ldy     #ErrBytes_CODE54
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1343,7 +1343,7 @@ L820E:
         bcc     L8228
         andb    #$F0
         orab    #$08
-        stab    <L00F3
+        stab    <Var_00F3
         brset   <b5a_IPL3,#$04,L8228
         ldy     #ErrBytes_CODE11
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1376,7 +1376,7 @@ BYTE8230:
 CrankInterrupt_HandleCamSensorRisingEdgeB:
         bset    <SyncFlags75,#$08
         ldd     <LastDistributorFallingEdgeTime
-        subd    <L0063
+        subd    <Crank_0063
         cpd     #$13F8
         bcs     L8285
         bset    <BitFlags71,#$02
@@ -1587,11 +1587,11 @@ CrankInterrupt_CalculateFuel:
         bra     L840E
 
 L83ED:
-        brclr   <L00F3,#$10,L8403
-        ldaa    >$047B
+        brclr   <Var_00F3,#$10,L8403
+        ldaa    >Crank_047B
         inca
         bne     L8403
-        staa    >$047B
+        staa    >Crank_047B
         clr     $27,x
         ldaa    #$20
         staa    $25,x
@@ -1651,7 +1651,7 @@ L843D:
         ldd     <VehicleSpeed_HB
         bne     L848D
         brset   <BitFlags_AIS,#$08,L8481
-        inc     >L047D
+        inc     >Var_047D
 L8481:
         ldaa    <Counter_EPP_MaxFF
         cmpa    >LE00A
@@ -1662,9 +1662,9 @@ L8481:
 L848D:
         bset    <IPL2,#$04
 L8490:
-        ldaa    >L045A
+        ldaa    >Var_045A
         beq     L8498
-        dec     >L045A
+        dec     >Var_045A
 L8498:
         brclr   <BitFlags69,#$08,L84A5
         ldaa    >Counter_FuelEngRunning_0450
@@ -1683,17 +1683,17 @@ L84AE:
         beq     L84B7
         staa    >Counter_SomethingWithCamSensor
 L84B7:
-        ldaa    >L04AD
+        ldaa    >Var_04AD
         beq     L84CB
         deca
-        staa    >L04AD
+        staa    >Var_04AD
         bne     L84CB
         ldx     #$04AC
         bclr    $00,x,#$01
         ldx     #REGS
 L84CB:
         ldaa    <MapValue
-        staa    >L01AB
+        staa    >Var_01AB
         ldaa    $31,x
         ldab    <EngineRpm_HB
         cmpb    #$2E
@@ -1708,16 +1708,24 @@ L84CB:
         cmpa    >MAPLOW_MapSensorLowerLimit          ; MAPLOW (MapSensorLowerLimit)
         bcs     L84F1
 L84ED:
-        brclr   <b58_IPL1,#$A0,GET_AVERAGE_MAP_READING
+        brclr   <b58_IPL1,#$A0,CrankMapRpmUpdate
 L84F1:
         jsr     >SimulateMapReadingFromTps
         bra     L84F9
 
 
 ;---------------------------------------------------------------------------------------------------
-; GET_AVERAGE_MAP_READING  ($84F6)
+; CrankMapRpmUpdate  ($84F6)
+;
+; Crank-synchronous update: converts the MAP sample to MapValue and computes engine RPM from the
+; period between edges. [reviewed - data flow]
+;
+; Called with A = previous MAP volts (averaged with MapVolts). Keeps the last three RPM values in
+; RpmHistory0-2 and the previous period in CrankPeriodPrev, which the (dormant) misfire monitor
+; uses. RPM = RpmScaleA/B (or calibration $CB94/$CB96 when SyncFlags74 bit 0 is set) divided by
+; the period. Original name GET_AVERAGE_MAP_READING.
 ;---------------------------------------------------------------------------------------------------
-GET_AVERAGE_MAP_READING:
+CrankMapRpmUpdate:
         adda    <MapVolts
         rora
 L84F9:
@@ -1732,14 +1740,14 @@ L8508:
         brclr   <BitFlags76,#$01,L8538
         bclr    <BitFlags76,#$01
         bset    <BitFlags76,#$02
-        ldd     >L01B0
-        std     >L01B2
-        ldd     >L01AE
-        std     >L01B0
+        ldd     >RpmHistory1
+        std     >RpmHistory2
+        ldd     >RpmHistory0
+        std     >RpmHistory1
         ldd     <EngineRpm_HB
-        std     >L01AE
+        std     >RpmHistory0
         ldd     <DistributorFallingEdgePulsewidth_HB
-        std     >L01AC
+        std     >CrankPeriodPrev
         ldd     <LastDistributorFallingEdgeTime
         subd    <LastCamFallingEdgeTime
         std     <DistributorFallingEdgePulsewidth_HB
@@ -1754,8 +1762,8 @@ L8538:
 L853A:
         std     <DistributorFallingEdgePulsewidth_HB
         brset   <SyncFlags74,#$01,L8549
-        ldd     >L0131
-        ldy     >L0133
+        ldd     >RpmScaleA
+        ldy     >RpmScaleB
         bra     L8550
 
 L8549:
@@ -1782,37 +1790,37 @@ L8567:
         ldab    <SyncFlags74
         andb    #$03
         bne     L85A2
-        ldaa    >L0456
+        ldaa    >Var_0456
         beq     L8576
         deca
-        staa    >L0456
+        staa    >Var_0456
 L8576:
-        ldaa    >L01A5
+        ldaa    >MapRpm_01A5
         bne     L859E
-        brset   <L00E5,#$08,L85A2
-        ldab    >L019D
+        brset   <BitFlagsE5,#$08,L85A2
+        ldab    >Misfire_019D
         incb
         bne     L8586
         decb
 L8586:
-        stab    >L019D
-        ldaa    >L012B
+        stab    >Misfire_019D
+        ldaa    >Misfire_012B
         anda    #$C0
         cmpa    #$C0
         bne     L85A2
-        ldab    >L01A1
+        ldab    >Misfire_01A1
         incb
         bne     L8599
         decb
 L8599:
-        stab    >L01A1
+        stab    >Misfire_01A1
         bra     L85A2
 
 L859E:
         deca
-        staa    >L01A5
+        staa    >MapRpm_01A5
 L85A2:
-        ldd     >L01AE
+        ldd     >RpmHistory0
         subd    <EngineRpm_HB
         bhi     L85AC
 L85A9:
@@ -1821,19 +1829,19 @@ L85A9:
 L85AC:
         cpd     >LCBD0
         bls     L85A9
-        ldaa    >$0457
+        ldaa    >MapRpm_0457
         inca
         bne     L85B9
         deca
 L85B9:
-        staa    >$0457
+        staa    >MapRpm_0457
         cmpa    >LCBCF
         bhi     L85C4
 L85C1:
         jmp     >L8665
 
 L85C4:
-        ldd     >L01B2
+        ldd     >RpmHistory2
         subd    <EngineRpm_HB
         bls     L85C1
         std     <Temp5
@@ -1845,59 +1853,59 @@ L85C4:
         asld
         cpd     <Temp5
         bcc     L85C1
-        ldab    >L019E
-        subb    >L0458
+        ldab    >Misfire_019E
+        subb    >MapRpm_0458
         bcs     L85EA
-        stab    >L019E
+        stab    >Misfire_019E
         bra     L85F8
 
 L85EA:
-        clr     >L019E
+        clr     >Misfire_019E
         negb
-        ldaa    >L01A0
+        ldaa    >Misfire_01A0
         sba
         bcc     L85F5
         clra
 L85F5:
-        staa    >L01A0
+        staa    >Misfire_01A0
 L85F8:
-        ldaa    >L012B
+        ldaa    >Misfire_012B
         anda    #$40
         beq     L8640
-        ldab    >L01A2
-        subb    >L0458
+        ldab    >Misfire_01A2
+        subb    >MapRpm_0458
         bcs     L860C
 L8607:
-        stab    >L01A2
+        stab    >Misfire_01A2
         bra     L861A
 
 L860C:
-        clr     >L01A2
+        clr     >Misfire_01A2
 L860F:
         negb
 L8610:
-        ldaa    >L01A4
+        ldaa    >Misfire_01A4
         sba
         bcc     L8617
         clra
 L8617:
-        staa    >L01A4
+        staa    >Misfire_01A4
 L861A:
-        ldaa    >L01A1
-        ldab    >L0458
+        ldaa    >Misfire_01A1
+        ldab    >MapRpm_0458
 L8620:
         lsrb
         sba
         bcs     L8629
-        staa    >L01A1
+        staa    >Misfire_01A1
         bra     L8640
 
 L8629:
-        clr     >L01A1
-        ldab    >L01A3
+        clr     >Misfire_01A1
+        ldab    >Misfire_01A3
         beq     L8640
         decb
-        stab    >L01A3
+        stab    >Misfire_01A3
         nega
         tab
         ldaa    #$64
@@ -1905,31 +1913,31 @@ L8629:
         bcc     L863D
         clra
 L863D:
-        staa    >L01A1
+        staa    >Misfire_01A1
 L8640:
-        ldaa    >L019E
+        ldaa    >Misfire_019E
         bne     L8648
-        bclr    <L00E6,#$F0
+        bclr    <Misfire_00E6,#$F0
 L8648:
-        ldaa    >L01A0
+        ldaa    >Misfire_01A0
         bne     L8650
-        bclr    <L00E6,#$0F
+        bclr    <Misfire_00E6,#$0F
 L8650:
         ldab    >LCBD4
-        cmpb    >L01A5
+        cmpb    >MapRpm_01A5
         bls     L865E
-        stab    >L01A5
+        stab    >MapRpm_01A5
         clra
         bra     L8662
 
 L865E:
         clra
-        staa    >$0457
+        staa    >MapRpm_0457
 L8662:
-        staa    >L0458
+        staa    >MapRpm_0458
 L8665:
-        ldaa    >L01A5
-        ldab    >L01AB
+        ldaa    >MapRpm_01A5
+        ldab    >Var_01AB
         subb    <MapValue
         cmpb    >LCBE1
         blt     L867A
@@ -1961,7 +1969,7 @@ L8688:
         bhi     L86B8
 L86A9:
         ldab    <MapValue
-        cmpb    >L01CD
+        cmpb    >Var_01CD
         bcc     L86B8
         cmpa    >LCBD6
         bcc     L86B8
@@ -2001,24 +2009,24 @@ L86F9:
         bcc     L8705
         ldaa    >LCBDA
 L8705:
-        brclr   <L00E5,#$04,L870F
+        brclr   <BitFlagsE5,#$04,L870F
         cmpa    #$05
         bcc     L870F
         ldaa    #$05
 L870F:
-        brclr   <L00E5,#$40,L871E
-        bclr    <L00E5,#$40
+        brclr   <BitFlagsE5,#$40,L871E
+        bclr    <BitFlagsE5,#$40
         cmpa    >LCBDC
         bcc     L871E
         ldaa    >LCBDC
 L871E:
-        ldab    >L0476
+        ldab    >Var_0476
         subb    >LCBA6
         bcc     L8727
         clrb
 L8727:
         stab    <Temp5
-        ldab    >L014B
+        ldab    >MapRpm_014B
         bpl     L872F
         negb
 L872F:
@@ -2028,37 +2036,37 @@ L872F:
         bcc     L873B
         ldaa    >LCBA7
 L873B:
-        staa    >L01A5
-        ldab    >L01A6
+        staa    >MapRpm_01A5
+        ldab    >MapRpm_01A6
         beq     L8759
         decb
-        stab    >L01A6
+        stab    >MapRpm_01A6
         bne     L8759
         ldaa    <EngineRpm_HB
         ldx     #TABLEcc01
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        cmpa    >L01A5
+        cmpa    >MapRpm_01A5
         bls     L8759
-        staa    >L01A5
+        staa    >MapRpm_01A5
 L8759:
-        ldaa    >L01A5
+        ldaa    >MapRpm_01A5
         bne     L8762
-        brclr   <L00E5,#$08,L8765
+        brclr   <BitFlagsE5,#$08,L8765
 L8762:
         jmp     >L88B2
 
 L8765:
-        ldd     >L01AE
+        ldd     >RpmHistory0
         subd    <EngineRpm_HB
         std     <Temp5
         bmi     L8795
-        ldaa    >L01A7
+        ldaa    >MapRpm_01A7
         beq     L8776
 L8773:
         jmp     >L882A
 
 L8776:
-        ldd     >L014B
+        ldd     >MapRpm_014B
         bpl     L8780
         comb
         coma
@@ -2066,7 +2074,7 @@ L8776:
 L8780:
         cpd     >LCBA4
         bge     L8773
-        ldab    >L0476
+        ldab    >Var_0476
         clra
         asld
         asld
@@ -2083,14 +2091,14 @@ L879D:
         jmp     >L882A
 
 L87A0:
-        ldab    >L01A6
+        ldab    >MapRpm_01A6
         bne     L879D
         clra
         ldab    >LCBE6
         bpl     L87AC
         deca
 L87AC:
-        addb    >L0476
+        addb    >Var_0476
         adca    #$00
         aslb
         rola
@@ -2103,57 +2111,57 @@ L87AC:
         addd    #$0001
         cpd     <Temp5
         blt     L882A
-        ldab    >L019E
+        ldab    >Misfire_019E
         subb    >LCBE7
         bcs     L87CE
-        stab    >L019E
+        stab    >Misfire_019E
         bra     L87DC
 
 L87CE:
-        clr     >L019E
+        clr     >Misfire_019E
         negb
-        ldaa    >L01A0
+        ldaa    >Misfire_01A0
         sba
         bcc     L87D9
         clra
 L87D9:
-        staa    >L01A0
+        staa    >Misfire_01A0
 L87DC:
         ldaa    >LCBDE
-        staa    >L01A5
-        ldaa    >L012B
+        staa    >MapRpm_01A5
+        ldaa    >Misfire_012B
         anda    #$40
         beq     L882A
-        ldab    >L01A2
+        ldab    >Misfire_01A2
         subb    >LCBE7
         bcs     L87F6
-        stab    >L01A2
+        stab    >Misfire_01A2
         bra     L8804
 
 L87F6:
-        clr     >L01A2
+        clr     >Misfire_01A2
         negb
-        ldaa    >L01A4
+        ldaa    >Misfire_01A4
         sba
         bcc     L8801
         clra
 L8801:
-        staa    >L01A4
+        staa    >Misfire_01A4
 L8804:
-        ldaa    >L01A1
+        ldaa    >Misfire_01A1
         ldab    >LCBE7
         lsrb
         sba
         bcs     L8813
-        staa    >L01A1
+        staa    >Misfire_01A1
         bra     L882A
 
 L8813:
-        clr     >L01A1
-        ldab    >L01A3
+        clr     >Misfire_01A1
+        ldab    >Misfire_01A3
         beq     L882A
         decb
-        stab    >L01A3
+        stab    >Misfire_01A3
         nega
         tab
         ldaa    #$64
@@ -2161,12 +2169,12 @@ L8813:
         bcc     L8827
         clra
 L8827:
-        staa    >L01A1
+        staa    >Misfire_01A1
 L882A:
         brclr   <SyncFlags74,#$01,L8836
-        ldaa    >L0475
+        ldaa    >MapRpm_0475
         beq     L8838
-        dec     >L0475
+        dec     >MapRpm_0475
 L8836:
         bra     L88B2
 
@@ -2177,63 +2185,63 @@ L8838:
         ldaa    <EngineRpm_HB
         cmpa    >LCBA3
         bls     L88B2
-        ldd     >L01B0
+        ldd     >RpmHistory1
         addd    <EngineRpm_HB
         rora
         rorb
-        subd    >L01AE
-        std     >L01B8
-        bset    <L00E5,#$02
+        subd    >RpmHistory0
+        std     >MapRpm_01B8
+        bset    <BitFlagsE5,#$02
         bra     L88B2
 
 L8858:
-        ldaa    >L012B
+        ldaa    >Misfire_012B
         tab
         anda    #$80
         beq     L886F
         andb    #$40
         beq     L8877
-        ldaa    >L01A2
+        ldaa    >Misfire_01A2
         inca
         beq     L8877
-        staa    >L01A2
+        staa    >Misfire_01A2
         bra     L8877
 
 L886F:
-        ldaa    >L019E
+        ldaa    >Misfire_019E
         bne     L8877
-        bset    <L00E5,#$80
+        bset    <BitFlagsE5,#$80
 L8877:
         ldd     <Temp5
-        std     >L01A8
-        ldaa    >L019E
+        std     >MapRpm_01A8
+        ldaa    >Misfire_019E
         inca
         beq     L8885
-        staa    >L019E
+        staa    >Misfire_019E
 L8885:
-        ldaa    >L0458
+        ldaa    >MapRpm_0458
         inca
         beq     L888E
-        staa    >L0458
+        staa    >MapRpm_0458
 L888E:
-        brclr   <L00E5,#$01,L8898
+        brclr   <BitFlagsE5,#$01,L8898
         ldaa    >LCBDB
-        staa    >L0456
+        staa    >Var_0456
 L8898:
         ldab    <SyncFlags74
         andb    #$03
         ldx     #$8271
         abx
-        ldaa    <L00E6
+        ldaa    <Misfire_00E6
         oraa    $00,x
-        staa    <L00E6
+        staa    <Misfire_00E6
         ldaa    >LCBDD
-        staa    >L0475
+        staa    >MapRpm_0475
         ldaa    >LCBE4
-        staa    >L01A6
+        staa    >MapRpm_01A6
 L88B2:
         ldd     #$007D
-        std     >L0418
+        std     >IODev_0418
         inc     >AdaptiveCellUpdateTimer_IncrementedEveryCamRisingEdge
         inc     >Timer_O2ToggleDuration
         ldy     #$0400
@@ -2283,7 +2291,7 @@ L891A:
         brset   <b58_IPL1,#$08,L8929
         tstb
         beq     CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT
-        bset    <L005B,#$08
+        bset    <Var_005B,#$08
         bra     L8929
 
 
@@ -2298,7 +2306,7 @@ L891A:
 ; crank-synchronous path with the running fuel calculation.
 ;---------------------------------------------------------------------------------------------------
 CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT:
-        bset    <L005B,#$01
+        bset    <Var_005B,#$01
 L8929:
         ldaa    #$02
         staa    >IODev_InjectorCommand
@@ -2345,7 +2353,7 @@ L897C:
 L897E:
         ldaa    <TpsVolts
         clrb
-        cmpa    >L0191
+        cmpa    >Knock_0191
         bcs     L89A8
         ldaa    >TPSFL1_TPSFilterForTPSRetard_NoAR   ; TPSFL1 (TPSFilterForTPSRetard_NoAR)
         bne     L898F
@@ -2353,7 +2361,7 @@ L897E:
         bra     L89A8
 
 L898F:
-        ldy     >L0191
+        ldy     >Knock_0191
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
         ldaa    <TpsVolts
@@ -2362,12 +2370,12 @@ L898F:
         tsy
         subd    $00,y
         puly
-        addd    >L0191
+        addd    >Knock_0191
 L89A8:
-        std     >L0191
+        std     >Knock_0191
         ldaa    <TpsVolts
         clrb
-        cmpa    >L0193
+        cmpa    >Knock_0193
         bcs     L89D5
         ldaa    >TPSFL2_TPSFilterForTPSRetard_WithAR ; TPSFL2 (TPSFilterForTPSRetard_WithAR)
         bne     L89BC
@@ -2375,7 +2383,7 @@ L89A8:
         bra     L89D5
 
 L89BC:
-        ldy     >L0193
+        ldy     >Knock_0193
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
         ldaa    <TpsVolts
@@ -2384,9 +2392,9 @@ L89BC:
         tsy
         subd    $00,y
         puly
-        addd    >L0193
+        addd    >Knock_0193
 L89D5:
-        std     >L0193
+        std     >Knock_0193
         ldaa    <TpsVolts
         cmpa    <TpsAverageValue_HB
         bcs     L89FF
@@ -2675,10 +2683,10 @@ IncludeInjectorLatency:
         ldd     #$0000
 L8B6A:
         std     <Pulsewidth_AISEnrichment_HB
-        ldaa    >L0447
-        brclr   <L0039,#$04,L8B79
-        ldaa    >L0448
-        staa    >L0447
+        ldaa    >Crank_0447
+        brclr   <Var_0039,#$04,L8B79
+        ldaa    >Var_0448
+        staa    >Crank_0447
 L8B79:
         bmi     L8BAE
         ldab    #$08
@@ -2750,7 +2758,7 @@ L8BEF:
 L8BF6:
         bita    #$0F
         beq     L8C1C
-        ldab    >L0447
+        ldab    >Crank_0447
         bmi     L8C19
         deca
         staa    <Counter_FuelEngRunning
@@ -2773,7 +2781,7 @@ L8C19:
         jmp     >L8D03
 
 L8C1C:
-        ldab    >L0447
+        ldab    >Crank_0447
         bmi     L8C87
         suba    #$10
         staa    <Counter_FuelEngRunning
@@ -2837,8 +2845,8 @@ L8C85:
         staa    <Counter_FuelEngRunning
 L8C87:
         brclr   <SyncFlags75,#$20,L8C19
-        brset   <L0039,#$04,L8CBE
-        ldaa    >L0447
+        brset   <Var_0039,#$04,L8CBE
+        ldaa    >Crank_0447
         beq     L8C9F
         ldx     #$822D
         cmpa    $03,x
@@ -2846,15 +2854,15 @@ L8C87:
         cmpa    $07,x
         bne     L8CA3
 L8C9F:
-        brclr   <L0039,#$07,L8CA6
+        brclr   <Var_0039,#$07,L8CA6
 L8CA3:
         jmp     >L8D03
 
 L8CA6:
         bset    <InjCylinderMask,#$0F
-        inc     >L0039
+        inc     >Var_0039
         bclr    <InjMaskCD,#$0F
-        ldaa    >L0447
+        ldaa    >Crank_0447
         bita    #$0F
         bne     L8CBB
         bclr    <InjMaskCE,#$0F

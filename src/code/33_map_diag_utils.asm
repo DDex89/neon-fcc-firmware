@@ -14,7 +14,7 @@
 ;
 ; Converts the MAP sensor voltage to the internal MAP value. [from name]
 ;
-; Called from: GET_AVERAGE_MAP_READING, HandleBaroReadRequirement_MM, ResetInterrupt, StoreMAPVoltsAndCalcMAPValue
+; Called from: CrankMapRpmUpdate, HandleBaroReadRequirement_MM, ResetInterrupt, StoreMAPVoltsAndCalcMAPValue
 ;---------------------------------------------------------------------------------------------------
 ConvertMAPVoltsToValue:
         ldab    #$F4
@@ -334,12 +334,12 @@ LEAF0:
         puly
         cpy     #$E9B7
         bne     LEB11
-        ldab    >L00E7
+        ldab    >MonMisfire_00E7
         andb    #$F0
         bne     LEB11
-        ldab    >L00E7
+        ldab    >MonMisfire_00E7
         andb    #$F0
-        stab    >L00E7
+        stab    >MonMisfire_00E7
 LEB11:
         ldx     $04,y
         brset   $00,x,#$40,LEB1B
@@ -354,7 +354,7 @@ LEB29:
         ldx     #$011A
         brset   $00,x,#$02,LEBA4
         bset    $00,x,#$80
-        clr     >L0035
+        clr     >Var_0035
         ldx     $04,y
         brclr   $00,x,#$80,LEB5A
         ldx     $06,y
@@ -436,7 +436,7 @@ LEBDB:
 LEBE8:
         cmpb    #$01
         bcc     LEBF3
-        ldaa    >L011B
+        ldaa    >MonMisfire_011B
         cmpa    #$50
         bcs     LEC11
 LEBF3:
@@ -470,10 +470,10 @@ LEC18:
         cmpa    >LastEmissionFault
         bne     LEC30
         bset    $00,x,#$04
-        ldaa    >L011B
+        ldaa    >MonMisfire_011B
         inca
         beq     LEC30
-        staa    >L011B
+        staa    >MonMisfire_011B
 LEC30:
         rts
 
@@ -486,7 +486,7 @@ LEC30:
 LEC31:
         ldx     #$011A
         bset    $00,x,#$04
-        clr     >L011B
+        clr     >MonMisfire_011B
         rts
 
 
@@ -496,12 +496,12 @@ LEC31:
 ; Called from: LEABA
 ;---------------------------------------------------------------------------------------------------
 LEC3B:
-        ldab    >L00E7
+        ldab    >MonMisfire_00E7
         lsrb
         lsrb
         lsrb
         lsrb
-        orab    >L00E7
+        orab    >MonMisfire_00E7
         andb    #$0F
         pshb
         clra
@@ -539,7 +539,7 @@ LEC59:
 LEC7E:
         ldy     #ErrBytes_CODE43_e
 LEC82:
-        clr     >L00E7
+        clr     >MonMisfire_00E7
         rts
 
 
@@ -563,7 +563,7 @@ CaptureFreezeFrame:
         cmpa    $00,x
         beq     LECBB
         staa    $00,x
-        ldaa    >L0219
+        ldaa    >ObdMapValue
         staa    $06,x
         ldaa    <EngineRpm_HB
         staa    $07,x
@@ -688,11 +688,11 @@ LED24:
         ldx     #$011A
         ldy     #$0129
         brset   $02,y,#$02,LED37
-        clr     >L0439
+        clr     >MonMisfire_0439
         bra     LED73
 
 LED37:
-        ldaa    >L0438
+        ldaa    >MonMisfire_0438
         tab
         andb    #$80
         anda    #$7F
@@ -703,43 +703,43 @@ LED37:
 LED44:
         bitb    #$80
         bne     LED6F
-        ldab    >L0439
+        ldab    >MonMisfire_0439
         beq     LED51
         decb
-        stab    >L0439
+        stab    >MonMisfire_0439
 LED51:
         brclr   $00,x,#$10,LED68
         bclr    $00,x,#$10
         ldaa    <EngineRpm_HB
         ldx     #TABLEcc79
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        cmpb    >L0439
+        cmpb    >MonMisfire_0439
         bls     LED68
-        stab    >L0439
+        stab    >MonMisfire_0439
 LED68:
         ldab    #$80
-        tst     >L0439
+        tst     >MonMisfire_0439
         bne     LED70
 LED6F:
         clrb
 LED70:
         ldaa    >LED23
 LED73:
-        staa    >L0438
-        orab    >L0438
-        stab    >L0438
+        staa    >MonMisfire_0438
+        orab    >MonMisfire_0438
+        stab    >MonMisfire_0438
         ldx     #$011A
         brclr   $00,x,#$80,LEDAC
-        ldaa    >L0438
+        ldaa    >MonMisfire_0438
         bita    #$80
         bne     LEDA4
-        ldaa    >L011B
+        ldaa    >MonMisfire_011B
         cmpa    #$03
         bcs     LEDA9
-        ldaa    >L012B
+        ldaa    >Misfire_012B
         bita    #$02
         bne     LEDA9
-        ldaa    >L012F
+        ldaa    >MonMisfire_012F
         bita    #$02
         bne     LEDA9
         bclr    $00,x,#$80
@@ -766,15 +766,15 @@ LEDAD:
         ldaa    <CoolantTemp
         cmpa    #$C7
         bcs     LEDCF
-        suba    >L01AA
+        suba    >Var_01AA
         bcs     LEDCF
         cmpa    #$16
         bcs     LEDCF
         bset    $00,x,#$20
-        ldaa    >L0035
+        ldaa    >Var_0035
         inca
         beq     LEDCF
-        staa    >L0035
+        staa    >Var_0035
 LEDCF:
         rts
 
@@ -788,10 +788,10 @@ LEDD0:
         brclr   <BitFlags71,#$80,LEE13
         ldx     #$011A
         brset   $00,x,#$80,LEE13
-        ldaa    >L0035
+        ldaa    >Var_0035
         cmpa    #$28
         bcs     LEE13
-        clr     >L0035
+        clr     >Var_0035
         jsr     >EraseErorrCodes
         ldy     #ObdMonitorTable
         ldab    #$0E
@@ -970,7 +970,7 @@ LEF31:
         ldaa    >LastEmissionFault
         jsr     >LEC18
 LEF37:
-        ldaa    >L011B
+        ldaa    >MonMisfire_011B
         cmpa    #$50
         bcs     LEFA9
         ldy     #$0119

@@ -410,7 +410,7 @@ CcdRx_4:
         ldaa    >CcdRxData2
         bita    #$08
         beq     L471D
-        clr     >L01EF
+        clr     >Var_01EF
 L471D:
         bclr    <b5a_IPL3,#$80
         ldaa    >CcdRxData1
@@ -444,12 +444,12 @@ CcdRx_8:
 Set_ErrorBits_3_MM:
         brclr   <BitFlags_AIS,#$08,L4766
         brset   <BitFlags71,#$80,L4766
-        ldaa    >L01EF
+        ldaa    >Var_01EF
         inca
         bne     L473E
         deca
 L473E:
-        staa    >L01EF
+        staa    >Var_01EF
         ldaa    >CcdRxTimeout
         inca
         bne     L4748
@@ -703,22 +703,22 @@ L486F:
         brset   <OutputBits2,#$40,L4875
         oraa    #$20
 L4875:
-        brclr   <L006C,#$20,L48AC
+        brclr   <BitFlags6C,#$20,L48AC
         clrb
-        brset   <L006C,#$18,L4888
-        brset   <L006C,#$10,L4899
-        brset   <L006C,#$08,L489D
+        brset   <BitFlags6C,#$18,L4888
+        brset   <BitFlags6C,#$10,L4899
+        brset   <BitFlags6C,#$08,L489D
         bra     L48AC
 
 L4888:
         orab    #$03
-        brset   <L006C,#$02,L4890
+        brset   <BitFlags6C,#$02,L4890
         bra     L48A3
 
 L4890:
         clrb
-        bclr    <L006C,#$20
-        bclr    <L006C,#$18
+        bclr    <BitFlags6C,#$20
+        bclr    <BitFlags6C,#$18
         bra     L48AC
 
 L4899:
@@ -728,18 +728,18 @@ L4899:
 L489D:
         orab    #$01
 L489F:
-        brset   <L006C,#$02,L48AC
+        brset   <BitFlags6C,#$02,L48AC
 L48A3:
-        brset   <L006C,#$04,L48B3
-        inc     >L006C
+        brset   <BitFlags6C,#$04,L48B3
+        inc     >BitFlags6C
         bra     L48B3
 
 L48AC:
-        bclr    <L006C,#$22
-        bclr    <L006C,#$18
+        bclr    <BitFlags6C,#$22
+        bclr    <BitFlags6C,#$18
         clrb
 L48B3:
-        bclr    <L006C,#$04
+        bclr    <BitFlags6C,#$04
         brset   <AutoCalCell4,#$20,L48BC
         orab    #$80
 L48BC:

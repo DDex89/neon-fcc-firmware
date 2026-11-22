@@ -79,11 +79,12 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - Byte-identical rebuild of both variants, checked in CI.
 - 20,075 instructions identified. All code reached through pointer tables is now traced; only 7
   instructions in four unreferenced fragments remain, marked as dead code.
-- 617 routine headers with call graph; 166 routines described by hand, 131 of them checked (fully or partly) against the
+- 617 routine headers with call graph; 167 routines described by hand, 132 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
 - 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
-- RAM map with readers and writers of every address; 222 of 655 addresses still have a placeholder
-  name (`L0123`).
+- RAM map with readers and writers of every address; every directly accessed address is named.
+  Where the meaning is not decoded, the name says who owns the variable (`MonEvap_0205`) or that it
+  is shared (`Var_0183`).
 
 Help is welcome: improving the knowledge base means editing `annotations/routines.md` or
 `annotations/comments.txt`, regenerating and checking that the build is still byte-identical.
@@ -92,7 +93,7 @@ Help is welcome: improving the knowledge base means editing `annotations/routine
 
 1. Finish annotating the code. Done: engine position and scheduling, fuel, spark, knock, idle,
    fault codes, DRB / ISO 9141 / J1979 protocols, the companion chip link and CCD messages. Open: the
-   remaining RAM names, the meaning of the received CCD messages.
+   meaning of the received CCD messages and of the variables that only have owner names.
 2. Map the hardware completely. Done: connector pinout, timer pins, A/D channels, output drivers.
    Open: most switch input bits, the fuel level input, the registers of the I/O device at $0400 and
    the companion chip, which cannot be decoded further without their documentation.

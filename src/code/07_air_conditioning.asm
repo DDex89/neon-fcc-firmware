@@ -17,7 +17,7 @@ ErrorCodeRoutine_Unused:
         cmpa    #$02
         bhi     L2373
         ldd     #$0000
-        std     >TempStack
+        std     >IsoRespData2
         bra     L238F
 
 L2373:
@@ -26,12 +26,12 @@ L2373:
         ldy     #ErrBytes_CODE12
         ldaa    #$08
         mul
-        std     >L0498
+        std     >Iso_0498
         xgdy
-        addd    >L0498
+        addd    >Iso_0498
         xgdy
         ldd     $06,y
-        std     >TempStack
+        std     >IsoRespData2
 L238F:
         ldx     #$0496
         jmp     >CODE1f17
@@ -42,9 +42,9 @@ L238F:
 ;---------------------------------------------------------------------------------------------------
 CODE2395:
         ldaa    >ISO_ErrorBitRegister1
-        staa    >TempStack
+        staa    >IsoRespData2
         ldaa    #$00
-        staa    >L0495
+        staa    >IsoRespData3
         ldx     #$0496
         jmp     >CODE1f17
 
@@ -54,7 +54,7 @@ CODE2395:
 ;---------------------------------------------------------------------------------------------------
 CODE23a6:
         ldaa    >ISO_ErrorBitRegister2
-        staa    >TempStack
+        staa    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -68,7 +68,7 @@ CODE23b2:
         bcc     L23BA
         clra
 L23BA:
-        staa    >TempStack
+        staa    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -84,7 +84,7 @@ CODE23c3:
 L23CB:
         lsrd
         lsrd
-        stab    >TempStack
+        stab    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -100,7 +100,7 @@ CODE23d6:
 L23DE:
         lsrd
         lsrd
-        stab    >TempStack
+        stab    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -113,7 +113,7 @@ CODE23e9:
         ldab    #$69
         mul
         adca    #$00
-        staa    >TempStack
+        staa    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -125,7 +125,7 @@ CODE23fa:
         clrb
         ldaa    >ISO_ErrorBitRegisterStored2
         lsrd
-        std     >TempStack
+        std     >IsoRespData2
         ldx     #$0496
         jmp     >CODE1f17
 
@@ -145,7 +145,7 @@ L2412:
         ldab    #$CE
         mul
         adca    #$00
-        staa    >TempStack
+        staa    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -230,7 +230,7 @@ Check01DCStatus_SM:
         andb    #$30
         ldx     #$24A0
         abx
-        ldaa    >L01DC
+        ldaa    >Var_01DC
 L24F7:
         inx
         inx
@@ -262,18 +262,18 @@ ControlAirConditioning_MM:
         beq     L252D
         brset   <BitFlags71,#$80,L2520
 L251C:
-        brset   <L006E,#$04,L252E
+        brset   <BitFlags6E,#$04,L252E
 L2520:
         bset    <OutputDriverBits,#$01
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$F0
         oraa    #$02
-        staa    >L01FC
+        staa    >AcState
 L252D:
         rts
 
 L252E:
-        ldab    >L01FC
+        ldab    >AcState
         andb    #$0F
         aslb
         ldx     #ACControlSubroutineTable
@@ -291,7 +291,7 @@ AC_Rout1:
         oraa    >AisLoadFlagsB
         bita    #$20
         bne     L254A
-        inc     >L01FC
+        inc     >AcState
 L254A:
         rts
 
@@ -302,8 +302,8 @@ L254A:
 AC_Rout2:
         bset    <OutputDriverBits,#$01
         ldaa    >LC8C0                               ; FANTMP6: Detailed Description3
-        staa    <L00E9
-        inc     >L01FC
+        staa    <Ac_00E9
+        inc     >AcState
         rts
 
 
@@ -314,26 +314,26 @@ AC_Rout3:
         ldd     <Pulsewidth_PartThrottleEnrichment_HB
         beq     L2561
         ldaa    >LC8C1                               ; FANTMP6: Detailed Description3
-        staa    >L01FF
+        staa    >AcTimer
 L2561:
         ldab    <Counter_MainLoop
         bitb    #$3F
         beq     L256E
-        ldaa    <L00E9
+        ldaa    <Ac_00E9
         beq     L256E
         deca
-        staa    <L00E9
+        staa    <Ac_00E9
 L256E:
-        ldaa    >L01FF
+        ldaa    >AcTimer
         beq     L2579
         deca
-        staa    >L01FF
+        staa    >AcTimer
         bra     L2580
 
 L2579:
-        ldaa    <L00E9
+        ldaa    <Ac_00E9
         bne     L2580
-        inc     >L01FC
+        inc     >AcState
 L2580:
         rts
 
@@ -345,11 +345,11 @@ AR_Rout4:
         ldd     <Pulsewidth_PartThrottleEnrichment_HB
         beq     L2596
         ldaa    >LC8C1                               ; FANTMP6: Detailed Description3
-        staa    >L01FF
-        ldaa    >L01FC
+        staa    >AcTimer
+        ldaa    >AcState
         anda    #$F0
         oraa    #$02
-        staa    >L01FC
+        staa    >AcState
         rts
 
 L2596:
@@ -360,7 +360,7 @@ L2596:
         bcs     L25C4
         brset   <BitFlags67,#$04,L25C4
         ldaa    <EngineRpm_HB
-        brclr   <L0077,#$40,L25AF
+        brclr   <BitFlags77,#$40,L25AF
         bra     L25B4
 
 L25AF:
@@ -404,8 +404,8 @@ ACSubroutineTable2:
 AC_Rout5:
         bset    <OutputDriverBits,#$01
         clra
-        staa    >L01FF
-        inc     >L01FC
+        staa    >AcTimer
+        inc     >AcState
         rts
 
 
@@ -416,9 +416,9 @@ AC_Rout5_25F0:
         ldab    <Counter_MainLoop
         bitb    #$3F
         bne     L25F9
-        inc     >L01FF
+        inc     >AcTimer
 L25F9:
-        ldaa    >L01FC
+        ldaa    >AcState
         bita    #$10
         beq     L2613
         ldab    <TPSOverMINTHR
@@ -432,7 +432,7 @@ L2602:
 ; CODE2609  ($2609)
 ;---------------------------------------------------------------------------------------------------
 CODE2609:
-        ldab    >L01FF
+        ldab    >AcTimer
         cmpb    >LC8C8                               ; FANTMP6: Detailed Description3
         bcs     L264D
         bra     L264A
@@ -449,22 +449,22 @@ L2613:
         bcs     L2642
         cmpb    >LC8C6                               ; FANTMP6: Detailed Description3
         bcs     L2637
-        ldaa    >L01FC
+        ldaa    >AcState
         oraa    #$10
-        staa    >L01FC
+        staa    >AcState
         bra     L264D
 
 L2637:
-        ldaa    >L01FF
+        ldaa    >AcTimer
         cmpa    >LC8C9                               ; FANTMP6: Detailed Description3
         bcs     L264D
-        bset    <L006E,#$02
+        bset    <BitFlags6E,#$02
 L2642:
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$EF
-        staa    >L01FC
+        staa    >AcState
 L264A:
-        inc     >L01FC
+        inc     >AcState
 L264D:
         rts
 
@@ -483,7 +483,7 @@ AC_Rout6:
         cmpb    #$60
         bne     L2664
 L2661:
-        inc     >L01FC
+        inc     >AcState
 L2664:
         rts
 
@@ -492,13 +492,13 @@ L2664:
 ; AC_Rout7  ($2665)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout7:
-        ldaa    >L04AE
+        ldaa    >Var_04AE
         bne     L2679
         bclr    <OutputDriverBits,#$01
         ldaa    >LC8B1                               ; FANTMP6: Detailed Description3
-        staa    >L01FF
-        inc     >L01FC
-        bset    <L0077,#$40
+        staa    >AcTimer
+        inc     >AcState
+        bset    <BitFlags77,#$40
 L2679:
         rts
 
@@ -526,15 +526,15 @@ AC_Rout8:
         bcc     L26A7
 L26A3:
         clra
-        staa    >L01FF
+        staa    >AcTimer
 L26A7:
-        ldaa    >L01FF
+        ldaa    >AcTimer
         beq     L26AF
-        dec     >L01FF
+        dec     >AcTimer
 L26AF:
-        ldaa    >L01FF
+        ldaa    >AcTimer
         bne     L26B7
-        inc     >L01FC
+        inc     >AcState
 L26B7:
         rts
 
@@ -551,16 +551,16 @@ AC_Rout9:
 L26C3:
         ldaa    >LC8C8                               ; FANTMP6: Detailed Description3
         beq     L26F4
-        ldaa    >L01FC
+        ldaa    >AcState
         bita    #$10
         bne     L26E1
         ldab    <TPSOverMINTHR
         cmpb    >LC8C6                               ; FANTMP6: Detailed Description3
         bcs     L26F4
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$F0
         oraa    #$15
-        staa    >L01FC
+        staa    >AcState
         rts
 
 L26E1:
@@ -570,22 +570,22 @@ L26E1:
         bra     L2730
 
 L26EA:
-        ldaa    >L01FC
+        ldaa    >AcState
 
 ;---------------------------------------------------------------------------------------------------
 ; CODE26ed  ($26ED)
 ;---------------------------------------------------------------------------------------------------
 CODE26ed:
         anda    #$EF
-        staa    >L01FC
+        staa    >AcState
         bra     L2704
 
 L26F4:
-        brclr   <L006E,#$02,L2704
+        brclr   <BitFlags6E,#$02,L2704
         ldab    <TPSOverMINTHR
         cmpb    >LC8CB                               ; FANTMP6: Detailed Description3
         bhi     L2730
-        bclr    <L006E,#$02
+        bclr    <BitFlags6E,#$02
         bra     L2730
 
 L2704:
@@ -605,10 +605,10 @@ L2704:
 L2720:
         cmpb    >LC8CA                               ; FANTMP6: Detailed Description3
         bcc     L2730
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$F0
         oraa    #$05
-        staa    >L01FC
+        staa    >AcState
         rts
 
 L2730:
@@ -677,7 +677,7 @@ AC_Rout10:
         anda    #$60
         cmpa    #$60
         bne     L279A
-        inc     >L01FC
+        inc     >AcState
 L279A:
         rts
 
@@ -688,16 +688,16 @@ L279A:
 AC_Rout11:
         ldaa    >LC8C8                               ; FANTMP6: Detailed Description3
         beq     L27CC
-        ldaa    >L01FC
+        ldaa    >AcState
         bita    #$10
         bne     L27B9
         ldab    <TPSOverMINTHR
         cmpb    >LC8C6                               ; FANTMP6: Detailed Description3
         bcs     L27CC
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$F0
         oraa    #$15
-        staa    >L01FC
+        staa    >AcState
         rts
 
 L27B9:
@@ -707,17 +707,17 @@ L27B9:
         bra     L2808
 
 L27C2:
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$EF
-        staa    >L01FC
+        staa    >AcState
         bra     L27DC
 
 L27CC:
-        brclr   <L006E,#$02,L27DC
+        brclr   <BitFlags6E,#$02,L27DC
         ldab    <TPSOverMINTHR
         cmpb    >LC8CB                               ; FANTMP6: Detailed Description3
         bhi     L2808
-        bclr    <L006E,#$02
+        bclr    <BitFlags6E,#$02
         bra     L2808
 
 L27DC:
@@ -737,10 +737,10 @@ L27DC:
 L27F8:
         cmpb    >LC8CA                               ; FANTMP6: Detailed Description3
         bcc     L2808
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$F0
         oraa    #$05
-        staa    >L01FC
+        staa    >AcState
         rts
 
 L2808:
@@ -807,10 +807,10 @@ AC_Rout12:
         ldaa    >AisLoadFlagsA
         eora    >AisLoadFlagsB
         bne     L2875
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$10
         oraa    #$E8
-        staa    >L01FC
+        staa    >AcState
 L2875:
         rts
 
@@ -822,10 +822,10 @@ AC_Rout13:
         ldaa    >AisLoadFlagsA
         eora    >AisLoadFlagsB
         bne     L2888
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$10
         oraa    #$EC
-        staa    >L01FC
+        staa    >AcState
 L2888:
         rts
 
@@ -837,10 +837,10 @@ AC_Rout15:
         ldaa    >AisLoadFlagsA
         eora    >AisLoadFlagsB
         bne     L289B
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$10
         oraa    #$E0
-        staa    >L01FC
+        staa    >AcState
 L289B:
         rts
 
@@ -852,10 +852,10 @@ AC_Rout17_Unused:
         ldaa    >AisLoadFlagsA
         eora    >AisLoadFlagsB
         bne     L28AE
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$10
         oraa    #$E4
-        staa    >L01FC
+        staa    >AcState
 L28AE:
         rts
 
@@ -867,10 +867,10 @@ AC_Rout16:
         ldaa    >AisLoadFlagsA
         eora    >AisLoadFlagsB
         bne     L28C1
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$10
         oraa    #$E8
-        staa    >L01FC
+        staa    >AcState
 L28C1:
         rts
 
@@ -882,10 +882,10 @@ AC_Rout18:
         ldaa    >AisLoadFlagsA
         eora    >AisLoadFlagsB
         bne     L28D4
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$10
         oraa    #$EC
-        staa    >L01FC
+        staa    >AcState
 L28D4:
         rts
 
@@ -896,13 +896,13 @@ L28D4:
 ; Called from: SubLoopH
 ;---------------------------------------------------------------------------------------------------
 DecrementCounter01ff_SM:
-        brset   <L006E,#$04,L28E5
+        brset   <BitFlags6E,#$04,L28E5
         brset   <BitFlags71,#$80,L28E5
-        dec     >L01FF
+        dec     >AcTimer
         bne     L28E5
-        bset    <L006E,#$04
+        bset    <BitFlags6E,#$04
 L28E5:
-        bclr    <L0077,#$40
+        bclr    <BitFlags77,#$40
         rts
 
 
@@ -919,17 +919,17 @@ AC_Rout14:
 ; Called from: SubLoopG
 ;---------------------------------------------------------------------------------------------------
 IncrementCounter01fc_SM:
-        ldaa    >L01FC
+        ldaa    >AcState
         bita    #$E0
         beq     L2902
         suba    #$20
-        staa    >L01FC
+        staa    >AcState
         bita    #$03
         bne     L2902
         bita    #$E0
         bne     L2902
         inca
-        staa    >L01FC
+        staa    >AcState
 L2902:
         rts
 
@@ -941,10 +941,10 @@ L2902:
 ;---------------------------------------------------------------------------------------------------
 DecrementCounter04ae_SM:
         brclr   <BitFlags6a,#$02,L2910
-        ldaa    >L04AE
+        ldaa    >Var_04AE
         beq     L2910
         deca
-        staa    >L04AE
+        staa    >Var_04AE
 L2910:
         rts
 
@@ -1021,7 +1021,7 @@ CheckSpeedStatus_SM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         beq     L298F
-        ldaa    >L01FC
+        ldaa    >AcState
         anda    #$0C
         cmpa    #$08
         beq     L298A

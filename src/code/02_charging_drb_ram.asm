@@ -98,7 +98,7 @@ L13A4:
 TurnAlternatorOn:
         bset    $00,y,#$04
         bset    <BitFlags72,#$04
-        inc     >L0182
+        inc     >Alt_0182
 L13B2:
         bra     L13BB
 
@@ -119,25 +119,25 @@ L13C1:
         ldaa    <Timer_AlternatorDutyCycle
         anda    #$7F
         bne     L1402
-        ldab    >L0182
+        ldab    >Alt_0182
         aslb
-        ldaa    >$0183
+        ldaa    >Var_0183
         lsra
         aba
-        adda    >$0183
+        adda    >Var_0183
         rora
         bcc     L13DE
         inca
 L13DE:
-        staa    >$0183
-        clr     >L0182
+        staa    >Var_0183
+        clr     >Alt_0182
         ldaa    #$FF
         suba    >LC79F                               ; AISINC (AISPOSIncrementForSW2b7)
-        ldab    >L046F
+        ldab    >Var_046F
         mul
         adca    #$00
         psha
-        ldaa    >$0183
+        ldaa    >Var_0183
         ldab    >LC79F                               ; AISINC (AISPOSIncrementForSW2b7)
         mul
         adca    #$00
@@ -146,7 +146,7 @@ L13DE:
         bcc     L13FF
         ldaa    #$FF
 L13FF:
-        staa    >L046F
+        staa    >Var_046F
 L1402:
         sei
         clr     >ADCTL
@@ -164,7 +164,7 @@ L140A:
         bcc     L141C
         ldaa    #$FF
 L141C:
-        staa    >L0219
+        staa    >ObdMapValue
         pula
         brclr   <BitFlags67,#$20,L1427
 L1424:
@@ -297,13 +297,13 @@ L14E9:
         beq     AisDriveRoutine
         ldab    >SCDR
         brset   <BitFlags72,#$80,L1541
-        cmpb    >L049B
+        cmpb    >DrbIII_049B
         beq     L1549
-        stab    >L049B
-        inc     >L049B
+        stab    >DrbIII_049B
+        inc     >DrbIII_049B
         cmpb    #$F2
         bne     L150E
-        clr     >$049C
+        clr     >DrbIII_049C
         bclr    <SyncFlags74,#$40
         bclr    <BitFlags72,#$80
         bra     L1560
@@ -331,20 +331,20 @@ L1526:
 
 L1532:
         brset   <SyncFlags74,#$40,L1551
-        ldaa    >$049C
+        ldaa    >DrbIII_049C
         xgdx
         ldab    $00,x
-        stab    >L049D
+        stab    >DrbIII_049D
         bra     L1560
 
 L1541:
-        stab    >$049C
+        stab    >DrbIII_049C
         bclr    <BitFlags72,#$80
         bra     L1560
 
 L1549:
-        ldaa    >L049D
-        clr     >L049B
+        ldaa    >DrbIII_049D
+        clr     >DrbIII_049B
         bra     L1560
 
 L1551:

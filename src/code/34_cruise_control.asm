@@ -79,7 +79,7 @@ LF079:
         bita    #$20
         beq     LF090
         ldx     #$F02E
-        ldaa    >L0409
+        ldaa    >IODev_0409
         anda    #$02
         beq     LF099
         inx
@@ -94,15 +94,15 @@ LF093:
         bhi     LF093
 LF099:
         ldab    $01,x
-        ldaa    <L0040
+        ldaa    <Cruise_0040
         anda    #$07
         cba
         bne     LF0A8
-        ldab    <L0040
+        ldab    <Cruise_0040
         addb    #$40
         bcs     LF0AC
 LF0A8:
-        stab    <L0040
+        stab    <Cruise_0040
         bra     LF10A
 
 LF0AC:
@@ -290,7 +290,7 @@ LF1DB:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     LF1ED
-        brclr   <L00EF,#$10,LF24C
+        brclr   <OutputBits2Lo,#$10,LF24C
 LF1ED:
         ldab    >OutputDriverStatus
         eorb    <CCDFlags3
@@ -1210,11 +1210,11 @@ LF7D7:
         brclr   <StartupSwitchMirror1,#$01,LF7E6
         brclr   <CruiseStatus_1,#$40,LF7EB
 LF7E6:
-        bclr    <L00EF,#$10
+        bclr    <OutputBits2Lo,#$10
         bra     LF7FC
 
 LF7EB:
-        bset    <L00EF,#$10
+        bset    <OutputBits2Lo,#$10
         bra     LF7FC
 
 LF7F0:

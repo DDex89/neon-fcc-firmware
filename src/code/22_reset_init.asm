@@ -113,7 +113,7 @@ L8E7B:
         oraa    #$02
         staa    >SystemStatusFlag_4b6
         ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
-        staa    >L0100
+        staa    >ObdMonitorsComplete
         bclr    <BitFlags_AIS,#$40
         bset    <BitFlags_AIS,#$20
         ldab    #$DF
@@ -125,7 +125,7 @@ L8E7B:
         clrb
         std     <AverageKnockVolts
         ldaa    #$FF
-        staa    >L0101
+        staa    >Code8059_0101
         ldx     #$000B
         ldy     #$0102
 L8ED5:
@@ -143,17 +143,17 @@ L8EDF:
         bls     L8EDF
         ldaa    >LCB90                               ; SCRMP1 (SecondaryRampSubtractor1)
         inca
-        cmpa    >L0131
+        cmpa    >RpmScaleA
         bcs     L8EFA
         deca
         deca
-        cmpa    >L0131
+        cmpa    >RpmScaleA
         bls     L8F06
 L8EFA:
         ldd     >LCB90                               ; SCRMP1 (SecondaryRampSubtractor1)
-        std     >L0131
+        std     >RpmScaleA
         ldd     >LCB92                               ; SCRMP1 (SecondaryRampSubtractor1)
-        std     >L0133
+        std     >RpmScaleB
 L8F06:
         ldy     #$0400
         bset    $03,y,#$01
@@ -237,14 +237,14 @@ L8FA4:
         bclr    $00,x,#$40
 L8FAB:
         bclr    <SyncFlags75,#$20
-        ldaa    <L00F3
+        ldaa    <Var_00F3
         anda    #$E0
         oraa    #$08
-        staa    <L00F3
-        ldaa    >L0101
+        staa    <Var_00F3
+        ldaa    >Code8059_0101
         cmpa    >LCC88
         bcc     L8FC1
-        clr     >L0101
+        clr     >Code8059_0101
 L8FC1:
         ldaa    #$BE
         staa    $22,x
@@ -324,7 +324,7 @@ L9019:
 L9065:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <CoolantTemp
-        staa    >L01AA
+        staa    >Var_01AA
         staa    >CoolantTempVolts
         ldaa    >LastChargeTempVolts
         ldx     #TMPTL1_TempForColdScaleA2D          ; TMPTL1 (TempForColdScaleFromA2D)
@@ -360,7 +360,7 @@ L90AB:
         bne     L90C3
         inca
 L90C3:
-        staa    >L0218
+        staa    >Var_0218
         ldx     <BYTE03
         cpx     #$AAA5
         beq     L90D5
@@ -404,7 +404,7 @@ L9125:
         ldaa    <CoolantTemp
         ldx     #LCB37                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        staa    >$0460
+        staa    >Egr_0460
         cmpa    >TTEMPL_TstatDiagnosticsMinTempToArmDiagnosticsAtStartup ; TTEMPL (TstatDiagnosticsMinTempToArmDiagnosticsAtStartup)
         bcs     L9140
         cmpa    >TTEMPH_TstatDiagnosticsMaxTempToArmDiagnosticsAtStartup ; TTEMPH (TstatDiagnosticsMaxTempToArmDiagnosticsAtStartup)
@@ -420,9 +420,9 @@ L914D:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         cmpa    #$80
         ldaa    #$FF
-        staa    >L01EF
+        staa    >Var_01EF
         ldaa    >LCBA0
-        staa    >L01A7
+        staa    >MapRpm_01A7
         ldaa    <AmbientAirTemp
         ldx     #AMBAIS_AmbientTempAISCompensation   ; AMBAIS (AmbientTempAISCompensation)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -444,7 +444,7 @@ L917E:
         staa    <AISACCompensation
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         ldaa    >LBD76                               ; RETSPD: Retard from Speed.
-        staa    >L0447
+        staa    >Crank_0447
         ldx     #PRSHOT_KeyOnPrimePW                 ; PRSHOT: Prime Fuel Shot before cranking
         ldaa    <CoolantTemp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -494,11 +494,11 @@ L91DD:
         jsr     >CheckCoolantTempStatus2_SM
         bset    <BitFlags67,#$04
         ldaa    >LC8BF                               ; FANTMP6: Detailed Description3
-        staa    >L01FF
+        staa    >AcTimer
         jsr     >IncludeCylTrimWithAdaptiveCells
         clra
         suba    >LCD2F
-        staa    >L0201
+        staa    >MonEvap_0201
         ldx     #REGS
         ldaa    <CoolantTemp
         cmpa    >LBDAA
@@ -517,39 +517,39 @@ L9216:
 L9222:
         cba
         bcs     L922E
-        ldaa    <L0039
+        ldaa    <Var_0039
         adda    #$02
-        staa    <L0039
+        staa    <Var_0039
         bset    <SyncFlags74,#$80
 L922E:
         ldaa    >ObdMonStatus_Misfire
         anda    #$10
         beq     L9238
-        bset    <L00E5,#$20
+        bset    <BitFlagsE5,#$20
 L9238:
         ldaa    >ISO_ErrorBitRegisterStored4
         anda    #$7F
         staa    >ISO_ErrorBitRegisterStored4
-        ldaa    >L0128
+        ldaa    >Var_0128
         anda    #$7F
-        staa    >L0128
+        staa    >Var_0128
         ldaa    >MAXCNT_ProgramLoopsWithThrottleBelow_MINTHR_ToDecrement_MINTHR ; MAXCNT (ProgramLoopsWithThrottleBelow_MINTHR_ToDecrement_MINTHR)
         staa    >Timer_DelayBeforeUpdating_MINTHR
         ldaa    #$07
-        staa    >L020f
+        staa    >Var_020F
         ldx     #$010E
         brclr   $00,x,#$10,L925D
-        bset    <L00FF,#$80
+        bset    <BitFlagsFF,#$80
 L925D:
         ldaa    #$FF
         staa    >VariableRevLimit
         ldaa    >LCE74
         bita    #$40
         bne     L926C
-        bclr    <L0036,#$80
+        bclr    <BitFlags36,#$80
 L926C:
         ldd     >LC0B9                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
-        std     >L0213
+        std     >Code7886_0213
         ldx     #REGS
         ldd     $0E,x                                ; TCNT: Free-running timer counter (16 bit)
         addd    #$000A

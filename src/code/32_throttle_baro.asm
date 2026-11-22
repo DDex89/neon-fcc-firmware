@@ -104,9 +104,9 @@ LE583:
         ldaa    >SystemStatusFlag_4b6
         bita    #$02
         bne     LE5B4
-        ldaa    >L020f
+        ldaa    >Var_020F
         beq     LE594
-        dec     >L020f
+        dec     >Var_020F
         bra     LE5B4
 
 LE594:
@@ -223,7 +223,7 @@ LE655:
         ldab    <Temp0
         andb    #$7F
 LE659:
-        bset    <L00E5,#$40
+        bset    <BitFlagsE5,#$40
 LE65C:
         bitb    #$08
         bne     LE681
@@ -272,7 +272,7 @@ LE697:
         beq     LE6CC
         brclr   <BitFlags_AIS,#$04,LE6CC
         brset   <BitFlags_AIS,#$08,LE6BB
-        ldaa    >L01EF
+        ldaa    >Var_01EF
         inca
         beq     LE6E0
         ldaa    >CcdRxValueB
@@ -282,7 +282,7 @@ LE697:
         bra     LE6E0
 
 LE6BB:
-        ldaa    >L01EF
+        ldaa    >Var_01EF
         inca
         beq     LE6E0
         ldaa    >CcdRxValueB
@@ -309,7 +309,7 @@ LE6E0:
         brclr   <BitFlags_AIS,#$08,LE744
         bclr    <BitFlags_AIS,#$08
         ldaa    #$FF
-        staa    >L01EF
+        staa    >Var_01EF
         bra     LE704
 
 LE6FA:
@@ -347,7 +347,7 @@ LE732:
 LE737:
         bclr    <BitFlags_AIS,#$08
         ldaa    #$FF
-        staa    >L01EF
+        staa    >Var_01EF
 LE73F:
         stab    <Counter_IdleControl
         stab    >Counter_IdleControl2
@@ -368,17 +368,17 @@ CODEe74f_MM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$40
         beq     LE795
-        ldaa    >L01DC
+        ldaa    >Var_01DC
         brset   <b58_IPL1,#$04,LE782
-        brclr   <L006D,#$08,LE782
+        brclr   <BitFlags6D,#$08,LE782
         brset   <BitFlags6a,#$10,LE782
-        brset   <L006D,#$04,LE778
+        brset   <BitFlags6D,#$04,LE778
         cmpa    >LC8E3
         bcc     LE782
         cmpa    >LC8E1
         bcs     LE782
 LE773:
-        bclr    <L006D,#$04
+        bclr    <BitFlags6D,#$04
         bra     LE785
 
 LE778:
@@ -387,14 +387,14 @@ LE778:
         cmpa    >LC8E2
         bcc     LE773
 LE782:
-        bset    <L006D,#$04
+        bset    <BitFlags6D,#$04
 LE785:
         ldab    <CounterForSomething
-        ldaa    <L006D
+        ldaa    <BitFlags6D
         eora    <BitFlags67
         bita    #$04
         beq     LE7ED
-        brclr   <L006D,#$04,LE7D1
+        brclr   <BitFlags6D,#$04,LE7D1
         bra     LE7BB
 
 LE795:
@@ -461,7 +461,7 @@ LE800:
         stab    <CounterForSomething
 LE802:
         brset   <BitFlags_AIS,#$40,LE841
-        ldab    >$0217
+        ldab    >Var_0217
         cmpb    >LCDB0                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcc     LE83E
         ldab    >SwitchPortAccessReg1
@@ -481,16 +481,16 @@ LE824:
         bra     LE836
 
 LE82A:
-        ldab    >$0217
+        ldab    >Var_0217
         cmpb    #$FF
         beq     LE834
-        inc     >$0217
+        inc     >Var_0217
 LE834:
         bra     LE85C
 
 LE836:
         bclr    <BitFlags_AIS,#$40
-        clr     >$0217
+        clr     >Var_0217
         bra     LE85C
 
 LE83E:

@@ -791,7 +791,7 @@ L52E9:
         cpx     #$0438
         bcs     L5300
         ldaa    #$FF
-        staa    >L021C
+        staa    >Var_021C
 L52FD:
         jmp     >L525C
 
@@ -840,7 +840,7 @@ L5331:
         comb
         cba
         bne     L534C
-        jmp     >$021E
+        jmp     >DrbRamProgramEntry
 
 L5344:
         com     >DRBPointer3
@@ -1029,16 +1029,16 @@ EraseErrorCodes:
         staa    <ErrorCodeUpdateKeyOnCount2
         staa    <ErrorCodeUpdateKeyOnCount3
         staa    >ObdStatusFlags
-        staa    >L010F
-        staa    >$0110
-        staa    >L011B
+        staa    >MonCatalyst_010F
+        staa    >MonCatalyst_0110
+        staa    >MonMisfire_011B
         staa    >LastEmissionFault
         staa    >ISO_ErrBitStatus
-        staa    >L0149
+        staa    >MonSecAir_0149
         staa    >ObdDtcCount
-        staa    <L0035
+        staa    <Var_0035
         staa    >ISO_ErrorBitRegisterStored4
-        staa    >L0128
+        staa    >Var_0128
         ldx     #$0135
 L5465:
         staa    $00,x
@@ -1082,7 +1082,7 @@ L5470:
         anda    #$80
         staa    >ObdMonStatus_Misfire
         ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
-        staa    >L0100
+        staa    >ObdMonitorsComplete
         ldx     #$012D
         bclr    $02,x,#$F2
         bclr    $03,x,#$FF
@@ -1098,7 +1098,7 @@ L5470:
 ;---------------------------------------------------------------------------------------------------
 L54E4:
         clr     >DRBPointer1
-        clr     >L0483
+        clr     >Var_0483
         ldaa    <DRBPointer2
         bne     L54F7
         clr     >DrbOverrideTarget
@@ -1131,11 +1131,11 @@ L5506:
 ; Called from: SubLoopD
 ;---------------------------------------------------------------------------------------------------
 IncrementCounter0483_MM:
-        ldaa    >L0483
+        ldaa    >Var_0483
         cmpa    #$AE
         bhi     L5526
         inca
-        staa    >L0483
+        staa    >Var_0483
         bra     L552C
 
 L5526:
@@ -1213,14 +1213,14 @@ L5564:
 L5567:
         ldaa    <OutputDriverBits
         oraa    #$08
-        ldab    <L00EF
+        ldab    <OutputBits2Lo
         andb    #$7F
-        stab    <L00EF
+        stab    <OutputBits2Lo
         brset   <Counter_MainLoop,#$70,L557D
         anda    #$F7
-        ldab    <L00EF
+        ldab    <OutputBits2Lo
         orab    #$80
-        stab    <L00EF
+        stab    <OutputBits2Lo
 L557D:
         staa    <OutputDriverBits
         rts
@@ -1448,7 +1448,7 @@ L5671:
 ATM_Tachometer:
         ldaa    >SwitchPortAccessReg2
         eora    #$02
-        staa    >L0403
+        staa    >IODev_0403
         rts
 
 

@@ -213,7 +213,7 @@ SparkAdvance_BadO2:
         clra
         staa    >O2AdvanceIncrement_018D
 LA874:
-        clr     >L0198
+        clr     >SparkDrpm_0198
         bclr    <IPL2,#$03
         ldab    >Counter_DeltaEngineRPM_1
         cmpb    >MNCNRP_Minimum_CounterForDeltaRPMRetard ; MNCNRP (Minimum_CounterForDeltaRPMRetard)
@@ -394,7 +394,7 @@ CheckForOtherRetardFactors:
         ldaa    <TpsVolts
         cmpa    >TPSLM1_TPSLimitForTPSRetard_NoAR    ; TPSLM1 (TPSLimitForTPSRetard_NoAR)
         bcs     CheckRetardFromSpeed
-        suba    >L0191
+        suba    >Knock_0191
         bcc     LA99B
         clra
 LA99B:
@@ -427,7 +427,7 @@ CheckForTPSRetard_NoAR:
         ldaa    <TpsVolts
         cmpa    >TPSLM2_TPSLimitForTPSRetard_WithAR  ; TPSLM2 (TPSLimitForTPSRetard_WithAR)
         bcs     CheckRetardFromSpeed
-        suba    >L0193
+        suba    >Knock_0193
         bcc     LA9CD
         clra
 LA9CD:
@@ -556,7 +556,7 @@ LAA83:
 LAA94:
         clr     >Temp3
 LAA97:
-        ldaa    >L0198
+        ldaa    >SparkDrpm_0198
         staa    <Temp2
         ldaa    <IPL2
         anda    #$03
@@ -566,7 +566,7 @@ LAA97:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         cmpa    <SignedDeltaRPM
         bgt     LAAB5
-        clr     >L0199
+        clr     >SparkDrpm_0199
         inc     >IPL2
 LAAB5:
         ldaa    <IPL2
@@ -600,12 +600,12 @@ LAAB5:
         ldab    <Temp1
         mul
         adca    #$00
-        staa    >L0198
+        staa    >SparkDrpm_0198
         staa    <Temp2
-        ldaa    >L0199
+        ldaa    >SparkDrpm_0199
         inca
         beq     LAB09
-        staa    >L0199
+        staa    >SparkDrpm_0199
 LAB09:
         cmpa    >LBC3A                               ; RPMFC1 (RPMAveragingFactor1)
         bcc     LAB17
@@ -614,7 +614,7 @@ LAB09:
         cmpb    >LBC39                               ; RPMFC1 (RPMAveragingFactor1)
         bgt     LAB1D
 LAB17:
-        clr     >L0199
+        clr     >SparkDrpm_0199
         inc     >IPL2
 LAB1D:
         ldaa    <IPL2
@@ -623,10 +623,10 @@ LAB1D:
         bne     LAB52
         ldab    <Temp3
         negb
-        ldaa    >L0199
+        ldaa    >SparkDrpm_0199
         inca
         beq     LAB5E
-        staa    >L0199
+        staa    >SparkDrpm_0199
         ldx     #TABLEd029
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Temp1
@@ -636,7 +636,7 @@ LAB1D:
         ldab    <Temp1
         ldx     #TABLEbcba
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
-        ldaa    >L0198
+        ldaa    >SparkDrpm_0198
         mul
         adca    #$00
         staa    <Temp2
@@ -652,7 +652,7 @@ LAB5A:
 LAB5D:
         clrb
 LAB5E:
-        clr     >L0198
+        clr     >SparkDrpm_0198
         brclr   <IPL2,#$03,StoreKnockVoltsAvgCounter
         bset    <IPL2,#$03
 
@@ -668,7 +668,7 @@ StoreKnockVoltsAvgCounter:
         ldaa    <CoolantTemp
         cmpa    >LB9D2
         bls     CheckAndSetMinSparkAdvance
-        ldaa    >L020D
+        ldaa    >Var_020D
         aba
         tab
         bra     LAB85
@@ -678,7 +678,7 @@ StoreKnockVoltsAvgCounter:
 ; CheckAndSetMinSparkAdvance  ($AB82)
 ;---------------------------------------------------------------------------------------------------
 CheckAndSetMinSparkAdvance:
-        clr     >L020D
+        clr     >Var_020D
 LAB85:
         bvc     LAB90
         tstb

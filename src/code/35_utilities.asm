@@ -15,19 +15,19 @@
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 IncrementLoopCounters_MM:
-        ldaa    >L014E
+        ldaa    >CrankActivityTimer
 LF88F:
         beq     LF895
         deca
-        staa    >L014E
+        staa    >CrankActivityTimer
 LF895:
         sei
         ldaa    <Counter_MainLoop
         inc     >Counter_MainLoop
         eora    <Counter_MainLoop
         anda    <Counter_MainLoop
-        oraa    >L0150
-        staa    >L0150
+        oraa    >SubLoopRequests
+        staa    >SubLoopRequests
         tst     >Counter_MainLoop
         bne     LF8C1
         ldaa    #$FF
@@ -175,13 +175,13 @@ ResetAverageValues_MM:
         beq     LF9CE
         bclr    <BitFlags76,#$02
         ldd     #$FFFF
-        std     >L01AC
-        ldd     >L01B0
-        std     >L01B2
-        ldd     >L01AE
-        std     >L01B0
+        std     >CrankPeriodPrev
+        ldd     >RpmHistory1
+        std     >RpmHistory2
+        ldd     >RpmHistory0
+        std     >RpmHistory1
         ldd     <EngineRpm_HB
-        std     >L01AE
+        std     >RpmHistory0
         ldd     >LCB98
         ldy     >LCB9A
         ldx     <TimerOverflowsBetweenCamPulses
@@ -202,9 +202,9 @@ LF9CB:
         std     <EngineRpm_HB
 LF9CE:
         cli
-        brclr   <L00E5,#$02,LFA49
-        bclr    <L00E5,#$02
-        ldd     >L014B
+        brclr   <BitFlagsE5,#$02,LFA49
+        bclr    <BitFlagsE5,#$02
+        ldd     >MapRpm_014B
         asra
         rorb
         asra
@@ -216,16 +216,16 @@ LF9CE:
         asra
         rorb
         std     <Temp0
-        ldd     >L014B
-        addd    >L01B8
+        ldd     >MapRpm_014B
+        addd    >MapRpm_01B8
         subd    <Temp0
-        std     >L014B
-        ldaa    >L01A7
+        std     >MapRpm_014B
+        ldaa    >MapRpm_01A7
         beq     LF9F9
         deca
-        staa    >L01A7
+        staa    >MapRpm_01A7
 LF9F9:
-        ldaa    >L01A7
+        ldaa    >MapRpm_01A7
         bne     LFA05
         ldaa    <MapValue
         cmpa    >LCBA2
@@ -234,7 +234,7 @@ LFA05:
         jmp     >LFA86
 
 LFA08:
-        ldd     >L014B
+        ldd     >MapRpm_014B
         asra
         rorb
         asra
@@ -255,20 +255,20 @@ LFA1C:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldaa    >LCBA8
         mul
-        addd    >L0133
-        std     >L0133
+        addd    >RpmScaleB
+        std     >RpmScaleB
         bcc     LFA3D
-        ldd     >L0131
+        ldd     >RpmScaleA
         addd    #$0001
         bne     LFA3A
         subd    #$0001
 LFA3A:
-        std     >L0131
+        std     >RpmScaleA
 LFA3D:
         ldd     >LCB9C
-        cpd     >L0131
+        cpd     >RpmScaleA
         bcc     LFA49
-        std     >L0131
+        std     >RpmScaleA
 LFA49:
         bra     LFA86
 
@@ -286,21 +286,21 @@ LFA55:
         ldaa    >LCBA8
         mul
         std     <Temp2
-        ldd     >L0133
+        ldd     >RpmScaleB
         subd    <Temp2
-        std     >L0133
+        std     >RpmScaleB
         bcc     LFA7A
-        ldd     >L0131
+        ldd     >RpmScaleA
         subd    #$0001
         bcc     LFA77
         addd    #$0001
 LFA77:
-        std     >L0131
+        std     >RpmScaleA
 LFA7A:
         ldd     >LCB9E
-        cpd     >L0131
+        cpd     >RpmScaleA
         bls     LFA86
-        std     >L0131
+        std     >RpmScaleA
 LFA86:
         rts
 
@@ -565,9 +565,9 @@ LFBCB:
 ; Called from: CaculateChecksum, CrankInterrupt_FallingEdge, GetControlFeedback_DetermineIfShutdownRequired_MM, L97D9, MainSubLoop, ResetInterrupt, ShutDownSubroutineA, StoreMAPVoltsAndCalcMAPValue ... (16 total)
 ;---------------------------------------------------------------------------------------------------
 ResetCOPTimer:
-        ldaa    >L0409
+        ldaa    >IODev_0409
         anda    #$EF
-        staa    >L0409
+        staa    >IODev_0409
         ldab    #$0E
 LFBDF:
         decb
@@ -577,7 +577,7 @@ LFBDF:
         ldab    #$AA
         stab    >COPRST
         oraa    #$10
-        staa    >L0409
+        staa    >IODev_0409
         rts
 
 

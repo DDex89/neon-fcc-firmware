@@ -13,13 +13,13 @@
 ; VerifyOperationOfDownstreamO2Sensor_MM  ($9BAB)
 ;---------------------------------------------------------------------------------------------------
 VerifyOperationOfDownstreamO2Sensor_MM:
-        brset   <L006E,#$80,L9BC2
+        brset   <BitFlags6E,#$80,L9BC2
         ldaa    >CoolantTemp
         cmpa    >LCCAC
         bcs     L9BC2
-        brclr   <L006E,#$40,L9BC5
-        brclr   <L006E,#$20,L9C19
-        bset    <L006E,#$80
+        brclr   <BitFlags6E,#$40,L9BC5
+        brclr   <BitFlags6E,#$20,L9C19
+        bset    <BitFlags6E,#$80
 L9BC2:
         jmp     >L9C69
 
@@ -31,35 +31,35 @@ L9BC5:
         ldaa    >DownstreamO2Volts
         cmpa    >LCCD0
         bcc     L9C0C
-        bset    <L006E,#$10
+        bset    <BitFlags6E,#$10
         ldaa    <Counter_MainLoop
         bita    #$07
         bne     L9BC2
-        inc     >L045B
-        ldaa    >L045B
+        inc     >DsO2_045B
+        ldaa    >DsO2_045B
         cmpa    >LCCCB
         bcs     L9BC2
-        inc     >L045C
-        clr     >L045B
-        ldab    >L045C
+        inc     >Var_045C
+        clr     >DsO2_045B
+        ldab    >Var_045C
         cmpb    >LCCCA
         bcs     L9BC2
         ldy     #ErrBytes_CODE21_f
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L9C04
 L9C04:
-        bset    <L006E,#$80
-        bset    <L006E,#$40
+        bset    <BitFlags6E,#$80
+        bset    <BitFlags6E,#$40
         bra     L9C66
 
 L9C0C:
-        bset    <L006E,#$40
+        bset    <BitFlags6E,#$40
 L9C0F:
-        brclr   <L006E,#$10,L9C19
-        clr     >L045B
-        bclr    <L006E,#$10
+        brclr   <BitFlags6E,#$10,L9C19
+        clr     >DsO2_045B
+        bclr    <BitFlags6E,#$10
 L9C19:
-        brset   <L006E,#$20,L9C69
+        brset   <BitFlags6E,#$20,L9C69
         ldaa    <EngineRpm_HB
         cmpa    >LCCCD
         bcs     L9C69
@@ -73,24 +73,24 @@ L9C19:
         ldaa    <Counter_MainLoop
         bita    #$07
         bne     L9C69
-        inc     >L045B
-        ldaa    >L045B
+        inc     >DsO2_045B
+        ldaa    >DsO2_045B
         cmpa    >LCCCC
         bcs     L9C69
-        inc     >L045C
-        clr     >L045B
-        ldab    >L045C
+        inc     >Var_045C
+        clr     >DsO2_045B
+        ldab    >Var_045C
         cmpb    >LCCCA
         bcs     L9C69
         ldy     #ErrBytes_CODE21_f
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L9C60
 L9C60:
-        bset    <L006E,#$80
+        bset    <BitFlags6E,#$80
 L9C63:
-        bset    <L006E,#$20
+        bset    <BitFlags6E,#$20
 L9C66:
-        clr     >L045B
+        clr     >DsO2_045B
 L9C69:
         rts
 
@@ -109,9 +109,9 @@ ControlPurgeSolenoid_MM:
         bne     L9C87
         bset    <OutputBits2,#$80
         ldaa    #$C3
-        staa    >L0176
+        staa    >LinkReg58Data
         clra
-        staa    >$0177
+        staa    >LinkReg58DataLo
         jmp     >L9F67
 
 L9C87:
@@ -119,9 +119,9 @@ L9C87:
         bne     L9C9A
         bclr    <OutputBits2,#$80
         ldaa    #$C3
-        staa    >$0177
+        staa    >LinkReg58DataLo
         clra
-        staa    >L0176
+        staa    >LinkReg58Data
         jmp     >L9F67
 
 L9C9A:
@@ -158,10 +158,10 @@ L9CCB:
         brset   <BitFlagsE3,#$08,L9CF0
         ldaa    <Counter_MainLoop
         bne     L9CEA
-        ldaa    >L01EB
+        ldaa    >Var_01EB
         beq     L9CED
         deca
-        staa    >L01EB
+        staa    >Var_01EB
 L9CEA:
         jmp     >L9DB4
 
@@ -191,7 +191,7 @@ L9D09:
 L9D1F:
         bitb    <CylTrim_Flags_1
         beq     L9D68
-        bclr    <L0037,#$08
+        bclr    <BitFlags37,#$08
         lsrb
         lsrb
         lsrb
@@ -243,18 +243,18 @@ L9D68:
         lsrb
         lsrb
         lsrb
-        bitb    <L0037
+        bitb    <BitFlags37
         beq     L9D7B
         aslb
         aslb
         aslb
         eorb    <CylTrim_Flags_1
         stab    <CylTrim_Flags_1
-        bclr    <L0037,#$40
+        bclr    <BitFlags37,#$40
         bra     L9DAD
 
 L9D7B:
-        bset    <L0037,#$08
+        bset    <BitFlags37,#$08
         ldaa    <CylTrim_Adaptive_Var1
         cmpa    $00,x
         bcc     L9D97
@@ -267,13 +267,13 @@ L9D8D:
         inca
         beq     L9DB0
         staa    <CylTrim_Adaptive_Var1
-        bset    <L0037,#$40
+        bset    <BitFlags37,#$40
         bra     L9DB0
 
 L9D97:
         tba
-        orab    <L0037
-        stab    <L0037
+        orab    <BitFlags37
+        stab    <BitFlags37
         asla
         asla
         asla
@@ -282,14 +282,14 @@ L9D97:
         ldab    <PointerIntoAdaptiveMemory
         cmpb    >LCD39
         bne     L9DAD
-        bset    <L0037,#$10
+        bset    <BitFlags37,#$10
 L9DAD:
         clr     >CylTrim_Adaptive_Var1
 L9DB0:
         brclr   <BitFlags65,#$01,L9DBB
 L9DB4:
         clrb
-        clr     >$01EC
+        clr     >Purge_01EC
         jmp     >L9EFF
 
 L9DBB:
@@ -300,29 +300,29 @@ L9DBB:
         ldab    <Counter_MainLoop
         cmpb    #$DC
         bne     L9DF6
-        ldab    >L01EB
+        ldab    >Var_01EB
         incb
         cmpb    >LC8EB
         bcs     L9DDC
         bset    <BitFlagsE3,#$10
         tab
 L9DDC:
-        stab    >L01EB
+        stab    >Var_01EB
         bra     L9DF6
 
 L9DE1:
-        ldaa    >L01EB
+        ldaa    >Var_01EB
         beq     L9DF3
         ldab    <Counter_MainLoop
         andb    >LC8EC
         bne     L9DF6
         inca
-        staa    >L01EB
+        staa    >Var_01EB
         bne     L9DF6
 L9DF3:
         bset    <BitFlagsE3,#$04
 L9DF6:
-        staa    >L01EA
+        staa    >Purge_01EA
         ldaa    <Temp1
         ldab    <Temp2
         mul
@@ -330,7 +330,7 @@ L9DF6:
         adda    <Temp1
         bcs     L9E10
         staa    <Temp1
-        ldab    >L01EA
+        ldab    >Purge_01EA
         beq     L9E12
         mul
         adca    #$00
@@ -343,7 +343,7 @@ L9E12:
 L9E15:
         brclr   <BitFlags65,#$04,L9E25
         brset   <BitFlagsE3,#$01,L9E28
-        inc     >$01EC
+        inc     >Purge_01EC
         bset    <BitFlagsE3,#$01
         bra     L9E28
 
@@ -361,7 +361,7 @@ L9E28:
         cmpa    >LC986
         bcc     L9E45
 L9E3F:
-        clr     >$01EC
+        clr     >Purge_01EC
         jmp     >L9E8F
 
 L9E45:
@@ -372,18 +372,18 @@ L9E45:
         ldaa    <Counter_MainLoop
         cmpa    #$DC
         bne     L9E67
-        ldaa    >L01EB
+        ldaa    >Var_01EB
         inca
-        staa    >L01EB
+        staa    >Var_01EB
         cmpa    >LC98A
         bcs     L9E67
         bset    <BitFlagsE3,#$40
 L9E67:
         ldaa    >LC988
 L9E6A:
-        cmpa    >$01EC
+        cmpa    >Purge_01EC
         bhi     L9E8F
-        clr     >$01EC
+        clr     >Purge_01EC
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         cmpa    >LC987
         blt     L9E8F
@@ -391,12 +391,12 @@ L9E6A:
         tst     >LC983
         beq     L9EAF
 L9E82:
-        ldaa    >L01EA
+        ldaa    >Purge_01EA
         aba
         bcc     L9E8A
         ldaa    #$FF
 L9E8A:
-        staa    >L01EA
+        staa    >Purge_01EA
         bra     L9EAF
 
 L9E8F:
@@ -410,10 +410,10 @@ L9E8F:
         tst     >LC983
         beq     L9EAF
 L9EA6:
-        ldaa    >L01EA
+        ldaa    >Purge_01EA
         beq     L9EAF
         deca
-        staa    >L01EA
+        staa    >Purge_01EA
 L9EAF:
         ldaa    <Temp1
         ldab    <Temp2
@@ -426,7 +426,7 @@ L9EAF:
         beq     L9ED1
 L9EC3:
         staa    <Temp1
-        ldab    >L01EA
+        ldab    >Purge_01EA
         mul
         adca    #$00
         adda    <Temp1
@@ -463,9 +463,9 @@ L9EFF:
         ldx     #$0463
         brclr   $00,x,#$80,L9F2B
         brclr   $00,x,#$40,L9F28
-        cmpb    >L020B
+        cmpb    >Var_020B
         bcc     L9F23
-        ldab    >L020B
+        ldab    >Var_020B
         ldaa    <Counter_MainLoop
         bita    #$03
         bne     L9F21
@@ -473,7 +473,7 @@ L9EFF:
         bcc     L9F1E
         clrb
 L9F1E:
-        stab    >L020B
+        stab    >Var_020B
 L9F21:
         bra     L9F2B
 
@@ -482,14 +482,14 @@ L9F23:
         bra     L9F2B
 
 L9F28:
-        ldab    >L020B
+        ldab    >Var_020B
 L9F2B:
-        stab    <L00E4
+        stab    <Var_00E4
         brclr   <OutputBits2,#$80,L9F3C
         ldaa    #$C3
-        staa    >L0176
+        staa    >LinkReg58Data
         clra
-        staa    >$0177
+        staa    >LinkReg58DataLo
         bra     L9F67
 
 L9F3C:
@@ -498,7 +498,7 @@ L9F3C:
         ldaa    #$62
 L9F44:
         psha
-        ldab    <L00E4
+        ldab    <Var_00E4
         mul
         adca    #$00
         brset   <BitFlagsE3,#$02,L9F56
@@ -513,11 +513,11 @@ L9F56:
         ldaa    #$62
 L9F5C:
         sei
-        staa    >$0177
+        staa    >LinkReg58DataLo
         tab
         pula
         sba
-        staa    >L0176
+        staa    >LinkReg58Data
         cli
 L9F67:
         rts
@@ -615,7 +615,7 @@ IncludeCylTrimWithAdaptiveCells:
 L9FF5:
         ldaa    >LC8EF
 L9FF8:
-        staa    >L01EB
+        staa    >Var_01EB
         bne     LA000
         bset    <BitFlagsE3,#$08
 LA000:
@@ -692,7 +692,7 @@ LA070:
 LA090:
         clra
 LA091:
-        staa    >L0471
+        staa    >Var_0471
         ldaa    <Cyl1_InjPWTrim
         ldx     #$000D
         ldab    >CL1PTR_Cyl1AdaptiveMemoryPointer    ; CL1PTR (Cyl1AdaptiveMemoryPointer)
@@ -721,10 +721,10 @@ LA0B8:
         bcc     LA0BE
         clra
 LA0BE:
-        staa    >$0472
+        staa    >Var_0472
         bset    <BitFlagsE3,#$80
         ldaa    >LC4F8                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
-        staa    >$0470
+        staa    >Var_0470
         bra     LA0CF
 
 LA0CC:
@@ -773,7 +773,7 @@ LA0E5:
         adca    #$00
 LA0F9:
         staa    <Temp0
-        staa    >L01ED
+        staa    >Var_01ED
         ldx     #CylTrimTable1
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Temp1
@@ -820,16 +820,16 @@ LA136:
         jmp     >CODEa344
 
 LA139:
-        brclr   <L0037,#$04,LA136
+        brclr   <BitFlags37,#$04,LA136
         brclr   <CylTrim_Flags_1,#$04,LA136
         ldaa    <PointerIntoAdaptiveMemory
         cmpa    >LCD39
         bne     LA136
         brset   <BitFlags68,#$04,LA136
-        ldaa    >L0463
-        brset   <L0077,#$80,LA15A
+        ldaa    >MonEvap_0463
+        brset   <BitFlags77,#$80,LA15A
         oraa    #$02
-        staa    >L0463
+        staa    >MonEvap_0463
         bra     LA15E
 
 LA15A:
@@ -838,24 +838,24 @@ LA15A:
 LA15E:
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         adda    #$80
-        staa    >$020C
-        ldaa    >L0463
+        staa    >MonEvap_020C
+        ldaa    >MonEvap_0463
         bita    #$10
         bne     LA193
         oraa    #$10
-        staa    >L0463
+        staa    >MonEvap_0463
         ldaa    >LCD3A
-        staa    >$0202
+        staa    >MonEvap_0202
         ldaa    >LCD30
-        staa    >L0203
-        ldaa    >$020C
-        staa    >L0205
+        staa    >MonEvap_0203
+        ldaa    >MonEvap_020C
+        staa    >MonEvap_0205
         ldd     <EngineRpm_HB
-        std     >L0206
-        ldaa    >$0183
-        staa    >L0469
+        std     >MonEvap_0206
+        ldaa    >Var_0183
+        staa    >MonEvap_0469
         ldaa    <BatteryVolts
-        staa    >L0468
+        staa    >MonEvap_0468
 LA193:
         ldaa    >ObdStatusFlags
         bita    #$01
@@ -863,15 +863,15 @@ LA193:
         jmp     >CODEa344
 
 LA19D:
-        ldaa    >$0183
-        suba    >L0469
+        ldaa    >Var_0183
+        suba    >MonEvap_0469
         bcc     LA1A6
         nega
 LA1A6:
         cmpa    >LCD41
         bhi     LA1C0
         ldaa    <BatteryVolts
-        suba    >L0468
+        suba    >MonEvap_0468
         bcc     LA1B3
         nega
 LA1B3:
@@ -885,29 +885,29 @@ LA1C0:
         jmp     >CODEa344
 
 LA1C3:
-        ldaa    >$0202
+        ldaa    >MonEvap_0202
         beq     LA1D6
         brset   <Counter_MainLoop,#$FF,LA1CF
         jmp     >LA335
 
 LA1CF:
         deca
-        staa    >$0202
+        staa    >MonEvap_0202
         jmp     >LA335
 
 LA1D6:
         ldaa    >ObdMonStatus_EvapPurge
         oraa    #$04
         staa    >ObdMonStatus_EvapPurge
-        ldaa    >L0203
+        ldaa    >MonEvap_0203
         beq     LA249
         ldaa    >LCD2F
-        ldab    >$020C
+        ldab    >MonEvap_020C
         mul
         adca    #$00
         psha
-        ldaa    >L0201
-        ldab    >L0205
+        ldaa    >MonEvap_0201
+        ldab    >MonEvap_0205
         mul
         adca    #$00
         pulb
@@ -915,20 +915,20 @@ LA1D6:
         bcc     LA1FC
         ldaa    #$FF
 LA1FC:
-        staa    >L0205
+        staa    >MonEvap_0205
         ldaa    >LCD2F
         ldy     <EngineRpm_HB
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
-        ldaa    >L0201
-        ldy     >L0206
+        ldaa    >MonEvap_0201
+        ldy     >MonEvap_0206
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         sty     <Temp0
         pula
         pulb
         addd    <Temp0
-        std     >L0206
-        ldaa    >L0203
+        std     >MonEvap_0206
+        ldaa    >MonEvap_0203
         beq     LA249
         brset   <Counter_MainLoop,#$FF,LA22A
         jmp     >LA335
@@ -936,45 +936,45 @@ LA1FC:
 LA22A:
         deca
         bne     LA243
-        ldab    >L0205
-        stab    >L0208
-        ldx     >L0206
-        stx     >L0209
+        ldab    >MonEvap_0205
+        stab    >MonEvap_0208
+        ldx     >MonEvap_0206
+        stx     >MonEvap_0209
         ldab    <CurrentAisPosition
-        stab    >L0204
-        ldab    <L00E4
-        stab    >L020B
+        stab    >MonEvap_0204
+        ldab    <Var_00E4
+        stab    >Var_020B
 LA243:
-        staa    >L0203
+        staa    >MonEvap_0203
         jmp     >LA335
 
 LA249:
-        ldaa    >L0463
+        ldaa    >MonEvap_0463
         oraa    #$80
-        staa    >L0463
+        staa    >MonEvap_0463
         ldaa    <Counter_MainLoop
         bita    #$03
         bne     LA264
-        ldaa    >L020B
+        ldaa    >Var_020B
         adda    >LCD31
         bcc     LA261
         ldaa    #$FF
 LA261:
-        staa    >L020B
+        staa    >Var_020B
 LA264:
-        ldaa    >L020B
+        ldaa    >Var_020B
         cmpa    >LCD35
         bcs     LA26F
         jmp     >CODEa373
 
 LA26F:
         ldaa    >LCD2F
-        ldab    >$020C
+        ldab    >MonEvap_020C
         mul
         adca    #$00
         psha
-        ldaa    >L0201
-        ldab    >L0208
+        ldaa    >MonEvap_0201
+        ldab    >MonEvap_0208
         mul
         adca    #$00
         pulb
@@ -982,33 +982,33 @@ LA26F:
         bcc     LA288
         ldaa    #$FF
 LA288:
-        staa    >L0208
+        staa    >MonEvap_0208
         ldaa    >LCD2F
         ldy     <EngineRpm_HB
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
-        ldaa    >L0201
-        ldy     >L0209
+        ldaa    >MonEvap_0201
+        ldy     >MonEvap_0209
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         sty     <Temp0
         pula
         pulb
         addd    <Temp0
-        std     >L0209
-        ldaa    >L0204
+        std     >MonEvap_0209
+        ldaa    >MonEvap_0204
         suba    <CurrentAisPosition
         bcs     LA2B6
         cmpa    >LCD32
         bhi     LA2EA
 LA2B6:
-        ldaa    >L0205
-        suba    >L0208
+        ldaa    >MonEvap_0205
+        suba    >MonEvap_0208
         bcs     LA2C3
         cmpa    >LCD33
         bhi     LA2EA
 LA2C3:
-        ldaa    >L0206
-        suba    >L0209
+        ldaa    >MonEvap_0206
+        suba    >MonEvap_0209
         bcs     LA2D0
         cmpa    >LCD34
         bhi     LA2EA
@@ -1046,9 +1046,9 @@ LA2F4:
 ; CODEa373  ($A302)
 ;---------------------------------------------------------------------------------------------------
 CODEa373:
-        ldaa    >L046C
+        ldaa    >Var_046C
         inca
-        staa    >L046C
+        staa    >Var_046C
         cmpa    >LCD49
         bcs     CODEa344
         ldx     #$0463
@@ -1090,21 +1090,21 @@ MonitorFuelSystemRich:
         jmp     >LA515
 
 LA345:
-        ldaa    >L0187
+        ldaa    >MonFuelSys_0187
         bita    #$40
         beq     LA366
-        ldaa    >L0210
+        ldaa    >MonFuelSys_0210
         bne     LA35B
-        ldaa    >L0187
+        ldaa    >MonFuelSys_0187
         anda    #$BF
-        staa    >L0187
+        staa    >MonFuelSys_0187
         bra     LA366
 
 LA35B:
         ldab    <Counter_MainLoop
         bne     LA363
         deca
-        staa    >L0210
+        staa    >MonFuelSys_0210
 LA363:
         jmp     >LA55E
 
@@ -1112,7 +1112,7 @@ LA366:
         ldab    >ObdStatusFlags
         bitb    #$01
         bne     LA387
-        ldab    >L045A
+        ldab    >Var_045A
         beq     LA375
         jmp     >LA55E
 
@@ -1143,11 +1143,11 @@ LA399:
         asrb
         ldx     #$00F4
         jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
-        std     >L0188
+        std     >MonFuelSys_0188
         ldaa    <CoolantTemp
         ldx     #TABLEcd00
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        ldaa    >L0187
+        ldaa    >MonFuelSys_0187
         anda    #$08
         bne     LA3B5
         addb    >LCD29
@@ -1155,7 +1155,7 @@ LA3B5:
         clra
         asld
         std     <Temp0
-        cpd     >L0188
+        cpd     >MonFuelSys_0188
         bhi     LA404
         ldx     #$012D
         brset   $03,x,#$80,LA401
@@ -1164,10 +1164,10 @@ LA3B5:
         jsr     >LECD7
         ldx     #$012D
         brclr   $02,x,#$40,LA3FE
-        ldaa    >L04B0
+        ldaa    >MonFuelSys_04B0
         inca
         beq     LA3E1
-        staa    >L04B0
+        staa    >MonFuelSys_04B0
 LA3E1:
         cmpa    >$A336
         bcs     LA401
@@ -1185,20 +1185,20 @@ LA3F1:
         bra     LA401
 
 LA3FE:
-        clr     >L04B0
+        clr     >MonFuelSys_04B0
 LA401:
         jmp     >LA546
 
 LA404:
         ldx     #$012D
         brclr   $02,x,#$20,LA40E
-        clr     >L04B0
+        clr     >MonFuelSys_04B0
 LA40E:
-        ldaa    >L0187
+        ldaa    >MonFuelSys_0187
         oraa    #$08
-        staa    >L0187
-        inc     >L018B
-        ldaa    >L018B
+        staa    >MonFuelSys_0187
+        inc     >MonFuelSys_018B
+        ldaa    >MonFuelSys_018B
         cmpa    >LCD2A
         bcs     LA42F
         ldaa    >ObdMonStatus_FuelRich
@@ -1206,15 +1206,15 @@ LA40E:
         staa    >ObdMonStatus_FuelRich
         clra
         staa    <Counter_O2SensorFeedbackCount_Signed
-        staa    >L018B
+        staa    >MonFuelSys_018B
 LA42F:
         jmp     >LA55E
 
 LA432:
-        ldaa    >L018B
+        ldaa    >MonFuelSys_018B
         inca
         beq     LA43B
-        staa    >L018B
+        staa    >MonFuelSys_018B
 LA43B:
         ldab    <Cyl2_InjPWTrim
         ldaa    <PointerIntoAdaptiveMemory
@@ -1258,24 +1258,24 @@ LA477:
 LA480:
         asrb
         jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
-        std     >L0188
+        std     >MonFuelSys_0188
         ldaa    <CoolantTemp
         ldx     #CylTrimTable3
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         clra
         asld
         std     <Temp0
-        cpd     >L0188
+        cpd     >MonFuelSys_0188
         bls     LA4A7
-        ldaa    >L0462
+        ldaa    >MonFuelSys_0462
         inca
         beq     LA4A2
-        staa    >L0462
+        staa    >MonFuelSys_0462
 LA4A2:
         cmpa    >LCD2C
         bcc     LA4E8
 LA4A7:
-        ldaa    >L018B
+        ldaa    >MonFuelSys_018B
         cmpa    >LCD2B
         bcc     LA4B2
         jmp     >LA55E
@@ -1302,7 +1302,7 @@ LA4D6:
         bra     LA4E6
 
 LA4E3:
-        clr     >L04B0
+        clr     >MonFuelSys_04B0
 LA4E6:
         bra     LA538
 
@@ -1313,8 +1313,8 @@ LA4E8:
         ldx     #$012D
         brset   $02,x,#$10,LA50E
         clra
-        staa    >L04B0
-        staa    >L0130
+        staa    >MonFuelSys_04B0
+        staa    >MonFuelSys_0130
         ldx     #$012D
         brset   $02,x,#$80,LA50E
         jsr     >LED05
@@ -1331,7 +1331,7 @@ LA515:
         ldx     #$012D
         brclr   $02,x,#$20,LA529
         ldab    #$80
-        stab    >L0130
+        stab    >MonFuelSys_0130
 LA529:
         ldab    >ObdStatusFlags
         bitb    #$02
@@ -1341,21 +1341,21 @@ LA530:
         anda    #$7F
         staa    >ObdMonStatus_FuelRich
 LA538:
-        ldaa    >L0187
+        ldaa    >MonFuelSys_0187
         oraa    #$40
-        staa    >L0187
+        staa    >MonFuelSys_0187
         ldaa    >LCD2D
-        staa    >L0210
+        staa    >MonFuelSys_0210
 LA546:
         ldaa    >ObdMonStatus_FuelRich
         anda    #$FB
         staa    >ObdMonStatus_FuelRich
         ldaa    #$00
-        staa    >L018B
-        staa    >L0462
-        ldaa    >L0187
+        staa    >MonFuelSys_018B
+        staa    >MonFuelSys_0462
+        ldaa    >MonFuelSys_0187
         anda    #$F7
-        staa    >L0187
+        staa    >MonFuelSys_0187
 LA55E:
         rts
 
@@ -1405,7 +1405,7 @@ LA591:
         asrb
         ldx     #$00F4
         jsr     >ScaleXbyB_addingA_intoD             ; Fractional multiply-accumulate helper used by the fuel modifier code.
-        std     >L0188
+        std     >MonFuelSys_0188
         ldaa    <CoolantTemp
         ldx     #TABLEcd1e
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -1417,7 +1417,7 @@ LA5AE:
         clra
         asld
         std     <Temp0
-        cpd     >L0188
+        cpd     >MonFuelSys_0188
         bls     LA5FC
         ldx     #$012D
         brset   $03,x,#$80,LA5FA
@@ -1426,10 +1426,10 @@ LA5AE:
         jsr     >LECD7
         ldx     #$012D
         brclr   $02,x,#$40,LA5F7
-        ldaa    >L04B0
+        ldaa    >MonFuelSys_04B0
         inca
         beq     LA5DA
-        staa    >L04B0
+        staa    >MonFuelSys_04B0
 LA5DA:
         cmpa    >$A336
         bcs     LA5FA
@@ -1447,21 +1447,21 @@ LA5EA:
         bra     LA5FA
 
 LA5F7:
-        clr     >L04B0
+        clr     >MonFuelSys_04B0
 LA5FA:
         bra     LA669
 
 LA5FC:
         ldx     #$012D
         brclr   $02,x,#$10,LA606
-        clr     >L04B0
+        clr     >MonFuelSys_04B0
 LA606:
-        ldaa    >L0187
+        ldaa    >MonFuelSys_0187
         oraa    #$02
-        staa    >L0187
+        staa    >MonFuelSys_0187
 LA60E:
-        inc     >L018A
-        ldaa    >L018A
+        inc     >MonFuelSys_018A
+        ldaa    >MonFuelSys_018A
         cmpa    >LCD28
         bcs     LA676
         ldaa    >ObdMonStatus_FuelLean
@@ -1475,8 +1475,8 @@ CODEa68d:
         ldx     #$012D
         brset   $02,x,#$20,LA63F
         clra
-        staa    >L04B0
-        staa    >L0130
+        staa    >MonFuelSys_04B0
+        staa    >MonFuelSys_0130
         ldx     #$012D
         brset   $02,x,#$80,LA63F
         jsr     >LED05
@@ -1493,7 +1493,7 @@ LA646:
         ldx     #$012D
         brclr   $02,x,#$10,LA65A
         ldab    #$80
-        stab    >L0130
+        stab    >MonFuelSys_0130
 LA65A:
         ldab    >ObdStatusFlags
         bitb    #$02
@@ -1504,9 +1504,9 @@ LA661:
         staa    >ObdMonStatus_FuelLean
 LA669:
         ldaa    #$00
-        staa    >L018A
-        ldaa    >L0187
+        staa    >MonFuelSys_018A
+        ldaa    >MonFuelSys_0187
         anda    #$FD
-        staa    >L0187
+        staa    >MonFuelSys_0187
 LA676:
         rts

@@ -266,14 +266,14 @@ L58EA:
         bhi     L58F8
         ldaa    #$58
         staa    >LinkRegAddress
-        ldd     >L0176
+        ldd     >LinkReg58Data
         bra     L5900
 
 L58F8:
         ldaa    #$48
         staa    >LinkRegAddress
         clrb
-        ldaa    <L00EC
+        ldaa    <LinkReg48Data
 L5900:
         std     >LinkRegDataOutHi
         bset    <LinkRequestFlags,#$40
@@ -482,11 +482,11 @@ SendOutputDriverByte:
         cmpa    $29,x                                ; SPSR: SPI status
         ldaa    $2A,x                                ; SPDR: SPI data
         staa    >OutputDriverStatus
-        eora    <L003B
-        ldab    <L003B
+        eora    <Var_003B
+        ldab    <Var_003B
         stab    <CCDFlags3
         ldab    <OutputDriverBits
-        stab    <L003B
+        stab    <Var_003B
         cli
         ldx     #$0113
         brset   $00,x,#$04,L5AB9
@@ -526,7 +526,7 @@ L5A86:
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$40
         beq     L5AA2
-        brset   <L006D,#$08,L5AFA
+        brset   <BitFlags6D,#$08,L5AFA
 L5AA2:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
@@ -713,7 +713,7 @@ L5B83:
         pshy
         bsr     L5BDD
         puly
-        clr     >L0035
+        clr     >Var_0035
         ldx     #$0135
         ldd     $04,y
         abx
@@ -812,7 +812,7 @@ L5C2B:
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 ProcessErrorBits_WorkWithData_MM:
-        brclr   <L005B,#$FF,L5CA3
+        brclr   <Var_005B,#$FF,L5CA3
         ldaa    <CountdownTimerFromKeyOn
         bne     L5CA3
         clra
@@ -822,15 +822,15 @@ L5C3A:
         rola
         bcs     L5CA3
         addb    #$03
-        bita    <L005B
+        bita    <Var_005B
         beq     L5C3A
         ldx     #$57F6
         abx
         std     <Temp3
         coma
         sei
-        anda    <L005B
-        staa    <L005B
+        anda    <Var_005B
+        staa    <Var_005B
         cli
         ldy     $00,x
         ldd     $00,y
@@ -1085,7 +1085,7 @@ CheckIfCheckEngineLightShouldBeOn_B_MM:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         beq     L5DEF
-        brset   <L006D,#$02,L5DD9
+        brset   <BitFlags6D,#$02,L5DD9
         ldd     <KeyOnOrEngineRunningTime
         cmpa    #$02
         bcc     L5DD0
@@ -1093,9 +1093,9 @@ CheckIfCheckEngineLightShouldBeOn_B_MM:
         cpd     #$12C0
         bcs     L5DE9
 L5DD0:
-        bclr    <L00EC,#$10
+        bclr    <LinkReg48Data,#$10
         bset    <OutputBits2,#$10
-        bset    <L006D,#$02
+        bset    <BitFlags6D,#$02
 L5DD9:
         brset   <IPL2,#$80,L5DEC
         ldx     #$04B6
@@ -1104,7 +1104,7 @@ L5DD9:
         bra     L5DEF
 
 L5DE9:
-        bset    <L00EC,#$10
+        bset    <LinkReg48Data,#$10
 L5DEC:
         bclr    <OutputBits2,#$10
 L5DEF:
@@ -1241,7 +1241,7 @@ L5EB5:
         bne     L5EDC
         cli
         ldx     #POINTER5e8d
-        ldab    >L044E
+        ldab    >Var_044E
         abx
         ldy     $00,x
         ldab    #$89
@@ -1464,7 +1464,7 @@ CODE600e_SM:
         ldx     #$014D
         brclr   $00,x,#$04,L601E
         brset   <BitFlags71,#$80,L6059
-        ldaa    >L0218
+        ldaa    >Var_0218
         bne     L607A
 L601E:
         ldx     #$014D
@@ -1517,28 +1517,28 @@ L607A:
 ;---------------------------------------------------------------------------------------------------
 CheckStuffAndSetStatusFlags_SM:
         brset   <BitFlags71,#$80,L60D9
-        ldaa    >L0218
+        ldaa    >Var_0218
         bne     L60D9
-        ldaa    <L000B
-        suba    >L04BD
+        ldaa    <AsdVolts_000B
+        suba    >AsdVolts_04BD
         bcs     L6090
         cmpa    >LCEA7
         bhi     L60A5
 L6090:
-        ldaa    >L04BC
-        suba    >L04BB
+        ldaa    >AsdVolts_04BC
+        suba    >AsdVolts_04BB
         bpl     L6099
         nega
 L6099:
         cmpa    >LCEA6
         bhi     L60A5
-        ldaa    <L000B
+        ldaa    <AsdVolts_000B
         cmpa    >LCEA4
         bcc     L60A8
 L60A5:
-        clr     >L000C
+        clr     >Var_000C
 L60A8:
-        ldaa    <L000C
+        ldaa    <Var_000C
         cmpa    >LCEA5
         bcs     L60D1
         ldaa    >SystemStatusFlag_4b6
@@ -1678,7 +1678,7 @@ CheckErrorMaskingAndSetCodes_MM:
         bra     L61A5
 
 L618B:
-        ldy     >L01D2
+        ldy     >FaultMask_01D2
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
         ldaa    >ScaledDistPWForCruiseControl
@@ -1687,9 +1687,9 @@ L618B:
         tsy
         subd    $00,y
         puly
-        addd    >L01D2
+        addd    >FaultMask_01D2
 L61A5:
-        std     >L01D2
+        std     >FaultMask_01D2
         ldaa    >LCDB6                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bne     L61B2
         ldaa    <TpsVolts
@@ -1697,7 +1697,7 @@ L61A5:
         bra     L61CB
 
 L61B2:
-        ldy     >L01D6
+        ldy     >FaultMask_01D6
         jsr     >ScaleYbyA                           ; D = Y x A / 256 (unsigned fractional multiply).
         pshy
         ldaa    <TpsVolts
@@ -1706,9 +1706,9 @@ L61B2:
         tsy
         subd    $00,y
         puly
-        addd    >L01D6
+        addd    >FaultMask_01D6
 L61CB:
-        std     >L01D6
+        std     >FaultMask_01D6
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L61DC
@@ -1772,23 +1772,23 @@ L61FA:
         ldaa    <VehicleSpeedScaled
         cmpa    >LCDB9                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bhi     L62DB
-        tst     >L01D4
+        tst     >FaultMask_01D4
         beq     L6273
-        clr     >L01D9
+        clr     >FaultMask_01D9
         bra     L6273
 
 L6270:
         jmp     >L6345
 
 L6273:
-        ldaa    >L01D9
+        ldaa    >FaultMask_01D9
         cmpa    >LCDB2                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcc     L627E
-        inc     >L01D9
+        inc     >FaultMask_01D9
 L627E:
-        ldaa    >$01D5
-        ldab    >L01D8
-        subd    >L01D2
+        ldaa    >FaultMask_01D5
+        ldab    >FaultMask_01D8
+        subd    >FaultMask_01D2
         bcc     L628E
         coma
         comb
@@ -1796,44 +1796,44 @@ L627E:
 L628E:
         cpd     >LCDBA                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcs     L6297
-        clr     >L01D9
+        clr     >FaultMask_01D9
 L6297:
-        ldaa    >L01D2
-        ldab    >$01D3
-        staa    >$01D5
-        stab    >L01D8
-        clr     >L01D4
+        ldaa    >FaultMask_01D2
+        ldab    >FaultMask_01D3
+        staa    >FaultMask_01D5
+        stab    >FaultMask_01D8
+        clr     >FaultMask_01D4
         jmp     >L634E
 
 L62A9:
         brclr   $00,x,#$04,L62D2
         clrb
         ldaa    >ScaledDistPWForCruiseControl
-        cmpa    >L01D2
+        cmpa    >FaultMask_01D2
         bhi     L62B9
-        std     >L01D2
+        std     >FaultMask_01D2
 L62B9:
-        ldaa    >L01D2
-        staa    >$01D5
-        ldaa    >L01D6
+        ldaa    >FaultMask_01D2
+        staa    >FaultMask_01D5
+        ldaa    >FaultMask_01D6
         cmpa    #$FF
         beq     L62CC
-        tst     >$01D7
+        tst     >FaultMask_01D7
         bpl     L62CC
         inca
 L62CC:
-        staa    >L01D8
+        staa    >FaultMask_01D8
         bclr    $00,x,#$04
 L62D2:
-        ldd     >L01D2
+        ldd     >FaultMask_01D2
         cpd     >LCDB7                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcc     L62E1
 L62DB:
-        clr     >L01D4
+        clr     >FaultMask_01D4
         jmp     >L634B
 
 L62E1:
-        ldaa    >L01D9
+        ldaa    >FaultMask_01D9
         cmpa    >LCDB2                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcs     L634B
         ldaa    <MINTHR_LowestSessionTPS
@@ -1841,36 +1841,36 @@ L62E1:
         bcc     L62F2
         ldaa    #$FF
 L62F2:
-        cmpa    >L01D8
+        cmpa    >FaultMask_01D8
         bcc     L634B
-        ldaa    >L01D2
+        ldaa    >FaultMask_01D2
         cmpa    #$FF
         beq     L6304
-        tst     >$01D3
+        tst     >FaultMask_01D3
         bpl     L6304
         inca
 L6304:
         staa    <Temp0
-        suba    >$01D5
+        suba    >FaultMask_01D5
         bcs     L6315
         cmpa    >LCDB4                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcs     L631A
-        clr     >$01DA
+        clr     >FaultMask_01DA
         bra     L634B
 
 L6315:
         ldaa    <Temp0
-        staa    >$01D5
+        staa    >FaultMask_01D5
 L631A:
-        ldaa    >L01D4
+        ldaa    >FaultMask_01D4
         cmpa    #$FF
         beq     L6325
         inca
-        staa    >L01D4
+        staa    >FaultMask_01D4
 L6325:
         cmpa    >LCDB1                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcs     L634E
-        ldaa    >$01DA
+        ldaa    >FaultMask_01DA
         cmpa    >LCDBC                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         bcs     L6340
         ldy     #ErrBytes_CODE
@@ -1880,14 +1880,14 @@ L6325:
         bra     L634E
 
 L6340:
-        inc     >$01DA
+        inc     >FaultMask_01DA
         bra     L634B
 
 L6345:
-        clr     >L01D4
-        clr     >$01DA
+        clr     >FaultMask_01D4
+        clr     >FaultMask_01DA
 L634B:
-        clr     >L01D9
+        clr     >FaultMask_01D9
 L634E:
         rts
 
@@ -1964,7 +1964,7 @@ L63CE:
 L63D0:
         cmpb    >LCED5                               ; MPDELX (DeltaMapThatChecksGoodX)
         bls     L640C
-        ldaa    >L0409
+        ldaa    >IODev_0409
         bita    #$04
         beq     L640C
         brset   <BitFlags68,#$04,L640C
@@ -2064,12 +2064,12 @@ L6482:
         oraa    #$20
         staa    >BitFlags049E
         ldaa    >LE008+1
-        staa    >L04A0
+        staa    >Var_04A0
         bra     L64B8
 
 L64A2:
         brclr   <b58_IPL1,#$40,L64B8
-        dec     >L04A0
+        dec     >Var_04A0
         bne     L64B8
         ldaa    #$84
         jsr     >ResetErrorCodeIfTimerExpired
@@ -2180,7 +2180,7 @@ L6554:
 Set_ErrorBits_20_MM:
         brset   <IPL2,#$04,L6578
         brset   <b5a_IPL3,#$02,L6578
-        ldaa    >L047D
+        ldaa    >Var_047D
         cmpa    >LE00B
         bcc     L6575
         brclr   <IPL1,#$08,L6578

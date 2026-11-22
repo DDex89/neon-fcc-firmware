@@ -90,9 +90,9 @@ ISODiagnosticComs_14:
         oraa    #$01
         staa    >BitFlags049E
         ldaa    #$05
-        staa    >L048E
+        staa    >IsoReqHeader1
         ldaa    #$01
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         bra     L1B76
 
@@ -100,7 +100,7 @@ L1B52:
         ldaa    >BitFlags049E
         bita    #$01
         beq     L1B73
-        ldaa    >L048D
+        ldaa    >IsoTimer
         bne     L1B76
         ldaa    >BitFlags049E
         anda    #$FE
@@ -120,23 +120,23 @@ L1B76:
 ; ISODiagnosticComs_13  ($1B77)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_13:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1BAE
         ldy     #$0400
         brset   $0E,y,#$08,L1B8F
-        ldaa    >L048E
+        ldaa    >IsoReqHeader1
         beq     L1BA9
-        dec     >L048E
+        dec     >IsoReqHeader1
         bra     L1BA9
 
 L1B8F:
-        ldaa    >L048E
+        ldaa    >IsoReqHeader1
         bne     L1BA6
         ldaa    #$03
-        staa    >L048E
-        clr     >$048F
+        staa    >IsoReqHeader1
+        clr     >IsoReqHeader2
         ldaa    #$2E
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         bra     L1BAE
 
@@ -144,7 +144,7 @@ L1BA6:
         clr     >ISODiagTestOffset
 L1BA9:
         ldaa    #$01
-        staa    >L0485
+        staa    >IsoStep
 L1BAE:
         rts
 
@@ -153,25 +153,25 @@ L1BAE:
 ; ISODiagnosticComs_11  ($1BAF)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_11:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1BF0
         ldy     #$0400
         brclr   $0E,y,#$08,L1BC0
-        inc     >$048F
+        inc     >IsoReqHeader2
 L1BC0:
-        dec     >L048E
+        dec     >IsoReqHeader1
         bne     L1BEB
-        ldaa    >$048F
+        ldaa    >IsoReqHeader2
         cmpa    #$02
         bls     L1BE6
         clra
-        staa    >$048F
-        staa    >L0490
-        staa    >$0491
-        staa    >L0492
-        staa    >L049A
+        staa    >IsoReqHeader2
+        staa    >IsoReqSource
+        staa    >IsoReqService
+        staa    >IsoReqPid
+        staa    >Iso_049A
         ldaa    #$62
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         bra     L1BF0
 
@@ -181,7 +181,7 @@ L1BE6:
 
 L1BEB:
         ldaa    #$01
-        staa    >L0485
+        staa    >IsoStep
 L1BF0:
         rts
 
@@ -190,21 +190,21 @@ L1BF0:
 ; ISODiagnosticComs_12  ($1BF1)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_12:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1C53
         ldy     #$0400
         brclr   $0E,y,#$08,L1C02
-        inc     >$048F
+        inc     >IsoReqHeader2
 L1C02:
-        inc     >$0491
-        ldaa    >$0491
+        inc     >IsoReqService
+        ldaa    >IsoReqService
         cmpa    #$03
         bne     L1C4E
-        inc     >L0490
-        ldaa    >L0490
+        inc     >IsoReqSource
+        ldaa    >IsoReqSource
         cmpa    #$08
         bhi     L1C31
-        ldab    >$048F
+        ldab    >IsoReqHeader2
         cmpb    #$02
         bcc     L1C20
         sec
@@ -213,22 +213,22 @@ L1C02:
 L1C20:
         clc
 L1C21:
-        ror     >L0492
-        clr     >$048F
-        clr     >$0491
+        ror     >IsoReqPid
+        clr     >IsoReqHeader2
+        clr     >IsoReqService
         ldaa    #$62
-        staa    >L0485
+        staa    >IsoStep
         bra     L1C53
 
 L1C31:
-        ldab    >$048F
+        ldab    >IsoReqHeader2
         cmpb    #$02
         bcc     L1C49
-        ldaa    >L0492
+        ldaa    >IsoReqPid
         cmpa    #$33
         bne     L1C49
         ldaa    #$82
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         bra     L1C53
 
@@ -238,7 +238,7 @@ L1C49:
 
 L1C4E:
         ldaa    #$01
-        staa    >L0485
+        staa    >IsoStep
 L1C53:
         rts
 
@@ -247,7 +247,7 @@ L1C53:
 ; ISODiagnosticComs_3  ($1C54)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_3:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1C5C
         inc     >ISODiagTestOffset
 L1C5C:
@@ -275,7 +275,7 @@ L1C6A:
         ldaa    #$55
         staa    >SCDR
         ldaa    #$03
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         rts
 
@@ -284,7 +284,7 @@ L1C6A:
 ; ISODiagnosticComs_4  ($1C8B)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_4:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1C93
         inc     >ISODiagTestOffset
 L1C93:
@@ -300,7 +300,7 @@ ISODiagnosticComs_15:
         ldaa    #$08
         staa    >SCDR
         ldaa    #$01
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         rts
 
@@ -309,7 +309,7 @@ ISODiagnosticComs_15:
 ; ISODiagnosticComs_16  ($1CA8)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_16:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1CB0
         inc     >ISODiagTestOffset
 L1CB0:
@@ -325,7 +325,7 @@ ISODiagnosticComs_17:
         ldaa    #$08
         staa    >SCDR
         ldaa    #$0D
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         rts
 
@@ -336,10 +336,10 @@ ISODiagnosticComs_17:
 ISODiagnosticComs_5:
         ldaa    >SCSR
         ldaa    >SCDR
-        dec     >L0485
+        dec     >IsoStep
         bne     L1CD8
         ldaa    #$18
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
 L1CD8:
         rts
@@ -365,7 +365,7 @@ L1CE5:
         bra     L1CF8
 
 L1CF3:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1D05
 L1CF8:
         clr     >ISODiagTestOffset
@@ -373,7 +373,7 @@ L1CF8:
 
 L1CFD:
         ldaa    #$0D
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
 L1D05:
         rts
@@ -383,7 +383,7 @@ L1D05:
 ; ISODiagnosticComs_7  ($1D06)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_7:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1D0E
         inc     >ISODiagTestOffset
 L1D0E:
@@ -400,7 +400,7 @@ ISODiagnosticComs_8:
         coma
         staa    >SCDR
         ldaa    #$1C
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         rts
 
@@ -411,10 +411,10 @@ ISODiagnosticComs_8:
 ISODiagnosticComs_2:
         ldaa    >SCSR
         ldaa    >SCDR
-        dec     >L0485
+        dec     >IsoStep
         bne     L1D37
         ldaa    #$E3
-        staa    >L048D
+        staa    >IsoTimer
         inc     >ISODiagTestOffset
 L1D37:
         rts
@@ -436,14 +436,14 @@ L1D44:
         ldaa    >SCDR
         ldx     #$048E
         staa    $00,x
-        stx     >L0487
+        stx     >IsoRxEndPtr
         ldaa    #$0A
-        staa    >L0485
+        staa    >IsoStep
         inc     >ISODiagTestOffset
         bra     L1D65
 
 L1D5D:
-        ldaa    >L048D
+        ldaa    >IsoTimer
         bne     L1D65
         clr     >ISODiagTestOffset
 L1D65:
@@ -464,27 +464,27 @@ L1D72:
         bita    #$20
         beq     L1D97
         ldaa    >SCDR
-        ldab    >L0485
+        ldab    >IsoStep
         cmpb    #$09
         bhi     L1D97
         ldab    #$0D
-        ldx     >L0487
+        ldx     >IsoRxEndPtr
         cpx     #$0494
         beq     L1D9E
         inx
         staa    $00,x
-        stx     >L0487
+        stx     >IsoRxEndPtr
         ldab    #$0A
-        stab    >L0485
+        stab    >IsoStep
         bra     L1DC2
 
 L1D97:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1DC2
         ldab    #$03
 L1D9E:
-        stab    >L0485
-        ldaa    >$0491
+        stab    >IsoStep
+        ldaa    >IsoReqService
         cmpa    #$20
         bne     L1DAD
         clr     >ISODiagTestOffset
@@ -501,7 +501,7 @@ L1DB2:
 L1DBA:
         dec     >ISODiagTestOffset
         ldaa    #$E3
-        staa    >L048D
+        staa    >IsoTimer
 L1DC2:
         rts
 
@@ -510,36 +510,36 @@ L1DC2:
 ; ISODiagnosticComs_9  ($1DC3)
 ;---------------------------------------------------------------------------------------------------
 ISODiagnosticComs_9:
-        dec     >L0485
+        dec     >IsoStep
         bne     L1E0D
         ldaa    >SCSR
         ldaa    >SCDR
-        ldx     >L0489
+        ldx     >Iso_0489
         ldaa    $00,x
         staa    >SCDR
-        cpx     >L048B
+        cpx     >Iso_048B
         beq     L1DE6
         inx
-        stx     >L0489
+        stx     >Iso_0489
         ldaa    #$01
-        staa    >L0485
+        staa    >IsoStep
         bra     L1E0D
 
 L1DE6:
-        ldaa    >L049A
+        ldaa    >Iso_049A
         beq     L1DFA
         ldaa    #$03
-        staa    >$0491
+        staa    >IsoReqService
         dec     >ISODiagTestOffset
         ldaa    #$0D
-        staa    >L0485
+        staa    >IsoStep
         bra     L1DB2
 
 L1DFA:
         ldaa    #$E3
-        staa    >L048D
+        staa    >IsoTimer
         ldaa    #$1C
-        staa    >L0485
+        staa    >IsoStep
         dec     >ISODiagTestOffset
         dec     >ISODiagTestOffset
         dec     >ISODiagTestOffset
@@ -553,10 +553,10 @@ L1E0D:
 ; Called from: SubLoopA
 ;---------------------------------------------------------------------------------------------------
 DecrementCounter048D_SM:
-        ldaa    >L048D
+        ldaa    >IsoTimer
         beq     L1E17
         deca
-        staa    >L048D
+        staa    >IsoTimer
 L1E17:
         rts
 
@@ -575,37 +575,37 @@ L1E17:
 ; Called from: ISODiagnosticComs_18
 ;---------------------------------------------------------------------------------------------------
 IsoValidateRequest:
-        ldaa    >L048E
+        ldaa    >IsoReqHeader1
         cmpa    #$68
         beq     L1E22
         jmp     >L1EA7
 
 L1E22:
-        ldaa    >$048F
+        ldaa    >IsoReqHeader2
         cmpa    #$6A
         bne     L1EA7
-        ldaa    >L0490
+        ldaa    >IsoReqSource
         anda    #$F0
         cmpa    #$F0
         bne     L1EA7
         ldx     #$048E
         clra
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         beq     L1EA7
 L1E3B:
         adda    $00,x
         inx
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         bne     L1E3B
         cmpa    $00,x
         bne     L1EA7
-        ldaa    >$0491
+        ldaa    >IsoReqService
         cmpa    #$01
         bne     L1E7C
         ldx     #$0493
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         bne     L1EA7
-        ldab    >L0492
+        ldab    >IsoReqPid
         clra
         asld
         addd    #$1AEA
@@ -627,9 +627,9 @@ L1E7C:
         cmpa    #$02
         bne     L1EAB
         ldx     #$0494
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         bne     L1EA7
-        ldab    >L0492
+        ldab    >IsoReqPid
         clra
         asld
         addd    #$1B16
@@ -640,7 +640,7 @@ L1E7C:
         beq     L1EA7
         cpx     #$0000
         beq     L1EA7
-        ldaa    >TempVar100
+        ldaa    >IsoRespData1
         bne     L1EA7
         bra     L1EA9
 
@@ -656,7 +656,7 @@ L1EAB:
         cmpa    #$03
         bne     L1EBE
         ldx     #$0492
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         bne     L1EA7
         ldaa    >ObdDtcCount
         beq     L1EA7
@@ -666,7 +666,7 @@ L1EBE:
         cmpa    #$04
         bne     L1ED2
         ldx     #$0492
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         bne     L1EA7
         ldaa    <TimerOverflowsBetweenCamPulses
         cmpa    #$50
@@ -677,9 +677,9 @@ L1ED2:
         cmpa    #$05
         bne     L1EA7
         ldx     #$0494
-        cpx     >L0487
+        cpx     >IsoRxEndPtr
         bne     L1EA7
-        ldaa    >TempVar100
+        ldaa    >IsoRespData1
         cmpa    #$01
         beq     L1EA9
         cmpa    #$02
@@ -699,12 +699,12 @@ L1ED2:
 ;---------------------------------------------------------------------------------------------------
 IsoBuildResponse:
         ldaa    #$48
-        staa    >L048E
+        staa    >IsoReqHeader1
         ldaa    #$6B
-        staa    >$048F
+        staa    >IsoReqHeader2
         ldaa    #$40
-        staa    >L0490
-        ldaa    >$0491
+        staa    >IsoReqSource
+        ldaa    >IsoReqService
         cmpa    #$01
         beq     L1F34
         cmpa    #$02
@@ -725,28 +725,28 @@ L1F10:
 ; CODE1f17  ($1F17)
 ;---------------------------------------------------------------------------------------------------
 CODE1f17:
-        stx     >L048B
+        stx     >Iso_048B
         ldx     #$048E
         clra
-        cpx     >L048B
+        cpx     >Iso_048B
         beq     L1F33
 L1F23:
         adda    $00,x
         inx
-        cpx     >L048B
+        cpx     >Iso_048B
         bne     L1F23
         staa    $00,x
         ldx     #$048E
-        stx     >L0489
+        stx     >Iso_0489
 L1F33:
         rts
 
 L1F34:
         oraa    #$40
-        staa    >$0491
+        staa    >IsoReqService
         ldx     #$1AEA
-        ldab    >L0492
-        stab    >L0492
+        ldab    >IsoReqPid
+        stab    >IsoReqPid
         aslb
         abx
         ldx     $00,x
@@ -754,12 +754,12 @@ L1F34:
 
 L1F48:
         oraa    #$40
-        staa    >$0491
+        staa    >IsoReqService
         ldx     #$1B16
-        ldab    >L0492
-        stab    >L0492
-        ldaa    >TempVar100
-        staa    >TempVar100
+        ldab    >IsoReqPid
+        stab    >IsoReqPid
+        ldaa    >IsoRespData1
+        staa    >IsoRespData1
         aslb
         abx
         ldx     $00,x
@@ -767,46 +767,46 @@ L1F48:
 
 L1F62:
         oraa    #$40
-        staa    >$0491
+        staa    >IsoReqService
         ldd     #$0000
-        std     >L0492
-        std     >TempStack
-        std     >L0496
+        std     >IsoReqPid
+        std     >IsoRespData2
+        std     >IsoRespData4
         ldaa    >ObdDtcCount
-        ldab    >L049A
+        ldab    >Iso_049A
         bne     L1F91
         tab
         cmpb    #$03
         bls     L1F89
         subb    #$03
-        stab    >L049A
+        stab    >Iso_049A
         ldab    #$03
         bra     L1F8C
 
 L1F89:
-        clr     >L049A
+        clr     >Iso_049A
 L1F8C:
-        stab    >L0499
+        stab    >Iso_0499
         bra     L1FE3
 
 L1F91:
         cmpb    #$03
         bls     L1F9E
         subb    #$03
-        stab    >L049A
+        stab    >Iso_049A
         ldab    #$03
         bra     L1FA1
 
 L1F9E:
-        clr     >L049A
+        clr     >Iso_049A
 L1FA1:
-        ldaa    >L0499
+        ldaa    >Iso_0499
         anda    #$0F
         psha
-        ldaa    >L0499
+        ldaa    >Iso_0499
         anda    #$F0
         aba
-        staa    >L0499
+        staa    >Iso_0499
         ldx     #$0135
         ldy     #ToggleBits
         anda    #$F0
@@ -874,9 +874,9 @@ L2014:
         inx
         iny
         iny
-        ldaa    >L0499
+        ldaa    >Iso_0499
         adda    #$10
-        staa    >L0499
+        staa    >Iso_0499
         cpx     #$0149
         bcc     L20A1
         bra     L1FEA
@@ -884,7 +884,7 @@ L2014:
 L2029:
         psha
         pshb
-        ldaa    >L0499
+        ldaa    >Iso_0499
         anda    #$F0
         aba
         ldab    #$08
@@ -892,45 +892,45 @@ L2029:
         addd    #$D4E3
         pshy
         xgdy
-        ldaa    >L0499
+        ldaa    >Iso_0499
         anda    #$03
         cmpa    #$03
         bne     L204C
         ldd     $06,y
-        std     >L0492
+        std     >IsoReqPid
         bra     L205E
 
 L204C:
         cmpa    #$02
         bne     L2058
         ldd     $06,y
-        std     >TempStack
+        std     >IsoRespData2
         bra     L205E
 
 L2058:
         ldd     $06,y
-        std     >L0496
+        std     >IsoRespData4
 L205E:
         puly
-        ldaa    >L0499
+        ldaa    >Iso_0499
         tab
         anda    #$03
 L2066:
         deca
         andb    #$F0
         aba
-        staa    >L0499
+        staa    >Iso_0499
         pulb
-        ldaa    >L0499
+        ldaa    >Iso_0499
         anda    #$0F
         beq     L2078
         pula
         bra     L2009
 
 L2078:
-        ldaa    >L0499
+        ldaa    >Iso_0499
         aba
-        staa    >L0499
+        staa    >Iso_0499
         pula
         ldx     #$0492
         ldd     $00,x
@@ -953,15 +953,15 @@ L20A1:
 
 L20A7:
         oraa    #$40
-        staa    >$0491
+        staa    >IsoReqService
         jsr     >EraseErrorCodes                     ; Clears all stored fault codes.
         ldx     #$0492
         jmp     >CODE1f17
 
 L20B5:
         oraa    #$40
-        staa    >$0491
-        ldaa    >L0492
+        staa    >IsoReqService
+        ldaa    >IsoReqPid
         cmpa    #$00
         beq     L20D8
         cmpa    #$20
@@ -977,34 +977,34 @@ L20B5:
         jmp     >L217A
 
 L20D8:
-        staa    >L0492
-        ldaa    >TempVar100
-        staa    >TempVar100
+        staa    >IsoReqPid
+        ldaa    >IsoRespData1
+        staa    >IsoRespData1
         ldd     #$0000
-        std     >TempStack
+        std     >IsoRespData2
         ldaa    #$00
-        staa    >L0496
+        staa    >IsoRespData4
         ldaa    #$01
-        staa    >$0497
+        staa    >IsoRespData5
         ldx     #$0498
         jmp     >L21CC
 
 L20F7:
-        staa    >L0492
-        ldaa    >TempVar100
-        staa    >TempVar100
+        staa    >IsoReqPid
+        ldaa    >IsoRespData1
+        staa    >IsoRespData1
         ldd     #$0000
-        std     >TempStack
-        std     >L0496
+        std     >IsoRespData2
+        std     >IsoRespData4
         ldx     #$0498
         jmp     >L21CC
 
 L210F:
-        staa    >L0492
+        staa    >IsoReqPid
         ldaa    #$00
-        staa    >TempStack
-        ldaa    >TempVar100
-        staa    >TempVar100
+        staa    >IsoRespData2
+        ldaa    >IsoRespData1
+        staa    >IsoRespData1
         cmpa    #$02
         bne     L2125
         ldaa    #$00
@@ -1013,30 +1013,30 @@ L210F:
 L2125:
         ldaa    #$01
 L2127:
-        staa    >L0495
+        staa    >IsoRespData3
         ldaa    #$80
-        staa    >L0496
+        staa    >IsoRespData4
         ldaa    #$00
-        staa    >$0497
+        staa    >IsoRespData5
         ldx     #$0498
         jmp     >L21CC
 
 L213A:
-        staa    >L0492
-        ldaa    >TempVar100
+        staa    >IsoReqPid
+        ldaa    >IsoRespData1
         cmpa    #$01
         beq     L2157
-        staa    >TempVar100
+        staa    >IsoRespData1
 L2147:
         ldaa    #$00
-        staa    >TempStack
+        staa    >IsoRespData2
         ldd     #$0000
-        std     >L0495
+        std     >IsoRespData3
         ldx     #$0497
         bra     L21CC
 
 L2157:
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldaa    >ISO_ErrorBitRegisterStored4
         bita    #$40
         beq     L2147
@@ -1044,53 +1044,53 @@ L2157:
         anda    #$BF
         asla
         asla
-        staa    >TempStack
+        staa    >IsoRespData2
         ldaa    #$00
-        staa    >L0495
+        staa    >IsoRespData3
         ldaa    >LCCC5
-        staa    >L0496
+        staa    >IsoRespData4
         ldx     #$0497
         bra     L21CC
 
 L217A:
-        staa    >L0492
-        ldaa    >TempVar100
+        staa    >IsoReqPid
+        ldaa    >IsoRespData1
         cmpa    #$01
         beq     L218D
         cmpa    #$02
         beq     L21B0
-        staa    >TempVar100
+        staa    >IsoRespData1
         bra     L2147
 
 L218D:
-        staa    >TempVar100
-        ldaa    >L0128
+        staa    >IsoRespData1
+        ldaa    >Var_0128
         bita    #$40
         beq     L2147
         anda    #$7F
         anda    #$BF
         asla
         asla
-        staa    >TempStack
+        staa    >IsoRespData2
         ldaa    #$00
-        staa    >L0495
+        staa    >IsoRespData3
         ldaa    >LCCC5
-        staa    >L0496
+        staa    >IsoRespData4
         ldx     #$0497
         bra     L21CC
 
 L21B0:
-        staa    >TempVar100
-        ldaa    >L045C
-        staa    >TempStack
+        staa    >IsoRespData1
+        ldaa    >Var_045C
+        staa    >IsoRespData2
         ldaa    #$00
-        staa    >L0495
+        staa    >IsoRespData3
         ldaa    >LCCCA
         suba    #$01
         bcc     L21C6
         clra
 L21C6:
-        staa    >L0496
+        staa    >IsoRespData4
         ldx     #$0497
 L21CC:
         jmp     >CODE1f17
@@ -1103,9 +1103,9 @@ L21CC:
 ;---------------------------------------------------------------------------------------------------
 ObdPid00_Supported:
         ldaa    #$BE
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldaa    #$3E
-        staa    >TempStack
+        staa    >IsoRespData2
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     L21E4
@@ -1115,9 +1115,9 @@ ObdPid00_Supported:
 L21E4:
         ldaa    #$B8
 L21E6:
-        staa    >L0495
+        staa    >IsoRespData3
         ldaa    #$00
-        staa    >L0496
+        staa    >IsoRespData4
         ldx     #$0497
         jmp     >CODE1f17
 
@@ -1139,13 +1139,13 @@ L21FD:
         brclr   $00,x,#$80,L2206
         oraa    #$80
 L2206:
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldaa    >LB81F                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
-        staa    >TempStack
+        staa    >IsoRespData2
         ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
-        staa    >L0495
-        ldaa    >L0100
-        staa    >L0496
+        staa    >IsoRespData3
+        ldaa    >ObdMonitorsComplete
+        staa    >IsoRespData4
         ldx     #$0497
         jmp     >CODE1f17
 
@@ -1157,9 +1157,9 @@ L2206:
 ;---------------------------------------------------------------------------------------------------
 ObdPid03_FuelSystem:
         ldaa    >FuelSystemStatus
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldaa    #$00
-        staa    >TempStack
+        staa    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -1171,7 +1171,7 @@ ObdPid03_FuelSystem:
 ;---------------------------------------------------------------------------------------------------
 ObdPid04_Load:
         ldaa    >MaxRPMxMaxMAPFraction
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1187,7 +1187,7 @@ ObdPid05_Coolant:
         bcc     L2246
         clra
 L2246:
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1205,7 +1205,7 @@ ObdPid06_ShortTermTrim:
 L2256:
         lsrd
         lsrd
-        stab    >TempVar100
+        stab    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1223,7 +1223,7 @@ ObdPid07_LongTermTrim:
 L2268:
         lsrd
         lsrd
-        stab    >TempVar100
+        stab    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1234,11 +1234,11 @@ L2268:
 ; Service 1 PID $0B: MAP ($0219 × $69 / 256). [reviewed]
 ;---------------------------------------------------------------------------------------------------
 ObdPid0B_Map:
-        ldaa    >L0219
+        ldaa    >ObdMapValue
         ldab    #$69
         mul
         adca    #$00
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1251,7 +1251,7 @@ ObdPid0B_Map:
 ObdPid0C_Rpm:
         ldd     <EngineRpm_HB
         lsrd
-        std     >TempVar100
+        std     >IsoRespData1
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -1272,7 +1272,7 @@ L2299:
         ldab    #$CE
         mul
         adca    #$00
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1285,7 +1285,7 @@ L2299:
 ObdPid0E_Advance:
         ldaa    >AdvanceTemporary
         adda    #$80
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1301,7 +1301,7 @@ ObdPid0F_IntakeAirTemp:
         bcc     L22BD
         clra
 L22BD:
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1313,7 +1313,7 @@ L22BD:
 ;---------------------------------------------------------------------------------------------------
 ObdPid11_Throttle:
         ldaa    >LastTpsVolts
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1331,7 +1331,7 @@ ObdPid12_SecondaryAir:
 L22DA:
         ldaa    #$04
 L22DC:
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1343,7 +1343,7 @@ L22DC:
 ;---------------------------------------------------------------------------------------------------
 ObdPid13_O2Present:
         ldaa    #$03
-        staa    >TempVar100
+        staa    >IsoRespData1
         ldx     #$0494
         jmp     >CODE1f17
 
@@ -1366,7 +1366,7 @@ ObdPid14_O2Sensor1:
 L2304:
         ldab    #$FF
 L2306:
-        stab    >TempVar100
+        stab    >IsoRespData1
         puly
         ldaa    #$01
         ldab    <Counter_O2SensorFeedbackCount_Signed
@@ -1375,7 +1375,7 @@ L2306:
 L2312:
         lsrd
         lsrd
-        stab    >TempStack
+        stab    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -1398,7 +1398,7 @@ ObdPid15_O2Sensor2:
 L2331:
         ldab    #$FF
 L2333:
-        stab    >TempVar100
+        stab    >IsoRespData1
         puly
         ldaa    #$01
         ldab    <Counter_O2SensorFeedbackCount_Signed
@@ -1407,7 +1407,7 @@ L2333:
 L233F:
         lsrd
         lsrd
-        stab    >TempStack
+        stab    >IsoRespData2
         ldx     #$0495
         jmp     >CODE1f17
 
@@ -1419,12 +1419,12 @@ L233F:
 ;---------------------------------------------------------------------------------------------------
 ObdFfPid00_Supported:
         ldaa    #$7E
-        staa    >TempStack
+        staa    >IsoRespData2
         ldaa    #$38
-        staa    >L0495
+        staa    >IsoRespData3
         ldaa    #$00
-        staa    >L0496
+        staa    >IsoRespData4
         ldaa    #$00
-        staa    >$0497
+        staa    >IsoRespData5
         ldx     #$0498
         jmp     >CODE1f17

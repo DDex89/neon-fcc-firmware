@@ -129,9 +129,9 @@ Input capture 2 interrupt: vehicle speed sensor pulse; measures the period betwe
 Main program loop, paced to one pass every $1500 timer ticks (10.75 ms). [reviewed]
 
 Each pass calls MainSubLoop, then runs at most one of the eight sub-loops listed in SubLoopList:
-the request bits in L0150 are scanned from bit 0 upward and the first set bit is cleared and its
+the request bits in SubLoopRequests are scanned from bit 0 upward and the first set bit is cleared and its
 routine is called, so the slower jobs are spread over consecutive passes. Finally it measures how
-long the pass took (L0455, worst case in $0454) and waits until TCNT reaches the next slot stored
+long the pass took (LoopTimeLast, worst case in LoopTimeWorst) and waits until TCNT reaches the next slot stored
 in MinimumTimerCountBeforeMainloopCanContinue.
 
 ## 92D9 MainSubLoop
@@ -315,7 +315,7 @@ Selects the adaptive memory cell for the current operating point. [reviewed]
   cell): idle cell 12, or cell 13 when BitFlags_AIS bit 3 is set (a second idle load state).
 - Otherwise: six MAP bands separated by MP1..MP5 (hysteresis DLTMAP) times two RPM bands separated by
   R1 (hysteresis DLTRPM) give cells 0-11.
-When the cell changes, L0037 bit 7 is set so the controller restarts its averaging.
+When the cell changes, BitFlags37 bit 7 is set so the controller restarts its averaging.
 
 ## A74B CalculateSparkAdvance_MM
 Spark advance calculation (main loop). [reviewed]
@@ -881,4 +881,12 @@ HC11: DDRD = $3A, OC1M = 0, TCTL2 = $1A, SPCR = $54 (SPI master, CPHA = 1, E/2 =
 $00/$0C, OPTION = $B9, HPRIO = $2B. I/O device: clears $0402 bits 4 and 6, $0403 bits 4-7, $0404,
 $040B, $040C and $040F bits 4-7; $0407 = $1B, $0408 bits 4-7 set, $040A bits 0/1/3/4 set and
 2/5/7 cleared, $040D = $33. The meaning of the device registers is not known.
+
+## 84F6 CrankMapRpmUpdate
+Crank-synchronous update: converts the MAP sample to MapValue and computes engine RPM from the period between edges. [reviewed - data flow]
+
+Called with A = previous MAP volts (averaged with MapVolts). Keeps the last three RPM values in
+RpmHistory0-2 and the previous period in CrankPeriodPrev, which the (dormant) misfire monitor uses.
+RPM = RpmScaleA/B (or calibration $CB94/$CB96 when SyncFlags74 bit 0 is set) divided by the period.
+Original name GET_AVERAGE_MAP_READING.
 

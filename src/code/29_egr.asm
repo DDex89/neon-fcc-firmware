@@ -39,7 +39,7 @@ LB1DF:
         ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     LB215
-        ldaa    >L01AA
+        ldaa    >Var_01AA
         cmpa    >EGR27_ExhGasRecircConstFromCoolantTemp ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcc     LB1F4
         brset   <IPL1,#$10,LB218
@@ -52,12 +52,12 @@ LB1F4:
         bra     LB213
 
 LB1FF:
-        ldaa    >$0460
+        ldaa    >Egr_0460
         beq     LB20F
         ldab    <Counter_MainLoop
         bitb    #$FF
         bne     LB213
-        dec     >$0460
+        dec     >Egr_0460
         bra     LB213
 
 LB20F:
@@ -102,10 +102,10 @@ LB256:
         bset    <EGRVar2,#$10
         brclr   <OutputDriverBits,#$02,LB261
         clra
-        staa    >L045F
+        staa    >Var_045F
 LB261:
         brclr   <BitFlags66,#$01,LB270
-        ldaa    >L045F
+        ldaa    >Var_045F
         cmpa    >LCB42                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcs     LB270
         bclr    <BitFlags66,#$01
@@ -116,10 +116,10 @@ LB270:
 LB275:
         brset   <OutputDriverBits,#$02,LB27D
         clra
-        staa    >L045F
+        staa    >Var_045F
 LB27D:
         brset   <BitFlags66,#$01,LB28C
-        ldaa    >L045F
+        ldaa    >Var_045F
         cmpa    >LCB42+1                             ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcs     LB28C
         bset    <BitFlags66,#$01
@@ -153,15 +153,15 @@ LB2AA:
 
 LB2AD:
         brclr   <BitFlags71,#$80,LB2BA
-        clr     >$01E8
-        clr     >L01E9
+        clr     >Egr_01E8
+        clr     >Egr_01E9
 LB2B7:
         jmp     >LB3C3
 
 LB2BA:
         ldx     #$0111
         brset   $00,x,#$04,LB2B7
-        ldab    >$01E8
+        ldab    >Egr_01E8
         ldaa    <CoolantTemp
         cmpa    >LCAB6                               ; CRMASK (CruiseMask)
         bhi     LB2D2
@@ -173,21 +173,21 @@ LB2D2:
         ldaa    >LCABB                               ; CRMASK (CruiseMask)
         orab    #$01
 LB2D7:
-        stab    >$01E8
-        tst     >L01E7
+        stab    >Egr_01E8
+        tst     >Var_01E7
         bne     LB2F0
         bitb    #$80
         bne     LB2F0
-        staa    >L01E7
+        staa    >Var_01E7
         bne     LB2ED
         orab    #$80
-        stab    >$01E8
+        stab    >Egr_01E8
 LB2ED:
         jmp     >LB3BE
 
 LB2F0:
         ldaa    <MapValue
-        ldab    >$01E8
+        ldab    >Egr_01E8
         bitb    #$08
         bne     LB302
         cmpa    >LCABE                               ; CRMASK (CruiseMask)
@@ -266,47 +266,47 @@ LB36E:
         bcc     LB375
         andb    #$BF
 LB375:
-        ldaa    >L01E9
+        ldaa    >Egr_01E9
         bitb    #$7E
         beq     LB385
         bita    #$01
         bne     LB385
         oraa    #$01
-        staa    >L01E9
+        staa    >Egr_01E9
 LB385:
-        stab    >$01E8
-        ldab    >$01E8
-        tst     >L01E7
+        stab    >Egr_01E8
+        ldab    >Egr_01E8
+        tst     >Var_01E7
         beq     LB3A8
         bitb    #$80
         beq     LB398
         bitb    #$7E
         bne     LB3C3
 LB398:
-        dec     >L01E7
+        dec     >Var_01E7
         bne     LB3C9
         bitb    #$80
         bne     LB3A8
         orab    #$80
-        stab    >$01E8
+        stab    >Egr_01E8
         bra     LB3C6
 
 LB3A8:
         bitb    #$7E
         bne     LB3C6
-        ldab    >L01E9
+        ldab    >Egr_01E9
         bitb    #$01
         beq     LB3C6
         andb    #$FE
-        stab    >L01E9
+        stab    >Egr_01E9
         ldaa    >LCABC+1                             ; CRMASK (CruiseMask)
-        staa    >L01E7
+        staa    >Var_01E7
 LB3BE:
         bclr    <OutputDriverBits,#$20
         bra     LB3C9
 
 LB3C3:
-        clr     >L01E7
+        clr     >Var_01E7
 LB3C6:
         bset    <OutputDriverBits,#$20
 LB3C9:

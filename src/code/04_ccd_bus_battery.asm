@@ -292,7 +292,7 @@ LinkError:
         ldaa    #$0A
         bclr    $09,y,#$08
         bset    $09,y,#$08
-        clr     >L00F2
+        clr     >Var_00F2
         clr     >LinkFrameCHeader
 L197E:
         staa    >LinkRetryCount

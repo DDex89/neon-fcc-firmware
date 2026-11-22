@@ -49,21 +49,21 @@ LB031:
         ldaa    >SystemStatusFlag_4b6
         bita    #$20
         beq     LB043
-        ldaa    <L000C
+        ldaa    <Var_000C
         cmpa    #$FF
         beq     LB053
         inca
-        staa    <L000C
+        staa    <Var_000C
         bra     LB053
 
 LB043:
-        ldaa    >L014D
+        ldaa    >Vss_014D
         bita    #$04
         beq     LB053
         anda    #$03
         cmpa    #$03
         bcc     LB053
-        inc     >L014D
+        inc     >Vss_014D
 LB053:
         ldd     #$0640
         brset   <BitFlags73,#$10,LB05D
@@ -283,7 +283,7 @@ LB19C:
         cmpa    <VehicleSpeedScaled
         bcs     LB1C0
         ldd     >RPMDLT_RollingAisMinRpm             ; RPMDLT (RollingAisMinRpm)
-        brset   <L0077,#$80,LB1AA
+        brset   <BitFlags77,#$80,LB1AA
         ldd     >LC880                               ; RPMDLT (RollingAisMinRpm)
 LB1AA:
         addd    <TargetIdleSpeedHB

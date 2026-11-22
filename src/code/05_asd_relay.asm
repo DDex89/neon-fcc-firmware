@@ -92,7 +92,7 @@ L1A95:
         bhi     L1AA9
         cpx     <KeyOnOrEngineRunningTime
         bhi     L1AA9
-        ldaa    >L014E
+        ldaa    >CrankActivityTimer
         cmpa    #$D2
         bhi     L1AA9
 L1AA4:

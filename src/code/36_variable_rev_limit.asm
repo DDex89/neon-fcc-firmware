@@ -69,7 +69,7 @@ TPSandMAP_OK:
 
 LFCB9:
         ldaa    #$FF
-        brclr   <L0036,#$80,StoreVariableRevLimit
+        brclr   <BitFlags36,#$80,StoreVariableRevLimit
         ldaa    <TPSOverMINTHR
         ldx     #RevLimitFromTPSOverMinThr           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -99,7 +99,7 @@ StoreVariableRevLimit:
         ldaa    #$FF
 LFCF1:
         psha
-        ldaa    >$0183
+        ldaa    >Var_0183
         ldx     #RevLimitFrom0183
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         pula
@@ -147,7 +147,7 @@ LFD44:
         bra     LFD67
 
 LFD52:
-        bset    <L0036,#$80
+        bset    <BitFlags36,#$80
         ldaa    <TPSOverMINTHR
         ldx     #RevLimitFromTPSOverMinThr           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -155,7 +155,7 @@ LFD52:
         ldy     #ErrBytes_CODE14_a
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
 LFD67:
-        brclr   <L0036,#$80,VarRevLimit_Return
+        brclr   <BitFlags36,#$80,VarRevLimit_Return
         brset   <BitFlags65,#$80,VarRevLimit_Return
         ldaa    <EngineRpm_HB
         cmpa    >LCE7A
@@ -172,7 +172,7 @@ LFD67:
 ; TurnOffVariableRevLimit  ($FD84)
 ;---------------------------------------------------------------------------------------------------
 TurnOffVariableRevLimit:
-        bclr    <L0036,#$80
+        bclr    <BitFlags36,#$80
         ldaa    #$FF
         staa    >VariableRevLimit
         clra
@@ -199,7 +199,7 @@ LFD9F:
         bls     LFDB8
         ldaa    >REVLMT4_MapAbove75PctAndThrLimpin2000 ; REVLMT4 (MapAbove75PctAndThrLimpin2000)
         staa    >VariableRevLimit
-        bset    <L0036,#$80
+        bset    <BitFlags36,#$80
         bra     VarRevLimit_Return
 
 LFDB8:
@@ -208,7 +208,7 @@ LFDB8:
         beq     LFDC3
         brclr   <SwitchInputs,#$40,TurnOffVariableRevLimit2
 LFDC3:
-        brclr   <L0036,#$80,TurnOffVariableRevLimit2
+        brclr   <BitFlags36,#$80,TurnOffVariableRevLimit2
         ldaa    <Temp0
         ldx     #TABLEcdc6                           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).

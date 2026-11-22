@@ -40,12 +40,12 @@ Isr_TOC1_Periodic:
         ldx     #$0114
         brset   $00,x,#$04,L12AE
         ldx     #REGS
-        ldab    <L00F2
+        ldab    <Var_00F2
         cmpb    #$07
         bcc     L1285
         brset   <LinkRequestFlags,#$20,L128D
         brclr   <LinkStatusFlags,#$20,L1262
-        ldaa    >L0162
+        ldaa    >Var_0162
         lsra
         lsra
         lsra
@@ -53,7 +53,7 @@ Isr_TOC1_Periodic:
         cba
         bne     L1262
         incb
-        stab    <L00F2
+        stab    <Var_00F2
         cmpb    #$07
         bcc     L1285
 L1262:
@@ -63,9 +63,9 @@ L1262:
 ; CODE1265  ($1265)
 ;---------------------------------------------------------------------------------------------------
 CODE1265:
-        staa    >L0162
+        staa    >Var_0162
         aslb
-        addb    <L00F2
+        addb    <Var_00F2
         ldx     #L1204
         abx
         ldaa    $00,x
@@ -82,7 +82,7 @@ L1275:
 L1285:
         bhi     L128D
         incb
-        stab    <L00F2
+        stab    <Var_00F2
         bset    <BitFlags69,#$10
 L128D:
         brset   <Timer_AlternatorDutyCycle,#$03,L1293
@@ -115,15 +115,15 @@ L12D3:
 
 L12D6:
         ldx     #REGS
-        ldaa    >L0453
+        ldaa    >Toc1_0453
         inca
         cmpa    #$05
         bcs     L12E2
         clra
 L12E2:
-        staa    >L0453
+        staa    >Toc1_0453
         brclr   <BitFlags73,#$10,L1314
-        ldaa    >L0453
+        ldaa    >Toc1_0453
         bne     L1314
         ldd     <VehicleSpeed_HB
         ldx     #CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
@@ -137,7 +137,7 @@ L12F8:
         lsrd
         std     <InjCylinderMask
         bne     L1304
-        inc     >L00FE
+        inc     >Toc1_00FE
 L1304:
         ldd     <VehicleSpeed_HB
         beq     L130A

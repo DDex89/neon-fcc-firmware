@@ -233,7 +233,7 @@ L7176:
         ldx     #DFRPM1_DecelFuelShutoffTurnonLimitFromCoolantTemp ; DFRPM1: DecelFuelShutoffTurnonLimitFromCoolantTemp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         psha
-        ldaa    >L046F
+        ldaa    >Var_046F
         ldx     #DFRPMX_DecelFuelShutoffTurnonLimitFrom0x046f ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         pulb
@@ -357,10 +357,10 @@ L7241:
 ; Called from: SubLoopG
 ;---------------------------------------------------------------------------------------------------
 CODE7242_SM:
-        ldaa    >L0218
+        ldaa    >Var_0218
         beq     L7284
         deca
-        staa    >L0218
+        staa    >Var_0218
         beq     L7250
         jmp     >L72F7
 
@@ -386,25 +386,25 @@ L726D:
         bcc     L7272
         ldaa    #$FF
 L7272:
-        staa    >L04BD
-        staa    >L04BB
-        staa    >L04BC
+        staa    >AsdVolts_04BD
+        staa    >AsdVolts_04BB
+        staa    >AsdVolts_04BC
         ldab    >SystemStatusFlag_4b6
         bitb    #$10
         beq     L7284
-        staa    <L000B
+        staa    <AsdVolts_000B
 L7284:
-        ldaa    >L04BB
-        staa    >L04BC
+        ldaa    >AsdVolts_04BB
+        staa    >AsdVolts_04BC
         ldaa    >AsdOutputVolts
         ldx     #TABLEce82
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        staa    >L04BB
+        staa    >AsdVolts_04BB
         ldaa    <BatteryVolts
         ldx     #TABLEce95
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Temp0
-        ldaa    >L04BB
+        ldaa    >AsdVolts_04BB
         ldab    <Temp0
         bpl     L72AE
         negb
@@ -418,15 +418,15 @@ L72AE:
         bcc     L72B3
         ldaa    #$FF
 L72B3:
-        staa    >L04BB
+        staa    >AsdVolts_04BB
         ldaa    #$FF
         suba    >LCE94
-        ldab    <L000B
+        ldab    <AsdVolts_000B
         mul
         adca    #$00
         psha
         ldaa    >LCE94
-        ldab    >L04BB
+        ldab    >AsdVolts_04BB
         mul
         adca    #$00
         pulb
@@ -434,11 +434,11 @@ L72B3:
         bcc     L72D0
         ldaa    #$FF
 L72D0:
-        staa    <L000B
+        staa    <AsdVolts_000B
         ldaa    >SystemStatusFlag_4b6
         bita    #$08
         bne     L72F7
-        ldaa    <L000B
+        ldaa    <AsdVolts_000B
         cmpa    >LCEA3
         bls     L72EA
         ldaa    >SystemStatusFlag_4b6

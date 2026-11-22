@@ -77,7 +77,7 @@ L7344:
         ldab    <EngineRpm_HB
         cmpb    >LC08E                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
         bhi     L7363
-        ldab    >L04B1
+        ldab    >Pte_04B1
         cmpb    >LC08F                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
         bcs     L7372
 L7363:
@@ -93,11 +93,11 @@ L7372:
         ldab    <MapValue
         cmpb    <Temp1
         bls     L739D
-        ldab    >L04B1
+        ldab    >Pte_04B1
         cmpb    >LC090                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
         bcc     L739D
         addb    $01,x
-        stab    >L04B1
+        stab    >Pte_04B1
         bra     L739D
 
 L7387:
@@ -107,13 +107,13 @@ L7387:
         clrb
 L738E:
         stab    <TempA
-        ldab    >L04B1
+        ldab    >Pte_04B1
         addb    $01,x
         cmpb    #$FF
         bne     L739A
         clrb
 L739A:
-        stab    >L04B1
+        stab    >Pte_04B1
 L739D:
         brset   <IPL2,#$08,L73A7
         clrb
@@ -165,7 +165,7 @@ L73F1:
         ldaa    <MapValue
         cmpa    <Temp1
         bls     L73FF
-        ldaa    >L04B1
+        ldaa    >Pte_04B1
         cmpa    >LC08F                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
         bcc     L7400
 L73FF:
@@ -181,7 +181,7 @@ L7402:
         ldx     #WOTENR_WOTEnrichmentFromRPMAndMAP   ; WOTENR (WOTEnrichmentFromRPMAndMAP)
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
         psha
-        ldd     >L0211
+        ldd     >Var_0211
         cpd     >LC0B7                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
         bls     L7404
         ldaa    <EngineRpm_HB
@@ -262,7 +262,7 @@ L748D:
         bclr    <InjMaskCE,#$40
         clrb
         ldaa    <EngineRpm_HB
-        cmpa    >L044D
+        cmpa    >Pte_044D
         beq     L74D6
         ldaa    >LBD8C                               ; RETSPD: Retard from Speed.
         adda    >LBD8B                               ; RETSPD: Retard from Speed.
@@ -271,7 +271,7 @@ L748D:
         adda    >LBD8B                               ; RETSPD: Retard from Speed.
         staa    <Temp1
         ldaa    <EngineRpm_HB
-        cmpa    >L044D
+        cmpa    >Pte_044D
         bcs     L74C2
         cmpa    <Temp0
         bcs     L74D6
@@ -298,7 +298,7 @@ L74CD:
         cmpa    >LBD8D                               ; RETSPD: Retard from Speed.
         bcc     L74D6
 L74D3:
-        stab    >L044A
+        stab    >Pte_044A
 L74D6:
         clrb
         ldaa    <MapValue
@@ -338,11 +338,11 @@ L7515:
         cmpa    >LBD90                               ; RETSPD: Retard from Speed.
         bcc     L751F
 L751C:
-        stab    >$044B
+        stab    >Pte_044B
 L751F:
         ldx     #LBD91                               ; RETSPD: Retard from Speed.
-        ldab    >L044A
-        addb    >$044B
+        ldab    >Pte_044A
+        addb    >Pte_044B
         abx
         ldaa    $00,x
 L752B:
@@ -355,9 +355,9 @@ L752E:
         bls     L752E
         clra
 L7539:
-        staa    >L0448
+        staa    >Var_0448
         ldaa    <EngineRpm_HB
-        staa    >L044D
+        staa    >Pte_044D
         ldaa    <MapValue
         staa    >MAPTemp44c
         bra     L7552
@@ -367,16 +367,16 @@ L7548:
 L754C:
         clra
         clrb
-        std     >L01E3
+        std     >Var_01E3
         rts
 
 L7552:
         ldaa    <TpsVolts
-        ldab    >L01E5
-        staa    >L01E5
+        ldab    >Pte_01E5
+        staa    >Pte_01E5
         sba
         bcs     L754C
-        staa    >$01E6
+        staa    >Var_01E6
         staa    <Temp0
         suba    >LC362                               ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
         bcs     L754C
@@ -470,7 +470,7 @@ L75EA:
         asld
         addd    <Temp0
         asld
-        std     >L01E3
+        std     >Var_01E3
         ldab    #$03
         sei
         andb    <SyncFlags74
@@ -490,7 +490,7 @@ L7627:
         clrb
 L7629:
         std     <Temp2
-        ldd     >L01E3
+        ldd     >Var_01E3
         cpd     <Temp2
         bcs     L7636
         std     >InjectorPulsewidth_HB_Cyl4
@@ -507,7 +507,7 @@ L764A:
         clrb
 L764C:
         std     <Temp2
-        ldd     >L01E3
+        ldd     >Var_01E3
         cpd     <Temp2
         bcs     L7659
         std     >InjectorPulsewidth_HB_Cyl2
@@ -524,7 +524,7 @@ L766D:
         clrb
 L766F:
         std     <Temp2
-        ldd     >L01E3
+        ldd     >Var_01E3
         cpd     <Temp2
         bcs     L767C
         std     >InjectorPulsewidth_HB_Cyl1
@@ -541,7 +541,7 @@ L7690:
         clrb
 L7692:
         std     <Temp2
-        ldd     >L01E3
+        ldd     >Var_01E3
         cpd     <Temp2
         bcs     L769F
         std     >InjectorPulsewidth_HB_Cyl3
@@ -568,32 +568,32 @@ CalculateSumOfAllFuelModifiers_MM:
         brset   <b58_IPL1,#$02,L76E5
         brclr   <BitFlagsE3,#$80,L76E5
         brset   <BitFlags65,#$01,L76E5
-        ldaa    >$0470
+        ldaa    >Var_0470
         beq     L76BD
         deca
-        staa    >$0470
+        staa    >Var_0470
         bra     L76D5
 
 L76BD:
         ldaa    >LC4F8                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
-        staa    >$0470
-        ldaa    >L0471
+        staa    >Var_0470
+        ldaa    >Var_0471
         beq     L76CC
         deca
-        staa    >L0471
+        staa    >Var_0471
 L76CC:
-        ldaa    >$0472
+        ldaa    >Var_0472
         beq     L76D5
         deca
-        staa    >$0472
+        staa    >Var_0472
 L76D5:
-        ldaa    >L0471
+        ldaa    >Var_0471
         ldab    <PointerIntoAdaptiveMemory
         cmpb    #$0C
         beq     L76E5
         cmpb    #$0D
         beq     L76E5
-        ldaa    >$0472
+        ldaa    >Var_0472
 L76E5:
         adda    <ValueFromAdaptiveMemory
         bvc     L76F2
@@ -857,14 +857,14 @@ CODE7886:
         ldaa    <EngineRpm_HB
         cmpa    >LC0B6                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
         bls     L78A8
-        ldd     >L0211
+        ldd     >Var_0211
         addd    #$0001
         bcc     L789D
         ldd     #$FFFF
 L789D:
-        std     >L0211
+        std     >Var_0211
         ldd     >LC0B9                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
-        std     >L0213
+        std     >Code7886_0213
         bra     L78DB
 
 L78A8:
@@ -874,23 +874,23 @@ L78A8:
         cmpa    <MapValue
         bhi     L78C3
         ldd     >LC0B9                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
-        std     >L0213
+        std     >Code7886_0213
         ldaa    <CoolantTemp
         cmpa    >LC0B5                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
         bls     L78D0
         bra     L78DB
 
 L78C3:
-        ldd     >L0213
+        ldd     >Code7886_0213
         beq     L78D8
         subd    #$0001
-        std     >L0213
+        std     >Code7886_0213
         beq     L78D8
 L78D0:
-        ldd     >L0211
+        ldd     >Var_0211
         beq     L78DB
         subd    #$0001
 L78D8:
-        std     >L0211
+        std     >Var_0211
 L78DB:
         rts

@@ -174,7 +174,7 @@ LAD01:
         ldx     #RETMAX_MaxKnockRetardFromMap        ; RETMAX: Maximum Knock Retard from Map
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
 LAD07:
-        staa    <L00CA
+        staa    <Var_00CA
         ldaa    <EngineRpm_HB
         ldx     #DLTKNK_KnockSensorVoltageForKnockFromRpm ; DLTKNK: Input from the knock sensor that is above this voltage is considered K
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -275,13 +275,13 @@ CalculateAverageKnockVolts_SM:
         bne     LAE0C
         ldaa    <TpsVolts
         tab
-        suba    >L0191
+        suba    >Knock_0191
         bpl     LADB8
         nega
 LADB8:
         cmpa    >KNATPS_MinThrotPosForAverageKnockVoltCalc ; KNATPS (MinThrotPosForAverageKnockVoltCalc)
         bcc     LAE0C
-        subb    >L0193
+        subb    >Knock_0193
         bpl     LADC3
         negb
 LADC3:
@@ -391,24 +391,24 @@ LAE31:
 ; the scheduler is never called, so this monitor does not run (see docs/en/diagnostics.md).
 ;---------------------------------------------------------------------------------------------------
 MonitorMisfire:
-        ldaa    <L00E5
+        ldaa    <BitFlagsE5
         anda    #$F7
-        staa    <L00E5
+        staa    <BitFlagsE5
         ldab    >ObdStatusFlags
         bitb    #$01
         beq     LAE50
         oraa    #$08
-        staa    <L00E5
+        staa    <BitFlagsE5
 LAE50:
         ldaa    >ObdMonStatus_Misfire
         anda    #$10
         bne     LAE5A
-        bclr    <L00E5,#$20
+        bclr    <BitFlagsE5,#$20
 LAE5A:
-        ldaa    >L01AA
+        ldaa    >Var_01AA
         cmpa    >LCBE0
         bcc     LAE65
-        bset    <L00E5,#$04
+        bset    <BitFlagsE5,#$04
 LAE65:
         adda    >LCBDF
         bcc     LAE6C
@@ -416,123 +416,123 @@ LAE65:
 LAE6C:
         cmpa    <CoolantTemp
         bcc     LAE73
-        bclr    <L00E5,#$04
+        bclr    <BitFlagsE5,#$04
 LAE73:
-        ldaa    >L019D
+        ldaa    >Misfire_019D
         cmpa    #$64
         bcc     LAE7D
         jmp     >LAF21
 
 LAE7D:
-        ldaa    >L019E
+        ldaa    >Misfire_019E
         cmpa    >LCBD2
         bls     LAEBB
-        bset    <L00E5,#$01
+        bset    <BitFlagsE5,#$01
         sei
-        ldaa    <L00E6
+        ldaa    <Misfire_00E6
         anda    #$F0
-        oraa    <L00E7
-        staa    <L00E7
+        oraa    <MonMisfire_00E7
+        staa    <MonMisfire_00E7
         ldaa    >ObdMonStatus_Misfire
         oraa    #$49
         staa    >ObdMonStatus_Misfire
         ldaa    >ObdStatusFlags
         oraa    #$10
         staa    >ObdStatusFlags
-        ldaa    >L012B
+        ldaa    >Misfire_012B
         oraa    #$80
-        staa    >L012B
+        staa    >Misfire_012B
         ldaa    #$80
-        staa    >L012C
+        staa    >MonMisfire_012C
         clra
-        staa    >L01A1
-        staa    >L01A2
-        staa    >L01A3
-        staa    >L01A4
+        staa    >Misfire_01A1
+        staa    >Misfire_01A2
+        staa    >Misfire_01A3
+        staa    >Misfire_01A4
 LAEBB:
-        bclr    <L00E6,#$F0
-        ldaa    >L01A0
-        adda    >L019E
+        bclr    <Misfire_00E6,#$F0
+        ldaa    >Misfire_01A0
+        adda    >Misfire_019E
         bcc     LAEC8
         ldaa    #$FF
 LAEC8:
-        staa    >L01A0
+        staa    >Misfire_01A0
         cli
-        ldab    >L019F
+        ldab    >MonMisfire_019F
         incb
-        stab    >L019F
+        stab    >MonMisfire_019F
         cmpb    #$05
         bcs     LAF1A
         cmpa    >LCBD3
         bls     LAF11
         sei
-        ldaa    <L00E6
-        oraa    <L00E7
-        staa    <L00E7
+        ldaa    <Misfire_00E6
+        oraa    <MonMisfire_00E7
+        staa    <MonMisfire_00E7
         ldaa    >ObdMonStatus_Misfire
         oraa    #$48
-        ldab    >L012C
+        ldab    >MonMisfire_012C
         andb    #$80
-        brclr   <L00E5,#$20,LAEF5
+        brclr   <BitFlagsE5,#$20,LAEF5
         oraa    #$01
         orab    #$80
 LAEF5:
         staa    >ObdMonStatus_Misfire
-        stab    >L012C
-        ldaa    >L012B
+        stab    >MonMisfire_012C
+        ldaa    >Misfire_012B
         oraa    #$80
-        staa    >L012B
+        staa    >Misfire_012B
         cli
         clra
-        staa    >L01A1
-        staa    >L01A2
-        staa    >L01A3
-        staa    >L01A4
+        staa    >Misfire_01A1
+        staa    >Misfire_01A2
+        staa    >Misfire_01A3
+        staa    >Misfire_01A4
 LAF11:
         clra
-        staa    <L00E6
-        staa    >L019F
-        staa    >L01A0
+        staa    <Misfire_00E6
+        staa    >MonMisfire_019F
+        staa    >Misfire_01A0
 LAF1A:
         clra
-        staa    >L019D
-        staa    >L019E
+        staa    >Misfire_019D
+        staa    >Misfire_019E
 LAF21:
-        ldaa    >L012B
+        ldaa    >Misfire_012B
         anda    #$80
         bne     LAF2B
         jmp     >LAF9D
 
 LAF2B:
-        ldaa    >L012C
+        ldaa    >MonMisfire_012C
         cmpa    #$80
         bne     LAF35
         jmp     >LAFAA
 
 LAF35:
-        ldaa    >L01A1
+        ldaa    >Misfire_01A1
         cmpa    #$64
         bcs     LAF95
-        ldaa    >L01A2
+        ldaa    >Misfire_01A2
         cmpa    >LCBD2
         bls     LAF49
         ldab    #$80
-        stab    >L012C
+        stab    >MonMisfire_012C
 LAF49:
-        inc     >L01A3
+        inc     >Misfire_01A3
         sei
-        ldaa    >L01A4
-        adda    >L01A2
+        ldaa    >Misfire_01A4
+        adda    >Misfire_01A2
         bcc     LAF57
         ldaa    #$FF
 LAF57:
-        staa    >L01A4
+        staa    >Misfire_01A4
         cli
-        ldaa    >L01A3
+        ldaa    >Misfire_01A3
         cmpa    #$05
         bcs     LAF8E
-        ldab    >L012C
-        ldaa    >L01A4
+        ldab    >MonMisfire_012C
+        ldaa    >Misfire_01A4
         cmpa    >LCBD3
         bls     LAF71
         andb    #$80
@@ -549,24 +549,24 @@ LAF71:
         staa    >ObdMonStatus_Misfire
 LAF82:
         orab    #$80
-        stab    >L012C
+        stab    >MonMisfire_012C
         clra
-        staa    >L01A3
-        staa    >L01A4
+        staa    >Misfire_01A3
+        staa    >Misfire_01A4
 LAF8E:
         clra
-        staa    >L01A1
-        staa    >L01A2
+        staa    >Misfire_01A1
+        staa    >Misfire_01A2
 LAF95:
         ldx     #$0129
         jsr     >LECD7
         bra     LAFAA
 
 LAF9D:
-        brclr   <L00E5,#$80,LAFAA
+        brclr   <BitFlagsE5,#$80,LAFAA
         ldx     #$0129
         jsr     >LED05
-        bclr    <L00E5,#$80
+        bclr    <BitFlagsE5,#$80
 LAFAA:
         rts
 
@@ -606,7 +606,7 @@ LAFD2:
         ldx     #TABLEcc18
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
 LAFEC:
-        staa    >L0476
+        staa    >Var_0476
         rts
 
 

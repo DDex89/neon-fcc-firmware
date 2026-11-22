@@ -162,7 +162,7 @@ L6865:
 L686A:
         ldab    >LD03E
         beq     L6886
-        clr     >L0480
+        clr     >AltSerial_0480
         ldab    #$25
         stab    >BAUD
         ldab    >DebugTemp3
@@ -510,7 +510,7 @@ L6A48:
         cmpa    >LCB5E                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcs     L6A83
         ldaa    <VehicleSpeed_HB
-        brset   <L006E,#$08,L6A6A
+        brset   <BitFlags6E,#$08,L6A6A
         cmpa    >LCB5F                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcc     L6A74
         bra     L6A83
@@ -518,11 +518,11 @@ L6A48:
 L6A6A:
         cmpa    >LCB60                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcc     L6A74
-        bclr    <L006E,#$08
+        bclr    <BitFlags6E,#$08
         bra     L6A83
 
 L6A74:
-        bset    <L006E,#$08
+        bset    <BitFlags6E,#$08
         brset   <EGRVar2,#$10,L6A83
         brclr   <BitFlags65,#$10,L6A83
         brclr   <BitFlags66,#$10,L6A86
@@ -535,7 +535,7 @@ L6A86:
         bcs     L6AF1
         cmpa    >LCB45                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
         bcs     L6AF1
-        ldx     >L0178
+        ldx     >MonEgr_0178
         ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     L6ADE
@@ -555,9 +555,9 @@ L6A86:
         ldaa    <Counter_O2SensorFeedbackCount_Signed
         cmpa    >LCB4E                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
         bge     L6AF1
-        ldx     >L0178
+        ldx     >MonEgr_0178
         inx
-        stx     >L0178
+        stx     >MonEgr_0178
         ldab    >LCB4F                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
         suba    >EGR_Temp_1
         bvc     L6AE0
@@ -602,7 +602,7 @@ L6AF0:
         pulx
 L6AF1:
         ldd     #$0000
-        std     >L0178
+        std     >MonEgr_0178
         bclr    <EGRVar2,#$10
         ldaa    >ObdMonStatus_Egr
         anda    #$FB
@@ -634,7 +634,7 @@ CODE6b1d:
         bcc     CODE6b91
 L6B22:
         inx
-        stx     >L0178
+        stx     >MonEgr_0178
         ldaa    <MapValue
         ldx     #LCB50                               ; EGR16 (ExhGasRecircConstLoLimit16)
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
@@ -680,11 +680,11 @@ L6B6B:
         blt     L6BC2
         cmpa    >SCRMP1_SecondaryRampSubtractor1     ; SCRMP1 (SecondaryRampSubtractor1)
         bgt     L6BC2
-        ldx     >L0178
+        ldx     >MonEgr_0178
         cpx     >EGR19_ExhGasRecircConstLoLimit19    ; EGR15A (ExhGasRecircConstFromRPMHiLimit15a)
         bcs     L6BC2
         ldaa    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
-        staa    >L045A
+        staa    >Var_045A
         ldaa    >ObdMonStatus_Egr
         anda    #$FB
         anda    #$7F
@@ -698,15 +698,15 @@ L6B6B:
 ;---------------------------------------------------------------------------------------------------
 CODE6b91:
         ldd     #$0000
-        std     >L0178
+        std     >MonEgr_0178
         ldaa    >ObdMonStatus_Egr
-        ldab    >$04AF
+        ldab    >MonEgr_04AF
         incb
-        stab    >$04AF
+        stab    >MonEgr_04AF
         cmpb    >LCB5B                               ; SCRMP1 (SecondaryRampSubtractor1)
         bcs     L6BBD
         ldab    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
-        stab    >L045A
+        stab    >Var_045A
         oraa    #$48
         bita    #$10
         beq     L6BBB
@@ -829,18 +829,18 @@ L6C49:
         bcs     L6C66
         asla
         bcs     L6C5C
-        stab    >L016B
+        stab    >AltSerial_016B
         ldaa    #$10
         bra     L6C84
 
 L6C5C:
-        stab    >L016A
+        stab    >AltSerial_016A
         jsr     >L6D66
         ldaa    #$20
         bra     L6C84
 
 L6C66:
-        ldy     >L016A
+        ldy     >AltSerial_016A
         ldab    $00,y
         ldaa    #$40
         bra     L6C84
@@ -864,7 +864,7 @@ L6C84:
 
 L6C89:
         sei
-        ldy     >L016A
+        ldy     >AltSerial_016A
         cpy     #IDENT1_IDCode_1                     ; IDCODE_1 (IDCODE_1)
         bcs     L6CA1
         stab    $00,y
@@ -885,7 +885,7 @@ L6CA8:
         cpy     #L6CE1
         bne     L6CA8
         ldx     #$04B0
-        ldy     >L016A
+        ldy     >AltSerial_016A
         jsr     $00,x
         ldx     #$0480
         bra     L6C97
@@ -922,22 +922,22 @@ L6CE1:
         bcs     L6CFE
         asla
         bcs     L6CF7
-        stab    >L0169
+        stab    >AltSerial_0169
         ldaa    #$08
         bra     L6D18
 
 L6CF7:
-        stab    >$0168
+        stab    >AltSerial_0168
         ldaa    #$10
         bra     L6D18
 
 L6CFE:
-        stab    >L016B
+        stab    >AltSerial_016B
         ldaa    #$20
         bra     L6D18
 
 L6D05:
-        stab    >L016A
+        stab    >AltSerial_016A
         jsr     >L6D66
         ldaa    #$C0
         bra     L6D18
@@ -954,8 +954,8 @@ L6D18:
         jmp     >L6D4F
 
 L6D1D:
-        ldx     >L016A
-        ldy     >$0168
+        ldx     >AltSerial_016A
+        ldy     >AltSerial_0168
         ldab    >SCDR
         ldaa    $00,x
         staa    >SCDR
@@ -968,17 +968,17 @@ L6D1D:
         rts
 
 L6D39:
-        stx     >L016A
-        sty     >$0168
+        stx     >AltSerial_016A
+        sty     >AltSerial_0168
         cba
         bne     L6D45
         pulx
         rts
 
 L6D45:
-        ldaa    >L0480
+        ldaa    >AltSerial_0480
         anda    #$7F
-        staa    >L0480
+        staa    >AltSerial_0480
         pulx
         rts
 
@@ -1020,7 +1020,7 @@ EchoSerialData:
 ;---------------------------------------------------------------------------------------------------
 L6D66:
         pshx
-        ldx     >L016A
+        ldx     >AltSerial_016A
         cpx     #L1200
         bcs     L6D7E
         cpx     #$FFFF

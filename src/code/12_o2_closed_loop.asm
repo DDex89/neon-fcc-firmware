@@ -46,7 +46,7 @@ L4907:
         anda    #$04
 L4914:
         beq     O2_UsingFeedback
-        ldaa    >L0456
+        ldaa    >Var_0456
         beq     O2_UsingFeedback
 L491B:
         ldaa    #$04
@@ -144,7 +144,7 @@ L49A4:
         asla
         asla
         asla
-        staa    >L0484
+        staa    >Var_0484
         rts
 
 L49AD:
@@ -236,8 +236,8 @@ L4A3B:
         bne     SwitchOrStayOpenLoop
         ldab    <CylTrim_Adaptive_Var1
         beq     L4A6C
-        brclr   <L0037,#$40,L4A6C
-        brset   <L0037,#$08,L4A6C
+        brclr   <BitFlags37,#$40,L4A6C
+        brset   <BitFlags37,#$08,L4A6C
         cmpb    >CLTRMN_MinimumCylinderTrim          ; CLTRMN (MinimumCylinderTrim)
         bcs     SwitchOrStayOpenLoop
 L4A6C:
@@ -296,10 +296,10 @@ L4ABD:
         brclr   $00,x,#$04,L4AE8
         ldx     #$043D
         brclr   $00,x,#$01,L4AE8
-        ldd     >L0445
+        ldd     >Var_0445
         addd    #$0001
         beq     L4AE8
-        std     >L0445
+        std     >Var_0445
 L4AE8:
         ldab    <Temp0
         eorb    <BitFlags65
@@ -309,17 +309,17 @@ L4AE8:
         stab    <BitFlags65
         ldx     #$010E
         brclr   $00,x,#$04,L4AFE
-        inc     >L01F3
+        inc     >Var_01F3
 L4AFE:
         brclr   <BitFlags65,#$04,L4B1B
         ldx     #$0111
         brclr   $00,x,#$04,L4B1B
         ldx     #$043D
         brclr   $00,x,#$01,L4B1B
-        ldd     >$0443
+        ldd     >Var_0443
         addd    #$0001
         beq     L4B1B
-        std     >$0443
+        std     >Var_0443
 L4B1B:
         clrb
         ldaa    <Timer_OutOfClosedLoopMode
@@ -540,9 +540,9 @@ L4C51:
         bitb    #$04
         beq     L4C66
         tab
-        cmpb    >L04B2
+        cmpb    >Var_04B2
         blt     L4C66
-        subb    >L04B2
+        subb    >Var_04B2
         cmpb    >LCCE8
         bhi     DontUpdateO2FeedbackCount
 L4C66:
@@ -637,7 +637,7 @@ AdaptiveMemory_UpdateCellIfRequired:
         bra     L4CE0
 
 L4CB8:
-        brset   <L0037,#$08,L4CE0
+        brset   <BitFlags37,#$08,L4CE0
         ldy     #$0026
         cmpb    >CL2PTR_Cyl2AdaptiveMemoryPointer    ; CL2PTR (Cyl2AdaptiveMemoryPointer)
         beq     L4CD3
@@ -762,8 +762,8 @@ L4D8A:
 ;   idle cell): idle cell 12, or cell 13 when BitFlags_AIS bit 3 is set (a second idle load
 ;   state).
 ; - Otherwise: six MAP bands separated by MP1..MP5 (hysteresis DLTMAP) times two RPM bands
-;   separated by R1 (hysteresis DLTRPM) give cells 0-11. When the cell changes, L0037 bit 7 is set
-;   so the controller restarts its averaging.
+;   separated by R1 (hysteresis DLTRPM) give cells 0-11. When the cell changes, BitFlags37 bit 7
+;   is set so the controller restarts its averaging.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
@@ -818,10 +818,10 @@ L4DD2:
 L4DD9:
         decb
 L4DDA:
-        bclr    <L0037,#$80
+        bclr    <BitFlags37,#$80
         cmpb    <PointerIntoAdaptiveMemory
         beq     L4E00
-        bset    <L0037,#$80
+        bset    <BitFlags37,#$80
         clra
         staa    <AdaptiveCellUpdateTimer_IncrementedEveryCamRisingEdge
         staa    <CylTrim_Adaptive_Var1
@@ -871,7 +871,7 @@ L4E1C:
         ldaa    <EngineRunningTimeMaxFF
         cmpa    >LC473                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
         bls     L4E3B
-        brclr   <L0037,#$80,L4E3B
+        brclr   <BitFlags37,#$80,L4E3B
         clr     >Counter_O2SensorFeedbackCount_Signed
 L4E3B:
         rts

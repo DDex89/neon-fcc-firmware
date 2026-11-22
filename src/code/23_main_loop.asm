@@ -15,10 +15,10 @@
 ; Main program loop, paced to one pass every $1500 timer ticks (10.75 ms). [reviewed]
 ;
 ; Each pass calls MainSubLoop, then runs at most one of the eight sub-loops listed in SubLoopList:
-; the request bits in L0150 are scanned from bit 0 upward and the first set bit is cleared and its
-; routine is called, so the slower jobs are spread over consecutive passes. Finally it measures
-; how long the pass took (L0455, worst case in $0454) and waits until TCNT reaches the next slot
-; stored in MinimumTimerCountBeforeMainloopCanContinue.
+; the request bits in SubLoopRequests are scanned from bit 0 upward and the first set bit is
+; cleared and its routine is called, so the slower jobs are spread over consecutive passes.
+; Finally it measures how long the pass took (LoopTimeLast, worst case in LoopTimeWorst) and waits
+; until TCNT reaches the next slot stored in MinimumTimerCountBeforeMainloopCanContinue.
 ;---------------------------------------------------------------------------------------------------
 MainProgramLoop:
         bsr     MainSubLoop                          ; Work done on every main-loop pass (10.75 ms).
@@ -29,11 +29,11 @@ L9286:
         rola
         bcs     L92A1
         psha
-        anda    >L0150
+        anda    >SubLoopRequests
         pula
         beq     L9286
-        eora    >L0150
-        staa    >L0150
+        eora    >SubLoopRequests
+        staa    >SubLoopRequests
         clra
         asld
         addd    #$92C7
@@ -50,10 +50,10 @@ L92AB:
         sba
         nega
         adda    #$15
-        staa    >L0455
-        cmpa    >$0454
+        staa    >LoopTimeLast
+        cmpa    >LoopTimeWorst
         bls     L92BA
-        staa    >$0454
+        staa    >LoopTimeWorst
 L92BA:
         ldaa    >MinimumTimerCountBeforeMainloopCanContinue
 SetupMainLoopCounter:
@@ -94,9 +94,9 @@ MainSubLoop:
         ldd     #$55AA
         staa    >COPRST
         stab    >COPRST
-        ldaa    >L0409
+        ldaa    >IODev_0409
         eora    #$10
-        staa    >L0409
+        staa    >IODev_0409
         sei
         ldd     >TCNT
         std     <Temp0
@@ -340,10 +340,10 @@ L947A:
 ; Called from: GetControlFeedback_DetermineIfShutdownRequired_MM
 ;---------------------------------------------------------------------------------------------------
 ShutDownSubroutineA:
-        clr     >L0104
-        clr     >$0105
-        clr     >L0108
-        ldaa    >$0109
+        clr     >Shutdown_0104
+        clr     >Shutdown_0105
+        clr     >Shutdown_0108
+        ldaa    >Shutdown_0109
         anda    #$00
         ldx     #$0113
         bclr    $00,x,#$40
@@ -359,9 +359,9 @@ L949B:
         brclr   $00,x,#$80,L94AD
         oraa    #$40
 L94AD:
-        staa    >$0109
+        staa    >Shutdown_0109
         oraa    #$01
-        staa    >$0109
+        staa    >Shutdown_0109
         bita    #$C0
         beq     L94C7
         ldaa    <BatteryVolts
@@ -417,14 +417,14 @@ L9526:
         bne     L9526
         brclr   <LinkInputWordHi,#$01,L9512
 L952D:
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$F0
         oraa    #$02
-        staa    >$0109
+        staa    >Shutdown_0109
         bset    <OutputDriverBits,#$04
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         ldx     #$FFFF
-        stx     >L010A
+        stx     >Shutdown_010A
 L9543:
         ldy     #REGS
         bset    $23,y,#$40                           ; TFLG1: Timer interrupt flags 1 (write 1 to clear)
@@ -435,7 +435,7 @@ L9543:
         ldd     #$0001
         addd    $00,x
         std     $00,x
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$0F
         cmpa    #$02
         beq     L9593
@@ -450,7 +450,7 @@ L9576:
 
 L9579:
         jsr     >L97D9
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$0F
         cmpa    #$03
         beq     L95DB
@@ -467,22 +467,22 @@ L9593:
         ldd     >LCC97
         cpd     $00,x
         bcc     L95D8
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$F0
         oraa    #$03
-        staa    >$0109
+        staa    >Shutdown_0109
         jsr     >L97D9
         ldd     <Temp0
         sba
         bcc     L95AE
         clra
 L95AE:
-        staa    >L0102
+        staa    >Shutdown_0102
         cmpa    >LCC9E
         bls     L95C0
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$3F
-        staa    >$0109
+        staa    >Shutdown_0109
         bra     L9576
 
 L95C0:
@@ -491,12 +491,12 @@ L95C0:
         bcc     L95C6
         clra
 L95C6:
-        staa    >$0103
+        staa    >Shutdown_0103
         cmpa    >LCC9F
         bls     L95D8
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$3F
-        staa    >$0109
+        staa    >Shutdown_0109
         bra     L9576
 
 L95D8:
@@ -510,7 +510,7 @@ L95DB:
         bcc     L95EA
         clra
 L95EA:
-        suba    >L0102
+        suba    >Shutdown_0102
         bcc     L95F0
         clra
 L95F0:
@@ -524,7 +524,7 @@ L95F9:
         bcc     L9604
         clra
 L9604:
-        suba    >$0103
+        suba    >Shutdown_0103
         bcc     L960A
         clra
 L960A:
@@ -562,14 +562,14 @@ L963C:
         bra     L965B
 
 L964D:
-        ldd     >L010A
+        ldd     >Shutdown_010A
         cpd     >LCC9B
         bcs     L9698
         brclr   $00,y,#$30,L969B
 L965B:
         ldaa    <Temp0
         brclr   $00,y,#$20,L9667
-        staa    >L0102
+        staa    >Shutdown_0102
         bra     L966B
 
 L9667:
@@ -577,22 +577,22 @@ L9667:
 L966B:
         ldaa    <Temp2
         brclr   $00,y,#$10,L9677
-        staa    >$0103
+        staa    >Shutdown_0103
         bra     L967B
 
 L9677:
         bclr    $00,y,#$40
 L967B:
         brclr   $00,y,#$C0,L969B
-        ldaa    >L010C
+        ldaa    >Shutdown_010C
         cmpa    >LCC95
         bcs     L969B
         bclr    <OutputDriverBits,#$04
         jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
-        ldaa    >$0109
+        ldaa    >Shutdown_0109
         anda    #$F0
         oraa    #$04
-        staa    >$0109
+        staa    >Shutdown_0109
 L9698:
         jmp     >L9779
 
@@ -612,35 +612,35 @@ L96AD:
         bclr    $02,x,#$04
         cli
         ldaa    <Temp0
-        staa    >L0106
+        staa    >Shutdown_0106
         ldaa    <Temp2
-        staa    >$0107
-        ldaa    >$0109
+        staa    >Shutdown_0107
+        ldaa    >Shutdown_0109
         anda    #$F0
         oraa    #$05
-        staa    >$0109
+        staa    >Shutdown_0109
         bra     L9698
 
 L96CA:
-        ldaa    >L0108
+        ldaa    >Shutdown_0108
         inca
-        staa    >L0108
+        staa    >Shutdown_0108
         ldy     #$0109
         brclr   $00,y,#$80,L9719
         ldy     #$0113
         brset   $00,y,#$40,L9719
         ldaa    <Temp0
-        cmpa    >L0106
+        cmpa    >Shutdown_0106
         bcc     L96F1
-        ldab    >L0104
+        ldab    >Shutdown_0104
         incb
-        stab    >L0104
+        stab    >Shutdown_0104
 L96F1:
-        staa    >L0106
-        ldab    >L0104
+        staa    >Shutdown_0106
+        ldab    >Shutdown_0104
         cmpb    >LCCA6
         bcc     L9709
-        ldaa    >L0102
+        ldaa    >Shutdown_0102
         suba    <Temp0
         bcc     L9704
         clra
@@ -658,17 +658,17 @@ L9719:
         ldy     #$0114
         brset   $00,y,#$40,L9761
         ldaa    <Temp2
-        cmpa    >$0107
+        cmpa    >Shutdown_0107
         bcc     L9739
-        ldab    >$0105
+        ldab    >Shutdown_0105
         incb
-        stab    >$0105
+        stab    >Shutdown_0105
 L9739:
-        staa    >$0107
-        ldab    >$0105
+        staa    >Shutdown_0107
+        ldab    >Shutdown_0105
         cmpb    >LCCA7
         bcc     L9751
-        ldaa    >$0103
+        ldaa    >Shutdown_0103
         suba    <Temp2
         bcc     L974C
         clra
@@ -681,7 +681,7 @@ L9751:
         ldy     #$0109
         bclr    $00,y,#$40
 L9761:
-        ldaa    >L0108
+        ldaa    >Shutdown_0108
         cmpa    >LCC9D
         bcc     L9798
         ldy     #$0109
@@ -743,7 +743,7 @@ L97E7:
         ldy     #REGS
         brclr   $30,y,#$80,L97E7                     ; ADCTL: A/D control and status
         ldab    >ADR2
-        stab    >L010C
+        stab    >Shutdown_010C
         ldab    >ADR3
         stab    <Temp1
         ldaa    #$14
@@ -835,12 +835,12 @@ L9897:
         bita    #$20
         beq     L98AB
         brset   <BitFlags_AIS,#$08,L98AB
-        bclr    <L00FF,#$40
-        clr     >$01F0
+        bclr    <BitFlagsFF,#$40
+        clr     >MonO2Resp_01F0
         jmp     >L9B23
 
 L98AB:
-        brset   <L00FF,#$40,L98D4
+        brset   <BitFlagsFF,#$40,L98D4
         ldd     <VehicleSpeed_HB
         asld
         asld
@@ -850,17 +850,17 @@ L98AB:
         ldaa    <Counter_MainLoop
         bita    >$9880
         bne     L98CE
-        ldab    >$01F0
+        ldab    >MonO2Resp_01F0
         incb
         beq     L98D1
         cmpb    >LCCAE
         bcc     L98D1
-        stab    >$01F0
+        stab    >MonO2Resp_01F0
 L98CE:
         jmp     >L98D1_9BAA
 
 L98D1:
-        bset    <L00FF,#$40
+        bset    <BitFlagsFF,#$40
 L98D4:
         inc     >Temp0
         ldab    <PointerIntoAdaptiveMemory
@@ -873,13 +873,13 @@ L98E4:
         jmp     >L99BA
 
 L98E7:
-        ldaa    >$01F0
+        ldaa    >MonO2Resp_01F0
         beq     L98FE
         ldab    <Counter_MainLoop
         bitb    >$9880
         bne     L98F7
         deca
-        staa    >$01F0
+        staa    >MonO2Resp_01F0
 L98F7:
         bne     L98FB
         bra     L98FE
@@ -899,12 +899,12 @@ L98FE:
         ldab    >ObdStatusFlags
         bitb    #$01
         bne     L98FB
-        ldaa    >L0077
+        ldaa    >BitFlags77
         bita    #$80
         beq     L992C
-        brset   <L00FF,#$04,L992C
+        brset   <BitFlagsFF,#$04,L992C
         ldaa    >LCCB3
-        staa    >$01F0
+        staa    >MonO2Resp_01F0
         bra     L98FB
 
 L992C:
@@ -918,25 +918,25 @@ L992C:
         blt     L98FB
         inc     >Temp0
         ldy     #$0400
-        ldaa    >$0459
+        ldaa    >MonO2Resp_0459
         beq     L9956
         ldaa    <Counter_MainLoop
         bita    >$9880
         bne     L98FB
-        dec     >$0459
+        dec     >MonO2Resp_0459
         bne     L98FB
 L9956:
         ldaa    >OutputDriverBits
         bita    #$01
         bne     L9969
-        brclr   <L00FF,#$08,L996F
+        brclr   <BitFlagsFF,#$08,L996F
 L9961:
         ldaa    >LCCC9
-        staa    >$0459
+        staa    >MonO2Resp_0459
         bra     L98FB
 
 L9969:
-        brset   <L00FF,#$08,L996F
+        brset   <BitFlagsFF,#$08,L996F
         bra     L9961
 
 L996F:
@@ -961,7 +961,7 @@ L9989:
         brset   <OutputBits2,#$80,L99A9
         ldaa    <CylTrim_Adaptive_Var1
         beq     L99A9
-        brclr   <L0037,#$08,L99BA
+        brclr   <BitFlags37,#$08,L99BA
 L99A9:
         inc     >Temp0
         ldaa    <EngineRpm_HB
@@ -984,22 +984,22 @@ L99CA:
         ldaa    <O2SensorVolts
         cmpa    >LCCA9+1
         bls     L99EA
-        bset    <L006D,#$20
-        ldaa    >L0128
+        bset    <BitFlags6D,#$20
+        ldaa    >Var_0128
         bita    #$80
         bne     L99EA
-        ldaa    >L01F2
+        ldaa    >MonO2Resp_01F2
         lsra
         lsra
-        staa    >L0128
+        staa    >Var_0128
         oraa    #$80
         oraa    #$40
-        staa    >L0128
+        staa    >Var_0128
 L99EA:
-        brset   <L00FF,#$10,L99F9
-        bset    <L00FF,#$10
+        brset   <BitFlagsFF,#$10,L99F9
+        bset    <BitFlagsFF,#$10
         ldaa    <O2SensorVolts
-        staa    >$01FA
+        staa    >MonO2Resp_01FA
         jmp     >L9B61
 
 L99F9:
@@ -1007,94 +1007,94 @@ L99F9:
         bita    >$9880
         bne     L9A61
         ldab    #$01
-        ldaa    >$01F1
+        ldaa    >MonO2Resp_01F1
         inca
         beq     L9A33
-        staa    >$01F1
+        staa    >MonO2Resp_01F1
         cmpa    >LCCC0
         bcs     L9A61
         bhi     L9A33
-        bset    <L00FF,#$20
-        ldd     >$01F5
-        addd    >L01F7
+        bset    <BitFlagsFF,#$20
+        ldd     >MonO2Resp_01F5
+        addd    >MonO2Resp_01F7
         bcc     L9A20
         ldd     #$FFFF
 L9A20:
-        std     >L01F7
-        ldab    >$01F4
-        addb    >L01F9
+        std     >MonO2Resp_01F7
+        ldab    >MonO2Resp_01F4
+        addb    >MonO2Resp_01F9
         bcc     L9A2D
         ldab    #$FF
 L9A2D:
-        stab    >L01F9
+        stab    >MonO2Resp_01F9
         ldab    >LCCC0
 L9A33:
-        addb    >L01F2
+        addb    >MonO2Resp_01F2
         bcc     L9A3A
         ldab    #$FF
 L9A3A:
-        stab    >L01F2
-        brset   <L006D,#$20,L9A61
-        ldaa    >L01F2
+        stab    >MonO2Resp_01F2
+        brset   <BitFlags6D,#$20,L9A61
+        ldaa    >MonO2Resp_01F2
         cmpa    >LCCC5
         bcs     L9A61
-        ldaa    >L0128
+        ldaa    >Var_0128
         bita    #$80
         bne     L9A5E
         ldaa    #$FF
         lsra
         lsra
-        staa    >L0128
+        staa    >Var_0128
         oraa    #$80
         oraa    #$40
-        staa    >L0128
+        staa    >Var_0128
 L9A5E:
         jmp     >L9ADD
 
 L9A61:
         ldaa    <O2SensorVolts
-        suba    >$01FA
+        suba    >MonO2Resp_01FA
         bpl     L9A69
         nega
 L9A69:
         cmpa    >LCCC1
         bcs     L9A8D
-        ldx     >$01F5
+        ldx     >MonO2Resp_01F5
         inx
         beq     L9A77
-        stx     >$01F5
+        stx     >MonO2Resp_01F5
 L9A77:
-        brclr   <L00FF,#$20,L9A8D
+        brclr   <BitFlagsFF,#$20,L9A8D
         ldaa    #$0C
         staa    <Temp0
-        ldx     >L01F7
+        ldx     >MonO2Resp_01F7
         inx
         beq     L9AF6
-        stx     >L01F7
+        stx     >MonO2Resp_01F7
         cpx     >LCCC2
         bcc     L9AF6
 L9A8D:
         ldaa    <O2SensorVolts
-        staa    >$01FA
-        ldab    >L01F3
+        staa    >MonO2Resp_01FA
+        ldab    >Var_01F3
         beq     L9AB9
-        clr     >L01F3
-        ldab    >$01F4
+        clr     >Var_01F3
+        ldab    >MonO2Resp_01F4
         incb
         beq     L9AA3
-        stab    >$01F4
+        stab    >MonO2Resp_01F4
 L9AA3:
-        brclr   <L00FF,#$20,L9AB9
+        brclr   <BitFlagsFF,#$20,L9AB9
         ldaa    #$0D
         staa    <Temp0
-        ldab    >L01F9
+        ldab    >MonO2Resp_01F9
         incb
         beq     L9AF6
-        stab    >L01F9
+        stab    >MonO2Resp_01F9
         cmpb    >LCCC4
         bcc     L9AF6
 L9AB9:
-        ldaa    >L01F2
+        ldaa    >MonO2Resp_01F2
         cmpa    >LCCC5
         bcc     L9AC4
         jmp     >L98D1_9BAA
@@ -1115,7 +1115,7 @@ L9AC4:
 L9ADD:
         ldx     #$010E
         bset    $00,x,#$48
-        brclr   <L00FF,#$80,L9B23
+        brclr   <BitFlagsFF,#$80,L9B23
         bset    $00,x,#$01
         ldab    >ObdStatusFlags
         bitb    #$02
@@ -1127,7 +1127,7 @@ L9AF6:
         ldaa    >ISO_ErrorBitRegisterStored4
         bita    #$80
         bne     L9B0C
-        ldaa    >L01F2
+        ldaa    >MonO2Resp_01F2
         lsra
         lsra
         staa    >ISO_ErrorBitRegisterStored4
@@ -1135,28 +1135,28 @@ L9AF6:
         oraa    #$40
         staa    >ISO_ErrorBitRegisterStored4
 L9B0C:
-        ldaa    >L01F2
+        ldaa    >MonO2Resp_01F2
         cmpa    #$1E
         bcc     L9B16
 L9B13:
         jmp     >L98D1_9BAA
 
 L9B16:
-        brclr   <L006D,#$20,L9B13
+        brclr   <BitFlags6D,#$20,L9B13
         ldx     #$010E
         bset    $00,x,#$40
         bclr    $00,x,#$80
 L9B23:
-        clr     >L01F2
+        clr     >MonO2Resp_01F2
         ldd     #$0000
-        std     >L01F7
-        clr     >L01F9
+        std     >MonO2Resp_01F7
+        clr     >MonO2Resp_01F9
         ldaa    >ISO_ErrorBitRegisterStored4
         anda    #$7F
         staa    >ISO_ErrorBitRegisterStored4
-        ldaa    >L0128
+        ldaa    >Var_0128
         anda    #$7F
-        staa    >L0128
+        staa    >Var_0128
 L9B3F:
         ldx     #$010E
         brclr   $00,x,#$04,L9B5B
@@ -1172,31 +1172,31 @@ L9B52:
         bls     L9B5B
         stab    <Counter_O2SensorFeedbackCount_Signed
 L9B5B:
-        clr     >L01F3
-        bclr    <L00FF,#$10
+        clr     >Var_01F3
+        bclr    <BitFlagsFF,#$10
 L9B61:
-        bclr    <L00FF,#$20
-        clr     >$01F1
+        bclr    <BitFlagsFF,#$20
+        clr     >MonO2Resp_01F1
         ldd     #$0000
-        std     >$01F5
-        clr     >$01F4
+        std     >MonO2Resp_01F5
+        clr     >MonO2Resp_01F4
         ldaa    >OutputDriverBits
         bita    #$01
         bne     L9B7C
-        bclr    <L00FF,#$08
+        bclr    <BitFlagsFF,#$08
         bra     L9B7F
 
 L9B7C:
-        bset    <L00FF,#$08
+        bset    <BitFlagsFF,#$08
 L9B7F:
-        ldaa    >L0077
+        ldaa    >BitFlags77
         bita    #$80
         bne     L9B8B
-        bclr    <L00FF,#$04
+        bclr    <BitFlagsFF,#$04
         bra     L9B8E
 
 L9B8B:
-        bset    <L00FF,#$04
+        bset    <BitFlagsFF,#$04
 L9B8E:
         ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bita    #$20
@@ -1209,6 +1209,6 @@ L9B99:
         beq     L98D1_9BAA
 L9BA4:
         ldaa    >LCCB3
-        staa    >$01F0
+        staa    >MonO2Resp_01F0
 L98D1_9BAA:
         rts

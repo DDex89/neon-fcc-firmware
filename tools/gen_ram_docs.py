@@ -26,18 +26,29 @@ T = {
         "`annotations/ram_symbols.json` (names of the form `Lxxxx` are still unknown). **R** and **W** "
         "count the instructions that read and write the address (a 16-bit access counts for both "
         "bytes); the routine lists show up to five routines. Accesses through an index register (for example `ldx #$0135` then `brset 6,x`) are "
-        "not counted, so a low count does not mean an address is unused."),
+        "not counted, so a low count does not mean an address is unused.\n\n"
+        "Naming conventions: a descriptive name means the meaning is known. `Owner_xxxx` (for example "
+        "`MonEvap_0205`, `Iso_0489`) is private state of one routine or module whose meaning is not decoded; "
+        "`Var_xxxx` is shared by several unrelated routines; `BitFlagsxx` is a byte used only (or mostly) "
+        "through bit instructions; `Unref_xxxx` has no direct access in the code. Unnamed rows are low "
+        "bytes reached only through a 16-bit access to the address before."),
         cols="| Addr | Name | R | W | Read by | Written by |", unnamed="unnamed",
-        summary="%d addresses listed, %d of them named, %d still with a placeholder name."),
+        summary="%d addresses listed, %d of them named; %d placeholder names (`Lxxxx`) left."),
     "ru": dict(title="Карта ОЗУ", intro=(
         "Генерируется `tools/gen_ram_docs.py`; не редактируйте вручную. Имена берутся из "
         "`annotations/ram_symbols.json` (имена вида `Lxxxx` пока неизвестны). **R** и **W** — число "
         "инструкций, которые читают и пишут адрес (16-битное обращение считается для обоих байтов); в "
         "списках показано до пяти подпрограмм. Обращения "
         "через индексный регистр (например, `ldx #$0135`, затем `brset 6,x`) не учитываются, так что "
-        "малый счёт не значит, что адрес не используется."),
+        "малый счёт не значит, что адрес не используется.\n\n"
+        "Соглашения об именах: описательное имя значит, что смысл известен. `Владелец_xxxx` (например, "
+        "`MonEvap_0205`, `Iso_0489`) — внутреннее состояние одной подпрограммы или модуля, смысл которого не "
+        "расшифрован; `Var_xxxx` — переменная, общая для нескольких несвязанных подпрограмм; `BitFlagsxx` — "
+        "байт, с которым работают только (или в основном) битовыми командами; `Unref_xxxx` — прямых обращений "
+        "в коде нет. Строки без имени — младшие байты, к которым обращаются только 16-битной командой через "
+        "предыдущий адрес."),
         cols="| Адрес | Имя | R | W | Читают | Пишут |", unnamed="без имени",
-        summary="Всего адресов: %d, с именами: %d, с временным именем: %d."),
+        summary="Всего адресов: %d, с именами: %d; временных имён (`Lxxxx`) осталось: %d."),
 }
 
 
