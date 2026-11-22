@@ -210,30 +210,38 @@ L5891:
         dc.w    ErrBytes_CODE35_d
 
 ;---------------------------------------------------------------------------------------------------
-; ErrorCodeProcessingSomething_MM  ($58A1)
+; LinkRegisterUpdate  ($58A1)
+;
+; Processes the reply of a register frame and prepares the next one. [reviewed]
+;
+; The reply is decoded against LinkRegLastAddress (the header of the frame before, the chip
+; answers one frame late): $48 gives the switch input byte (SwitchInputs), $50 a 16-bit input word
+; (LinkInputWordHi/Lo). Then the header cycles $50 (data OutputBits2/$00EF), $58 ($0176/$0177) and
+; $48 ($00EC, 0), and LinkRequestFlags bit 6 is set. Original name
+; ErrorCodeProcessingSomething_MM.
 ;
 ; Called from: L97D9, MainSubLoop, ShutDownSubroutineA
 ;---------------------------------------------------------------------------------------------------
-ErrorCodeProcessingSomething_MM:
-        brclr   <L00EB,#$40,L58C1
-        ldaa    >$015C
+LinkRegisterUpdate:
+        brclr   <LinkStatusFlags,#$40,L58C1
+        ldaa    >LinkRegLastAddress
         anda    #$F8
         cmpa    #$48
         bne     L58B5
-        ldaa    >L015D
-        staa    <BitFlagsED
+        ldaa    >LinkRegDataInHi
+        staa    <SwitchInputs
         bra     L58BE
 
 L58B5:
         cmpa    #$50
 L58B7:
         bne     L58BE
-        ldd     >L015D
-        std     <L00F0
+        ldd     >LinkRegDataInHi
+        std     <LinkInputWordHi
 L58BE:
-        bclr    <L00EB,#$40
+        bclr    <LinkStatusFlags,#$40
 L58C1:
-        ldab    <L00EA
+        ldab    <LinkRequestFlags
         bitb    #$40
         bne     L5906
         ldaa    >ObdMonStatus_O2HeaterUp
@@ -243,13 +251,13 @@ L58C1:
         bitb    #$04
         bne     L5906
 L58D5:
-        ldaa    >L0159
-        staa    >$015C
+        ldaa    >LinkRegAddress
+        staa    >LinkRegLastAddress
         anda    #$F8
         cmpa    #$48
         bhi     L58EA
         ldaa    #$50
-        staa    >L0159
+        staa    >LinkRegAddress
         ldd     <OutputBits2
         bra     L5900
 
@@ -257,18 +265,18 @@ L58EA:
         cmpa    #$50
         bhi     L58F8
         ldaa    #$58
-        staa    >L0159
+        staa    >LinkRegAddress
         ldd     >L0176
         bra     L5900
 
 L58F8:
         ldaa    #$48
-        staa    >L0159
+        staa    >LinkRegAddress
         clrb
         ldaa    <L00EC
 L5900:
-        std     >$015A
-        bset    <L00EA,#$40
+        std     >LinkRegDataOutHi
+        bset    <LinkRequestFlags,#$40
 L5906:
         ldx     #$0113
         brset   $00,x,#$04,L5914
@@ -286,7 +294,7 @@ L5917:
         jmp     >L59B7
 
 L5924:
-        ldaa    <BitFlagsED
+        ldaa    <SwitchInputs
         anda    #$00
         ldx     #L5841
         ldy     #L5851
@@ -316,7 +324,7 @@ L5945:
         bcs     L59B7
         ldab    <CountdownTimerFromKeyOn
         bne     L59B7
-        ldaa    <L00F0
+        ldaa    <LinkInputWordHi
         anda    #$B0
         ldx     #L5861
         ldy     #L5871
@@ -346,7 +354,7 @@ L597E:
         bcs     L59B7
         ldab    <CountdownTimerFromKeyOn
         bne     L59B7
-        ldaa    <L00F1
+        ldaa    <LinkInputWordLo
         anda    #$8F
         ldx     #L5881
         ldy     #L5891
@@ -437,8 +445,8 @@ L5A09:
 ; CODE5a0c  ($5A0C)
 ;---------------------------------------------------------------------------------------------------
 CODE5a0c:
-        brclr   <L00EB,#$04,L5A28
-        bclr    <L00EB,#$04
+        brclr   <LinkStatusFlags,#$04,L5A28
+        bclr    <LinkStatusFlags,#$04
         ldy     #ErrBytes_CODE53_a
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
         bcc     L5A28
@@ -457,9 +465,9 @@ L5A28:
 ; [reviewed]
 ;
 ; Pulls $0403 bit 2 (chip select) low, writes OutputDriverBits to SPDR, waits for the transfer,
-; releases the chip select and stores the returned byte in CCDFlagsX (the driver's fault status).
-; OutputDriverBits bits: 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed
-; control solenoids (see docs/en/io_map.md).
+; releases the chip select and stores the returned byte in OutputDriverStatus (the driver's fault
+; status). OutputDriverBits bits: 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7
+; speed control solenoids (see docs/en/io_map.md).
 ;---------------------------------------------------------------------------------------------------
 SendOutputDriverByte:
         sei
@@ -473,7 +481,7 @@ SendOutputDriverByte:
         bset    $03,y,#$04
         cmpa    $29,x                                ; SPSR: SPI status
         ldaa    $2A,x                                ; SPDR: SPI data
-        staa    >CCDFlagsX
+        staa    >OutputDriverStatus
         eora    <L003B
         ldab    <L003B
         stab    <CCDFlags3
@@ -1570,7 +1578,7 @@ CheckAnalog0170Limits_SM:
         ldaa    <BatteryVolts
         ldx     #TABLEceb0
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        cmpa    >Analog170
+        cmpa    >AsdOutputVolts
         bcs     L6121
         bra     L6105
 
@@ -1578,7 +1586,7 @@ L60F8:
         ldaa    <BatteryVolts
         ldx     #TABLEcebe
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        cmpa    >Analog170
+        cmpa    >AsdOutputVolts
         bcs     L6121
 L6105:
         ldy     #ErrBytes_CODE_D98B
@@ -1609,7 +1617,7 @@ CheckAnalog0170Limits2_SM:
         ldaa    <BatteryVolts
         ldx     #TABLEceb7
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        cmpa    >Analog170
+        cmpa    >AsdOutputVolts
         bhi     L6161
         bra     L614D
 
@@ -1617,7 +1625,7 @@ L6140:
         ldaa    <BatteryVolts
         ldx     #TABLEcec5
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        cmpa    >Analog170
+        cmpa    >AsdOutputVolts
         bhi     L6161
 L614D:
         ldy     #ErrBytes_CODE_D993
@@ -2429,11 +2437,18 @@ L672A:
 
 
 ;---------------------------------------------------------------------------------------------------
-; DealWithConfigurationAndPulseAccumulator_MM  ($672B)
+; InitPeripheralRegisters  ($672B)
+;
+; Initialises HC11 peripherals and the I/O device registers. [reviewed]
+;
+; HC11: DDRD = $3A, OC1M = 0, TCTL2 = $1A, SPCR = $54 (SPI master, CPHA = 1, E/2 = 1 MHz), SCCR1/2
+; = $00/$0C, OPTION = $B9, HPRIO = $2B. I/O device: clears $0402 bits 4 and 6, $0403 bits 4-7,
+; $0404, $040B, $040C and $040F bits 4-7; $0407 = $1B, $0408 bits 4-7 set, $040A bits 0/1/3/4 set
+; and 2/5/7 cleared, $040D = $33. The meaning of the device registers is not known.
 ;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
-DealWithConfigurationAndPulseAccumulator_MM:
+InitPeripheralRegisters:
         ldx     #REGS
         ldd     #$3A1A
         staa    $09,x                                ; DDRD: Port D data direction

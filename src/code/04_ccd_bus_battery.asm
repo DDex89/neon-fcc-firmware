@@ -11,17 +11,25 @@
 
 ;---------------------------------------------------------------------------------------------------
 ; CCDBusComs  ($1788)
+;
+; Sends the prepared CCD message (CcdTxHeader, CcdTxId, CcdTxData1/2) to the link chip and reads
+; the received CCD message back. [reviewed]
+;
+; 5-byte frame: header ($D0 = transmit, $D8 = nothing to send, with the low 3 bits of
+; LinkCommandByte), ID, two data bytes, complement of the sum. The reply (LinkReplyHeader,
+; CcdRxId, CcdRxData1, CcdRxData2, checksum) is checked; bits 6-7 of the reply header go to
+; LinkStatusFlags bits 2-3 and LinkStatusFlags bit 7 is set (a message was received).
 ;---------------------------------------------------------------------------------------------------
 CCDBusComs:
-        ldab    >L0165
+        ldab    >LinkCommandByte
         andb    #$07
-        orab    >CCDOutputVarTemp1
+        orab    >CcdTxHeader
         ldaa    #$0A
 L1792:
         brclr   $00,y,#$08,L179D
         deca
         bne     L1792
-        jmp     >L1961
+        jmp     >LinkError
 
 L179D:
         bclr    $08,x,#$20
@@ -31,14 +39,14 @@ L179D:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >$0166
+        stab    >LinkReplyHeader
         ldaa    #$0A
-        ldab    >CCDOutputVarTemp2
+        ldab    >CcdTxId
 L17B8:
         brclr   $00,y,#$08,L17C3
         deca
         bne     L17B8
-        jmp     >L1961
+        jmp     >LinkError
 
 L17C3:
         stab    $2A,x
@@ -48,13 +56,13 @@ L17C3:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >CCDVar1
-        ldab    >CCDOutputVarTemp3
+        stab    >CcdRxId
+        ldab    >CcdTxData1
 L17DB:
         brclr   $00,y,#$08,L17E6
         deca
         bne     L17DB
-        jmp     >L1961
+        jmp     >LinkError
 
 L17E6:
         stab    $2A,x
@@ -64,13 +72,13 @@ L17E6:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >CCDVar2
-        ldab    >CCDOutputVarTemp4
+        stab    >CcdRxData1
+        ldab    >CcdTxData2
 L17FE:
         brclr   $00,y,#$08,L1809
         deca
         bne     L17FE
-        jmp     >L1961
+        jmp     >LinkError
 
 L1809:
         stab    $2A,x
@@ -80,14 +88,14 @@ L1809:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >CCDVar3
+        stab    >CcdRxData2
         ldab    <InjCylinderMask
         comb
 L1821:
         brclr   $00,y,#$08,L182C
         deca
         bne     L1821
-        jmp     >L1961
+        jmp     >LinkError
 
 L182C:
         stab    $2A,x
@@ -98,56 +106,67 @@ L182C:
         cmpb    $29,x
         ldab    $2A,x
         bset    $08,x,#$20
-        ldaa    >$0166
-        adda    >CCDVar1
-        adda    >CCDVar2
-        adda    >CCDVar3
+        ldaa    >LinkReplyHeader
+        adda    >CcdRxId
+        adda    >CcdRxData1
+        adda    >CcdRxData2
         coma
         cba
         beq     L1852
-        jmp     >L1961
+        jmp     >LinkError
 
 L1852:
-        ldaa    >$0166
+        ldaa    >LinkReplyHeader
         lsra
         lsra
         lsra
         lsra
         anda    #$0C
-        ldab    <L00EB
+        ldab    <LinkStatusFlags
         andb    #$F3
         aba
         oraa    #$80
-        staa    <L00EB
-        ldab    <L00EA
+        staa    <LinkStatusFlags
+        ldab    <LinkRequestFlags
         anda    #$08
         beq     L1870
         aslb
         aslb
         aslb
         aslb
-        orab    <L00EA
+        orab    <LinkRequestFlags
 L1870:
         andb    #$60
         orab    #$08
-        stab    <L00EA
+        stab    <LinkRequestFlags
         tsta
         beq     L187C
-        jmp     >L1961
+        jmp     >LinkError
 
 L187C:
         jmp     >L167B
 
-L187F:
-        ldab    >L0165
+
+;---------------------------------------------------------------------------------------------------
+; LinkSendRegisterFrame  ($187F)
+;
+; Writes a 16-bit register of the link chip and reads one back: header LinkRegAddress ($48, $50 or
+; $58), data LinkRegDataOut. [reviewed]
+;
+; 4-byte frame (header, two data bytes, complement of the sum). The reply goes to LinkRegDataIn.
+; Sets LinkStatusFlags bit 6, which LinkRegisterUpdate then processes. Also clears
+; LinkRequestFlags bit 2 unless one of the O2 heater monitors is active.
+;---------------------------------------------------------------------------------------------------
+LinkSendRegisterFrame:
+        ldab    >LinkCommandByte
         andb    #$07
-        orab    >L0159
+        orab    >LinkRegAddress
         ldaa    #$0A
 L1889:
         brclr   $00,y,#$08,L1894
         deca
         bne     L1889
-        jmp     >L1961
+        jmp     >LinkError
 
 L1894:
         bclr    $08,x,#$20
@@ -157,14 +176,14 @@ L1894:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >$0166
+        stab    >LinkReplyHeader
         ldaa    #$0A
-        ldab    >$015A
+        ldab    >LinkRegDataOutHi
 L18AF:
         brclr   $00,y,#$08,L18BA
         deca
         bne     L18AF
-        jmp     >L1961
+        jmp     >LinkError
 
 L18BA:
         stab    $2A,x
@@ -174,13 +193,13 @@ L18BA:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >L015D
-        ldab    >L015B
+        stab    >LinkRegDataInHi
+        ldab    >LinkRegDataOutLo
 L18D2:
         brclr   $00,y,#$08,L18DD
         deca
         bne     L18D2
-        jmp     >L1961
+        jmp     >LinkError
 
 L18DD:
         stab    $2A,x
@@ -190,14 +209,14 @@ L18DD:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >$015E
+        stab    >LinkRegDataInLo
         ldab    <InjCylinderMask
         comb
 L18F5:
         brclr   $00,y,#$08,L1900
         deca
         bne     L18F5
-        jmp     >L1961
+        jmp     >LinkError
 
 L1900:
         stab    $2A,x
@@ -208,34 +227,34 @@ L1900:
         cmpb    $29,x
         ldab    $2A,x
         bset    $08,x,#$20
-        ldaa    >$0166
-        adda    >L015D
-        adda    >$015E
+        ldaa    >LinkReplyHeader
+        adda    >LinkRegDataInHi
+        adda    >LinkRegDataInLo
         coma
         cba
         beq     L1923
-        jmp     >L1961
+        jmp     >LinkError
 
 L1923:
-        ldaa    >$0166
+        ldaa    >LinkReplyHeader
         lsra
         lsra
         lsra
         lsra
         anda    #$0C
-        ldab    <L00EB
+        ldab    <LinkStatusFlags
         andb    #$F3
         aba
         oraa    #$40
-        staa    <L00EB
-        ldab    <L00EA
+        staa    <LinkStatusFlags
+        ldab    <LinkRequestFlags
         anda    #$08
         beq     L1941
         aslb
         aslb
         aslb
         aslb
-        orab    <L00EA
+        orab    <LinkRequestFlags
 L1941:
         andb    #$A0
         ldx     #$0113
@@ -245,28 +264,38 @@ L1941:
         orab    #$04
 L1953:
         ldx     #REGS
-        stab    <L00EA
+        stab    <LinkRequestFlags
         tsta
         beq     L195E
-        jmp     >L1961
+        jmp     >LinkError
 
 L195E:
         jmp     >L167B
 
-L1961:
+
+;---------------------------------------------------------------------------------------------------
+; LinkError  ($1961)
+;
+; Error exit of the link exchange: flushes the SPI, raises PD5 and counts LinkRetryCount down.
+; [reviewed]
+;
+; After ten failed exchanges in a row it pulses $0409 bit 3 low, which most likely resets the link
+; chip, and clears $00F2 and LinkFrameCHeader.
+;---------------------------------------------------------------------------------------------------
+LinkError:
         ldaa    $29,x
         ldaa    $2A,x
         bset    $08,x,#$20
-        ldaa    >L0167
+        ldaa    >LinkRetryCount
         deca
         bne     L197E
         ldaa    #$0A
         bclr    $09,y,#$08
         bset    $09,y,#$08
         clr     >L00F2
-        clr     >L015F
+        clr     >LinkFrameCHeader
 L197E:
-        staa    >L0167
+        staa    >LinkRetryCount
         jmp     >L16AF
 
 
@@ -277,7 +306,7 @@ L197E:
 ;---------------------------------------------------------------------------------------------------
 Load05Into0167_SM:
         ldaa    #$05
-        staa    >L0167
+        staa    >LinkRetryCount
         rts
 
 

@@ -89,7 +89,7 @@ SubLoopList:
 ; Called from: MainProgramLoop
 ;---------------------------------------------------------------------------------------------------
 MainSubLoop:
-        jsr     >DealWithConfigurationAndPulseAccumulator_MM
+        jsr     >InitPeripheralRegisters             ; Initialises HC11 peripherals and the I/O device registers.
         cli
         ldd     #$55AA
         staa    >COPRST
@@ -157,8 +157,8 @@ MainSubLoop:
         jsr     >DRBIISerialCommunications_MM        ; Receives DRB / SCI command bytes (7812.5 baud, BAUD = $22) and echoes each byte back.
         jsr     >ActuatorTestMode_MM                 ; Runs the DRB actuator test selected by ATMOffset (set by DRB command $13).
         jsr     >DRBIIOuput_MM                       ; Dispatches the received DRB command: handler = DRBFunctionTable[command - $10].
-        jsr     >PrepareCCDDataForXmit_MM_2
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >PrepareCCDDataForXmit_MM_2          ; Handles a received CCD message: calls CCDDataStream_2[CcdRxId & $0F].
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         jsr     >IncrementLoopCounters_MM
         rts
 
@@ -171,7 +171,7 @@ MainSubLoop:
 ;---------------------------------------------------------------------------------------------------
 SubLoopA:
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
-        jsr     >PrepareCCDDataForXmit_MM_1
+        jsr     >PrepareCCDDataForXmit_MM_1          ; Builds the next CCD message from the 128-slot schedule CCDDataStream_1 (index CcdTxSlot).
         jsr     >CODEe74f_MM
         jsr     >Set_ErrorBits_20_MM
         jsr     >DecrementCounter048D_SM
@@ -408,21 +408,21 @@ L9512:
         beq     L952D
         bset    <OutputBits2,#$01
         pshy
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         puly
         ldx     #$0682
 L9526:
         dex
         bne     L9526
-        brclr   <L00F0,#$01,L9512
+        brclr   <LinkInputWordHi,#$01,L9512
 L952D:
         ldaa    >$0109
         anda    #$F0
         oraa    #$02
         staa    >$0109
         bset    <OutputDriverBits,#$04
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         ldx     #$FFFF
         stx     >L010A
 L9543:
@@ -588,7 +588,7 @@ L967B:
         cmpa    >LCC95
         bcs     L969B
         bclr    <OutputDriverBits,#$04
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         ldaa    >$0109
         anda    #$F0
         oraa    #$04
@@ -723,7 +723,7 @@ L97B5:
         bset    $00,x,#$01
 L97D2:
         bset    <OutputDriverBits,#$04
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
 L97D8:
         rts
 
@@ -763,7 +763,7 @@ L981B:
         bset    <OutputBits2,#$08
         pshb
         pshy
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         puly
         pulb
@@ -771,7 +771,7 @@ L981B:
 L9831:
         dex
         bne     L9831
-        brclr   <L00F0,#$08,L981B
+        brclr   <LinkInputWordHi,#$08,L981B
 L9838:
         ldaa    #$10
         staa    >ADCTL
@@ -794,7 +794,7 @@ L9862:
         bclr    <OutputBits2,#$08
         pshb
         pshy
-        jsr     >ErrorCodeProcessingSomething_MM
+        jsr     >LinkRegisterUpdate                  ; Processes the reply of a register frame and prepares the next one.
         jsr     >ResetCOPTimer                       ; Kicks the COP watchdog (writes $55, $AA to COPRST).
         puly
         pulb
@@ -802,7 +802,7 @@ L9862:
 L9878:
         dex
         bne     L9878
-        brset   <L00F0,#$08,L9862
+        brset   <LinkInputWordHi,#$08,L9862
 L987F:
         rts
 

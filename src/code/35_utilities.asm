@@ -380,7 +380,7 @@ LFACB:
 ;
 ; D = Y x A / 256 (unsigned fractional multiply). [from name]
 ;
-; Called from: CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT, CODE22f0, CODE231d, CODEf101, CODEfbfa, CalculateAverageKnockVolts_SM, CalculateInjectorPulsewidthForEngineRunning, CalculateInjectorPulsewidthForStarting_MM ... (24 total)
+; Called from: CALC_SPARK_RETARD_BASED_ON_KNOCK_VOLT, CODEf101, CODEfbfa, CalculateAverageKnockVolts_SM, CalculateInjectorPulsewidthForEngineRunning, CalculateInjectorPulsewidthForStarting_MM, CalculateSumOfAllFuelModifiers_MM, CheckErrorMaskingAndSetCodes_MM ... (24 total)
 ;---------------------------------------------------------------------------------------------------
 ScaleYbyA:
         psha

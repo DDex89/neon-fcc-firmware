@@ -222,7 +222,7 @@ L3462:
         bhi     L346D
         tba
 L346D:
-        ldab    >L01E2
+        ldab    >CcdRxValueB
         cmpb    #$02
         bne     L347B
         ldab    >LC5EA                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
@@ -239,10 +239,10 @@ L347B:
         ldaa    #$FF
 L348B:
         staa    <Temp0
-        ldab    >L01E1
+        ldab    >CcdRxValueA
         andb    #$80
         beq     L34B8
-        ldab    >L01E1
+        ldab    >CcdRxValueA
         andb    #$7F
         bne     L34A5
         ldab    >LC5EB                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
@@ -252,7 +252,7 @@ L348B:
         bra     L34B8
 
 L34A5:
-        brclr   <BitFlagsED,#$40,L34B8
+        brclr   <SwitchInputs,#$40,L34B8
         ldaa    <TPSOverMINTHR
         cmpa    #$05
         bhi     L34B8
@@ -1191,7 +1191,7 @@ AIS_Subroutine_12:
         ldab    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bitb    #$20
         beq     L3A2F
-        brclr   <BitFlagsED,#$20,L3A8A
+        brclr   <SwitchInputs,#$20,L3A8A
 L3A2F:
         brset   <BitFlags66,#$08,L3A8A
         ldab    <KeyOnOrEngineRunningTime
@@ -2124,7 +2124,7 @@ L3FC0:
         ldaa    <Timer_DacalCountdown
         lsra
         lsra
-        ldab    >L01E1
+        ldab    >CcdRxValueA
         andb    #$80
         beq     L3FD0
         adda    >LC7DC                               ; DANOM2 (Base_nominalCal2)
@@ -2217,7 +2217,7 @@ CalculateAisPosition2:
         ldaa    <Timer_DacalCountdown
         lsra
         lsra
-        ldab    >L01E1
+        ldab    >CcdRxValueA
         andb    #$80
         beq     L4073
         adda    >LC7DC                               ; DANOM2 (Base_nominalCal2)
@@ -2408,8 +2408,8 @@ L4191:
 ; [reviewed]
 ;
 ; 12 when BitFlags68 bit 5 is set, 14 when speed control is active (BitFlags66 bit 6), 13 with the
-; throttle closed (BitFlags65 bit 7 clear). With the throttle open: 13 if BitFlagsED bit 6 is set
-; and RPM is above TABLEc681(TPS), otherwise 12.
+; throttle closed (BitFlags65 bit 7 clear). With the throttle open: 13 if SwitchInputs bit 6 is
+; set and RPM is above TABLEc681(TPS), otherwise 12.
 ;
 ; Called from: AisState12_ThrottleOpen, AisState13_ClosedThrottle, AisState14_SpeedControl, AisState15_MapLimpIn, AisState1_Cranking, AisState4_ThrottleOpen
 ;---------------------------------------------------------------------------------------------------
@@ -2421,7 +2421,7 @@ SelectAisStateA:
         ldaa    #$0D
         brclr   <BitFlags65,#$80,L41BC
         ldaa    #$0C
-        brclr   <BitFlagsED,#$40,L41BC
+        brclr   <SwitchInputs,#$40,L41BC
         ldx     #TABLEc681                           ; BARAIS: Barometric compensation factor for AIS control
         ldaa    <TPSOverMINTHR
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
@@ -2458,7 +2458,7 @@ SelectAisStateB:
         ldaa    #$05
         brclr   <BitFlags65,#$80,L41EE
         ldaa    #$04
-        brclr   <BitFlagsED,#$40,L41EE
+        brclr   <SwitchInputs,#$40,L41EE
         ldx     #TABLEc681                           ; BARAIS: Barometric compensation factor for AIS control
         ldaa    <TPSOverMINTHR
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).

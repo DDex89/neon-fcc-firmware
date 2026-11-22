@@ -365,7 +365,7 @@ CODE7242_SM:
         jmp     >L72F7
 
 L7250:
-        ldaa    >Analog170
+        ldaa    >AsdOutputVolts
         ldx     #TABLEce82
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         psha
@@ -396,7 +396,7 @@ L7272:
 L7284:
         ldaa    >L04BB
         staa    >L04BC
-        ldaa    >Analog170
+        ldaa    >AsdOutputVolts
         ldx     #TABLEce82
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    >L04BB

@@ -96,14 +96,52 @@ they only need to be scheduled, checked against the calibration and tested.
 | 8 | `MonitorFuelSystemLean` | $A55F | Fuel system lean | P0171 | `$0118` |
 | 9 | `MonitorMisfire` | $AE3F | Misfire | P0300-P0304 | `$0119` |
 
-## ISO 9141 (generic OBD-II)
+## ISO 9141 / SAE J1979 (generic OBD-II)
 
 `HanldeISODiagnosticComs` ($1ABA) is a state machine of 20 steps (`DiagnosticRoutineTable`). At the
 start of a session it sets the SCI to 10.4 kbaud, forces OC4 (PA4) high and sends `$55`, the
-ISO 9141-2 sync byte. The handlers read the stored faults, the freeze frame (`ISO_ErrorBitRegister0`
-at `$011E`) and `ObdDtcCount` (`$010D`). That matches the service-1 "number of codes", service-2
-"freeze frame" and service-3 "stored codes" requests of a generic scan tool. [inferred] The service
-numbers and the message layout are not decoded yet.
+ISO 9141-2 sync byte. Requests are collected in a buffer at `$048E`. [code]
+
+`IsoValidateRequest` ($1E18) accepts a request only with the J1979 header `$68 $6A $Fx`, a correct
+sum checksum and the right length for the service. `IsoBuildResponse` ($1EEB) answers with the header
+`$48 $6B $40`. [code]
+
+| Service | Function | Conditions |
+|---|---|---|
+| `$01` | Current data, PID table at `$1AEA` | PID `$12` only with CONFIG2 bit 5 |
+| `$02` | Freeze frame, PID table at `$1B16` | Frame 0 only |
+| `$03` | Stored emission codes | Only when `ObdDtcCount` is not zero |
+| `$04` | Clear codes (`EraseErrorCodes`) | Engine stopped only |
+| `$05` | O2 sensor test results | O2 sensor 1 or 2 |
+
+Service `$01` PIDs (handlers `ObdPid…`):
+
+| PID | Value | Source |
+|---|---|---|
+| `$00` | Supported PIDs `$BE $3E $B8 $00` (`$F8` in the third byte with CONFIG2 bit 5) | constant |
+| `$01` | Code count and MIL bit; supported and completed monitors | `ObdDtcCount`, `ObdStatusFlags` bit 7, calibration `$B81F`/`$B820`, RAM `$0100` |
+| `$03` | Fuel system status | `FuelSystemStatus` ($043B) |
+| `$04` | Calculated load | `MaxRPMxMaxMAPFraction` |
+| `$05` | Coolant temperature | `CoolantTempVolts` − `$58` |
+| `$06` | Short-term fuel trim | O2 feedback counter |
+| `$07` | Long-term fuel trim | `ValueFromAdaptiveMemory` |
+| `$0B` | MAP | `$0219` × `$69` / 256 |
+| `$0C` | Engine RPM | `EngineRpm_HB` |
+| `$0D` | Vehicle speed | `VehicleSpeed_HB` |
+| `$0E` | Spark advance | `AdvanceTemporary` + `$80` |
+| `$0F` | Intake air temperature | `ChargeTempVolts` − `$58` |
+| `$11` | Throttle position | `LastTpsVolts` |
+| `$12` | Secondary air status | `OutputDriverBits` bit 5 |
+| `$13` | O2 sensors present | `$03` (bank 1, sensors 1 and 2) |
+| `$14`, `$15` | O2 sensor 1 / 2 voltage | `O2SensorVolts`, `DownstreamO2Volts` |
+
+Service `$02` (freeze frame) supports PIDs `$00`, `$02` (code that stored the frame), `$03`-`$07`,
+`$0B` and `$0C`, read from the frame that `CaptureFreezeFrame` keeps at `$011E`. [code]
+
+The calibration declares which monitors PID `$01` reports as supported: `$B81F` = `$07` (misfire,
+fuel system, components) and `$B820` = `$61` (catalyst, O2 sensor, O2 heater) in 5269718; `$00` and
+`$E1` (adds EGR) in 5007033. The monitors themselves are dormant (see above), so a scan tool would
+never see them complete. [code]
 
 ## Lamps
 
@@ -111,5 +149,5 @@ The check-engine lamp (pin 36) and the charge indicator lamp (pin 37) are contro
 and 4 of `$00EE` (`OutputBits2`, called `StartupSwitchMirror2` in the original disassembly). Flash codes are
 blinked by toggling bit 6, so bit 6 is the check-engine lamp. [inferred] Bit 4 is set from `$0070` bit 7,
 which only charging-system faults set (flag bit 5), so bit 4 is most likely the charge lamp.
-[inferred] `$00EE` is sent out as part of a frame with the address bytes `$48`, `$50` and `$58`, together
-with `$0176` and `$00EC`. The chip that receives these frames is not identified yet.
+[inferred] `$00EE` is sent to the I/O companion chip in the register frame with header `$50`; see
+[ccd_and_link.md](ccd_and_link.md).

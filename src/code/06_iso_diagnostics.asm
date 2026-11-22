@@ -42,29 +42,29 @@ DiagnosticRoutineTable:
         dc.w    ISODiagnosticComs_1
         dc.w    ISODiagnosticComs_18
         dc.w    ISODiagnosticComs_9
-        dc.w    ISODiagnosticComs_19
-        dc.w    ISODiagnosticComs_20
+        dc.w    ObdPid00_Supported
+        dc.w    ObdPid01_MonitorStatus
 
 Pointer1aee:
         dc.b    $00,$00
-        dc.w    CODE2221
-        dc.w    CODE2232
-        dc.w    CODE223e
-        dc.w    CODE224f
-        dc.w    CODE2261
+        dc.w    ObdPid03_FuelSystem
+        dc.w    ObdPid04_Load
+        dc.w    ObdPid05_Coolant
+        dc.w    ObdPid06_ShortTermTrim
+        dc.w    ObdPid07_LongTermTrim
         dc.b    $00,$00,$00,$00,$00,$00
-        dc.w    CODE2273
-        dc.w    CODE2284
-        dc.w    CODE2290
-        dc.w    CODE22a7
-        dc.w    CODE22b5
+        dc.w    ObdPid0B_Map
+        dc.w    ObdPid0C_Rpm
+        dc.w    ObdPid0D_Speed
+        dc.w    ObdPid0E_Advance
+        dc.w    ObdPid0F_IntakeAirTemp
         dc.b    $00,$00
-        dc.w    CODE22c6
-        dc.w    CODE22d2
-        dc.w    CODE22e5
-        dc.w    CODE22f0
-        dc.w    CODE231d
-        dc.w    CODE234a
+        dc.w    ObdPid11_Throttle
+        dc.w    ObdPid12_SecondaryAir
+        dc.w    ObdPid13_O2Present
+        dc.w    ObdPid14_O2Sensor1
+        dc.w    ObdPid15_O2Sensor2
+        dc.w    ObdFfPid00_Supported
         dc.b    $00,$00
 L1B1A:
         dc.w    ErrorCodeRoutine_Unused
@@ -491,10 +491,10 @@ L1D9E:
         bra     L1DC2
 
 L1DAD:
-        jsr     >CODE1e18
+        jsr     >IsoValidateRequest                  ; Checks a received SAE J1979 request in the buffer at $048E: header $68 $6A $Fx, sum checks
         bcc     L1DBA
 L1DB2:
-        jsr     >L1EEB
+        jsr     >IsoBuildResponse                    ; Builds the J1979 response (header $48 $6B $40) for the service in the request and runs the
         inc     >ISODiagTestOffset
         bra     L1DC2
 
@@ -562,11 +562,19 @@ L1E17:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE1e18  ($1E18)
+; IsoValidateRequest  ($1E18)
+;
+; Checks a received SAE J1979 request in the buffer at $048E: header $68 $6A $Fx, sum checksum,
+; service and length. [reviewed]
+;
+; Service 1: PID table at $1AEA (PIDs $00-$15, PID $12 only with CONFIG2 bit 5). Service 2: table
+; at $1B16 (PIDs $00-$0C), frame 0 only. Service 3: only when ObdDtcCount is not zero. Service 4:
+; only with the engine stopped. Service 5: test IDs for O2 sensors 1 and 2. Returns carry set when
+; the request is valid.
 ;
 ; Called from: ISODiagnosticComs_18
 ;---------------------------------------------------------------------------------------------------
-CODE1e18:
+IsoValidateRequest:
         ldaa    >L048E
         cmpa    #$68
         beq     L1E22
@@ -608,7 +616,7 @@ L1E3B:
         beq     L1EA7
         cpx     #$0000
         beq     L1EA7
-        cpx     #CODE22d2
+        cpx     #ObdPid12_SecondaryAir
         bne     L1EA9
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
@@ -680,11 +688,16 @@ L1ED2:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L1EEB  ($1EEB)
+; IsoBuildResponse  ($1EEB)
+;
+; Builds the J1979 response (header $48 $6B $40) for the service in the request and runs the PID
+; handler. [reviewed]
+;
+; Service 4 calls EraseErrorCodes. See docs/en/diagnostics.md.
 ;
 ; Called from: ISODiagnosticComs_18
 ;---------------------------------------------------------------------------------------------------
-L1EEB:
+IsoBuildResponse:
         ldaa    #$48
         staa    >L048E
         ldaa    #$6B
@@ -1084,9 +1097,11 @@ L21CC:
 
 
 ;---------------------------------------------------------------------------------------------------
-; ISODiagnosticComs_19  ($21CF)
+; ObdPid00_Supported  ($21CF)
+;
+; Service 1 PID $00: supported PIDs $BE $3E $B8 $00 (PID $12 added with CONFIG2 bit 5). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-ISODiagnosticComs_19:
+ObdPid00_Supported:
         ldaa    #$BE
         staa    >TempVar100
         ldaa    #$3E
@@ -1108,9 +1123,12 @@ L21E6:
 
 
 ;---------------------------------------------------------------------------------------------------
-; ISODiagnosticComs_20  ($21F4)
+; ObdPid01_MonitorStatus  ($21F4)
+;
+; Service 1 PID $01: DTC count with the MIL bit (ObdStatusFlags bit 7), monitor support from
+; calibration bytes $B81F/$B820 and completion from $0100. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-ISODiagnosticComs_20:
+ObdPid01_MonitorStatus:
         ldaa    >ObdDtcCount
         bne     L21FD
         ldaa    #$00
@@ -1133,10 +1151,12 @@ L2206:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE2221  ($2221)
+; ObdPid03_FuelSystem  ($2221)
+;
+; Service 1 PID $03: FuelSystemStatus. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE2221:
-        ldaa    >L043B
+ObdPid03_FuelSystem:
+        ldaa    >FuelSystemStatus
         staa    >TempVar100
         ldaa    #$00
         staa    >TempStack
@@ -1145,9 +1165,11 @@ CODE2221:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE2232  ($2232)
+; ObdPid04_Load  ($2232)
+;
+; Service 1 PID $04: MaxRPMxMaxMAPFraction. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE2232:
+ObdPid04_Load:
         ldaa    >MaxRPMxMaxMAPFraction
         staa    >TempVar100
         ldx     #$0494
@@ -1155,9 +1177,11 @@ CODE2232:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE223e  ($223E)
+; ObdPid05_Coolant  ($223E)
+;
+; Service 1 PID $05: coolant temperature (CoolantTempVolts - $58). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE223e:
+ObdPid05_Coolant:
         ldaa    >CoolantTempVolts
         suba    #$58
         bcc     L2246
@@ -1169,9 +1193,11 @@ L2246:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE224f  ($224F)
+; ObdPid06_ShortTermTrim  ($224F)
+;
+; Service 1 PID $06: short-term fuel trim from the O2 feedback counter. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE224f:
+ObdPid06_ShortTermTrim:
         ldaa    #$01
         ldab    <Counter_O2SensorFeedbackCount_Signed
         bmi     L2256
@@ -1185,9 +1211,11 @@ L2256:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE2261  ($2261)
+; ObdPid07_LongTermTrim  ($2261)
+;
+; Service 1 PID $07: long-term fuel trim (ValueFromAdaptiveMemory). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE2261:
+ObdPid07_LongTermTrim:
         ldaa    #$01
         ldab    <ValueFromAdaptiveMemory
         bmi     L2268
@@ -1201,9 +1229,11 @@ L2268:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE2273  ($2273)
+; ObdPid0B_Map  ($2273)
+;
+; Service 1 PID $0B: MAP ($0219 × $69 / 256). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE2273:
+ObdPid0B_Map:
         ldaa    >L0219
         ldab    #$69
         mul
@@ -1214,9 +1244,11 @@ CODE2273:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE2284  ($2284)
+; ObdPid0C_Rpm  ($2284)
+;
+; Service 1 PID $0C: engine RPM. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE2284:
+ObdPid0C_Rpm:
         ldd     <EngineRpm_HB
         lsrd
         std     >TempVar100
@@ -1225,9 +1257,11 @@ CODE2284:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE2290  ($2290)
+; ObdPid0D_Speed  ($2290)
+;
+; Service 1 PID $0D: vehicle speed. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE2290:
+ObdPid0D_Speed:
         ldd     <VehicleSpeed_HB
         asld
         asld
@@ -1244,9 +1278,11 @@ L2299:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE22a7  ($22A7)
+; ObdPid0E_Advance  ($22A7)
+;
+; Service 1 PID $0E: spark advance (AdvanceTemporary + $80). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE22a7:
+ObdPid0E_Advance:
         ldaa    >AdvanceTemporary
         adda    #$80
         staa    >TempVar100
@@ -1255,9 +1291,11 @@ CODE22a7:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE22b5  ($22B5)
+; ObdPid0F_IntakeAirTemp  ($22B5)
+;
+; Service 1 PID $0F: charge air temperature (ChargeTempVolts - $58). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE22b5:
+ObdPid0F_IntakeAirTemp:
         ldaa    >ChargeTempVolts
         suba    #$58
         bcc     L22BD
@@ -1269,9 +1307,11 @@ L22BD:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE22c6  ($22C6)
+; ObdPid11_Throttle  ($22C6)
+;
+; Service 1 PID $11: LastTpsVolts. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE22c6:
+ObdPid11_Throttle:
         ldaa    >LastTpsVolts
         staa    >TempVar100
         ldx     #$0494
@@ -1279,9 +1319,11 @@ CODE22c6:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE22d2  ($22D2)
+; ObdPid12_SecondaryAir  ($22D2)
+;
+; Service 1 PID $12: secondary air status from OutputDriverBits bit 5 (1 or 4). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE22d2:
+ObdPid12_SecondaryAir:
         brset   <OutputDriverBits,#$20,L22DA
         ldaa    #$01
         bra     L22DC
@@ -1295,9 +1337,11 @@ L22DC:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE22e5  ($22E5)
+; ObdPid13_O2Present  ($22E5)
+;
+; Service 1 PID $13: O2 sensors present, fixed $03 (bank 1 sensors 1 and 2). [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE22e5:
+ObdPid13_O2Present:
         ldaa    #$03
         staa    >TempVar100
         ldx     #$0494
@@ -1305,9 +1349,11 @@ CODE22e5:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE22f0  ($22F0)
+; ObdPid14_O2Sensor1  ($22F0)
+;
+; Service 1 PID $14: upstream O2 voltage. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE22f0:
+ObdPid14_O2Sensor1:
         pshy
         ldaa    >O2SensorVolts
         cmpa    #$41
@@ -1335,9 +1381,11 @@ L2312:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE231d  ($231D)
+; ObdPid15_O2Sensor2  ($231D)
+;
+; Service 1 PID $15: downstream O2 voltage. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE231d:
+ObdPid15_O2Sensor2:
         pshy
         ldaa    >DownstreamO2Volts
         cmpa    #$41
@@ -1365,9 +1413,11 @@ L233F:
 
 
 ;---------------------------------------------------------------------------------------------------
-; CODE234a  ($234A)
+; ObdFfPid00_Supported  ($234A)
+;
+; Service 2 PID $00: supported freeze frame PIDs. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-CODE234a:
+ObdFfPid00_Supported:
         ldaa    #$7E
         staa    >TempStack
         ldaa    #$38

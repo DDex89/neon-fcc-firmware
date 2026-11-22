@@ -12,10 +12,22 @@
 ;---------------------------------------------------------------------------------------------------
 ; AisDriveRoutine  ($1563)
 ;
-; Low-level AIS stepper motor phase sequencing. [from name]
+; Tail of Isr_TOC1_Periodic: one AIS stepper step and one frame on the SPI link to the I/O
+; companion chip, then RTI. [reviewed]
+;
+; Steps CurrentAisPosition one step towards DesiredNewAisPosition (not below BTVAIS battery volts,
+; not during CountdownTimerFromKeyOn), taking the phase command from the four bytes at $1200 ($B1,
+; $AA, $A3, $9C) and pacing with AisStepDelay. Without a step the command is $B8 (hold), or $95
+; once after start. The command goes into LinkCommandByte. Then one frame is exchanged: a long
+; frame if LinkRequestFlags asks for one (bit 5 frame C, bit 7 CCD transmit, bit 6 register frame)
+; and no crank event is pending (TFLG1 IC1F), otherwise the 1-byte command frame. Every link byte
+; waits for $0400 bit 3 (ready) and is clocked by a pulse on $0402 bit 3. A header byte carries a
+; 3-bit field in bits 3-5 and its complement in bits 0-2; the reply header is checked the same
+; way. Reply status (bits 0-2): 6 = sets BitFlags69 bit 1 (if battery volts are OK), 5 or 7 = sets
+; BitFlags69 bit 4. Errors go to LinkError. See docs/en/ccd_and_link.md.
 ;---------------------------------------------------------------------------------------------------
 AisDriveRoutine:
-        brclr   <L00EA,#$10,L15D9
+        brclr   <LinkRequestFlags,#$10,L15D9
         ldx     #$0113
         brset   $00,x,#$04,L15D9
         ldx     #$0114
@@ -34,7 +46,7 @@ L1575:
         bra     L15D9
 
 L1590:
-        ldaa    >L01c5
+        ldaa    >AisStepDelay
         cmpb    <DesiredNewAisPosition
         beq     L15D1
         bcs     L15AB
@@ -69,7 +81,7 @@ L15BB:
         staa    <AISCounterIndex
         ldab    $00,x
         ldaa    #$02
-        staa    >L01c5
+        staa    >AisStepDelay
         bra     L15ED
 
 L15D1:
@@ -77,26 +89,26 @@ L15D1:
         bcc     L15D6
         clra
 L15D6:
-        staa    >L01c5
+        staa    >AisStepDelay
 L15D9:
         ldab    #$B8
         brclr   <BitFlags69,#$10,L15ED
         brset   $03,y,#$01,L15ED
-        brset   <L00EA,#$20,L15ED
+        brset   <LinkRequestFlags,#$20,L15ED
         ldab    #$95
         bset    <BitFlags69,#$10
 L15ED:
-        stab    >L0165
+        stab    >LinkCommandByte
         ldx     #REGS
         brclr   $03,y,#$01,L15FB
         jmp     >L16AF
 
 L15FB:
         bset    $00,y,#$08
-        ldaa    <L00EA
+        ldaa    <LinkRequestFlags
         bita    #$20
         beq     L1608
-        jmp     >L16B7
+        jmp     >LinkSendFrameC
 
 L1608:
         brclr   $23,x,#$04,L160E
@@ -105,7 +117,7 @@ L1608:
 L160E:
         bita    #$80
         beq     L161B
-        ldab    <L00EB
+        ldab    <LinkStatusFlags
         andb    #$82
         bne     L161B
         jmp     >CCDBusComs
@@ -113,16 +125,16 @@ L160E:
 L161B:
         bita    #$40
         beq     L1622
-        jmp     >L187F
+        jmp     >LinkSendRegisterFrame
 
 L1622:
-        ldab    >L0165
+        ldab    >LinkCommandByte
         ldaa    #$0A
 L1627:
         brclr   $00,y,#$08,L1632
         deca
         bne     L1627
-        jmp     >L1961
+        jmp     >LinkError
 
 L1632:
         bclr    $08,x,#$20
@@ -132,7 +144,7 @@ L1632:
         cmpb    $29,x
         ldab    $2A,x
         bset    $08,x,#$20
-        stab    >$0166
+        stab    >LinkReplyHeader
         tba
         anda    #$07
         lsrb
@@ -142,38 +154,38 @@ L1632:
         andb    #$07
         cba
         bne     L1678
-        ldaa    >$0166
+        ldaa    >LinkReplyHeader
         lsra
         lsra
         lsra
         lsra
         anda    #$0C
-        ldab    <L00EB
+        ldab    <LinkStatusFlags
         andb    #$F3
         aba
-        staa    <L00EB
-        ldab    <L00EA
+        staa    <LinkStatusFlags
+        ldab    <LinkRequestFlags
         anda    #$08
         beq     L1671
         aslb
         aslb
         aslb
         aslb
-        orab    <L00EA
+        orab    <LinkRequestFlags
 L1671:
         andb    #$E0
-        stab    <L00EA
+        stab    <LinkRequestFlags
         tsta
         beq     L167B
 L1678:
-        jmp     >L1961
+        jmp     >LinkError
 
 L167B:
-        ldaa    >$0166
+        ldaa    >LinkReplyHeader
         anda    #$07
         cmpa    #$05
         bcc     L1689
-        cmpa    >L01c6
+        cmpa    >LinkLastStatus
         beq     L16A7
 L1689:
         cmpa    #$06
@@ -196,24 +208,33 @@ L16A1:
 L16A6:
         nop
 L16A7:
-        ldaa    >L0165
+        ldaa    >LinkCommandByte
         anda    #$07
-        staa    >L01c6
+        staa    >LinkLastStatus
 L16AF:
         bset    $03,y,#$01
         bset    $22,x,#$80
         rti
 
-L16B7:
-        ldab    >L0165
+
+;---------------------------------------------------------------------------------------------------
+; LinkSendFrameC  ($16B7)
+;
+; Third long frame type: header LinkFrameCHeader, data LinkFrameCData1/2; reply into
+; LinkFrameCReply1/2. [reviewed]
+;
+; Requested by LinkRequestFlags bit 5 (set in CODE1265). Purpose not decoded.
+;---------------------------------------------------------------------------------------------------
+LinkSendFrameC:
+        ldab    >LinkCommandByte
         andb    #$07
-        orab    >L015F
+        orab    >LinkFrameCHeader
         ldaa    #$0A
 L16C1:
         brclr   $00,y,#$08,L16CC
         deca
         bne     L16C1
-        jmp     >L1961
+        jmp     >LinkError
 
 L16CC:
         bclr    $08,x,#$20
@@ -223,14 +244,14 @@ L16CC:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >$0166
+        stab    >LinkReplyHeader
         ldaa    #$0A
-        ldab    >$0160
+        ldab    >LinkFrameCData1
 L16E7:
         brclr   $00,y,#$08,L16F2
         deca
         bne     L16E7
-        jmp     >L1961
+        jmp     >LinkError
 
 L16F2:
         stab    $2A,x
@@ -240,13 +261,13 @@ L16F2:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >$0163
-        ldab    >L0161
+        stab    >LinkFrameCReply1
+        ldab    >LinkFrameCData2
 L170A:
         brclr   $00,y,#$08,L1715
         deca
         bne     L170A
-        jmp     >L1961
+        jmp     >LinkError
 
 L1715:
         stab    $2A,x
@@ -256,14 +277,14 @@ L1715:
         stab    <InjCylinderMask
         cmpb    $29,x
         ldab    $2A,x
-        stab    >L0164
+        stab    >LinkFrameCReply2
         ldab    <InjCylinderMask
         comb
 L172D:
         brclr   $00,y,#$08,L1738
         deca
         bne     L172D
-        jmp     >L1961
+        jmp     >LinkError
 
 L1738:
         stab    $2A,x
@@ -274,41 +295,41 @@ L1738:
         cmpb    $29,x
         ldab    $2A,x
         bset    $08,x,#$20
-        ldaa    >$0166
-        adda    >$0163
-        adda    >L0164
+        ldaa    >LinkReplyHeader
+        adda    >LinkFrameCReply1
+        adda    >LinkFrameCReply2
         coma
         cba
         beq     L175B
-        jmp     >L1961
+        jmp     >LinkError
 
 L175B:
-        ldaa    >$0166
+        ldaa    >LinkReplyHeader
         lsra
         lsra
         lsra
         lsra
         anda    #$0C
-        ldab    <L00EB
+        ldab    <LinkStatusFlags
         andb    #$F3
         aba
         oraa    #$20
-        staa    <L00EB
-        ldab    <L00EA
+        staa    <LinkStatusFlags
+        ldab    <LinkRequestFlags
         anda    #$08
         beq     L1779
         aslb
         aslb
         aslb
         aslb
-        orab    <L00EA
+        orab    <LinkRequestFlags
 L1779:
         andb    #$C0
         orab    #$02
-        stab    <L00EA
+        stab    <LinkRequestFlags
         tsta
         beq     L1785
-        jmp     >L1961
+        jmp     >LinkError
 
 L1785:
         jmp     >L167B

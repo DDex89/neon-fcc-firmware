@@ -276,5 +276,4 @@ Fuel is cut for whole engine revolutions:
 
 The DRB and ISO 9141 protocols, the actuator tests, the lamps and the OBD-II monitors are described in
 [diagnostics.md](diagnostics.md), the fault descriptors in [fault_codes.md](fault_codes.md). The CCD
-bus (`CCDBusComs`, `CCD_*`) carries data for the instrument cluster and body modules (RPM, coolant
-temperature, speed, warning lamps …); its message list is not decoded yet.
+bus and the I/O companion chip that carries it are described in [ccd_and_link.md](ccd_and_link.md).

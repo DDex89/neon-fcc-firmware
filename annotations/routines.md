@@ -405,7 +405,18 @@ MAP sensor failure, then calls AISSubroutineTable[state]. The running states (4-
 chosen by SelectAisStateA/B. State list: docs/en/engine_control.md.
 
 ## 1563 AisDriveRoutine
-Low-level AIS stepper motor phase sequencing. [from name]
+Tail of Isr_TOC1_Periodic: one AIS stepper step and one frame on the SPI link to the I/O companion chip, then RTI. [reviewed]
+
+Steps CurrentAisPosition one step towards DesiredNewAisPosition (not below BTVAIS battery volts,
+not during CountdownTimerFromKeyOn), taking the phase command from the four bytes at $1200
+($B1, $AA, $A3, $9C) and pacing with AisStepDelay. Without a step the command is $B8 (hold), or
+$95 once after start. The command goes into LinkCommandByte. Then one frame is exchanged: a long
+frame if LinkRequestFlags asks for one (bit 5 frame C, bit 7 CCD transmit, bit 6 register frame)
+and no crank event is pending (TFLG1 IC1F), otherwise the 1-byte command frame. Every link byte
+waits for $0400 bit 3 (ready) and is clocked by a pulse on $0402 bit 3. A header byte carries a
+3-bit field in bits 3-5 and its complement in bits 0-2; the reply header is checked the same way.
+Reply status (bits 0-2): 6 = sets BitFlags69 bit 1 (if battery volts are OK), 5 or 7 = sets
+BitFlags69 bit 4. Errors go to LinkError. See docs/en/ccd_and_link.md.
 
 ## B1C7 ExhGasRecirc_MM
 EGR solenoid control: enables EGR within RPM, MAP, coolant and time windows. [reviewed]
@@ -522,7 +533,7 @@ Clears all stored fault codes. [from name]
 Sends the relay/solenoid command byte to the SPI output driver and reads back its status. [reviewed]
 
 Pulls $0403 bit 2 (chip select) low, writes OutputDriverBits to SPDR, waits for the transfer, releases the
-chip select and stores the returned byte in CCDFlagsX (the driver's fault status). OutputDriverBits bits:
+chip select and stores the returned byte in OutputDriverStatus (the driver's fault status). OutputDriverBits bits:
 0 A/C clutch relay, 3 radiator fan relay, 5 purge solenoid, 6-7 speed control solenoids (see
 docs/en/io_map.md).
 
@@ -665,7 +676,7 @@ State 15, MAP sensor failure (b58_IPL1 bit 5 or 7, set by VerifyOperationOfMapSe
 Picks the running AIS state from the set 12-14 and stores it in the low nibble of AISSubIndex. [reviewed]
 
 12 when BitFlags68 bit 5 is set, 14 when speed control is active (BitFlags66 bit 6), 13 with the
-throttle closed (BitFlags65 bit 7 clear). With the throttle open: 13 if BitFlagsED bit 6 is set
+throttle closed (BitFlags65 bit 7 clear). With the throttle open: 13 if SwitchInputs bit 6 is set
 and RPM is above TABLEc681(TPS), otherwise 12.
 
 ## 41C4 SelectAisStateB
@@ -697,4 +708,177 @@ Lone RTS; nothing references it (dead). [reviewed]
 
 ## FBC6 Dead_FBC6
 JMP back into the serial wait loop; nothing references it (dead). [reviewed]
+
+## 1788 CCDBusComs
+Sends the prepared CCD message (CcdTxHeader, CcdTxId, CcdTxData1/2) to the link chip and reads the received CCD message back. [reviewed]
+
+5-byte frame: header ($D0 = transmit, $D8 = nothing to send, with the low 3 bits of
+LinkCommandByte), ID, two data bytes, complement of the sum. The reply (LinkReplyHeader, CcdRxId,
+CcdRxData1, CcdRxData2, checksum) is checked; bits 6-7 of the reply header go to LinkStatusFlags
+bits 2-3 and LinkStatusFlags bit 7 is set (a message was received).
+
+## 187F LinkSendRegisterFrame
+Writes a 16-bit register of the link chip and reads one back: header LinkRegAddress ($48, $50 or $58), data LinkRegDataOut. [reviewed]
+
+4-byte frame (header, two data bytes, complement of the sum). The reply goes to LinkRegDataIn.
+Sets LinkStatusFlags bit 6, which LinkRegisterUpdate then processes. Also clears LinkRequestFlags
+bit 2 unless one of the O2 heater monitors is active.
+
+## 16B7 LinkSendFrameC
+Third long frame type: header LinkFrameCHeader, data LinkFrameCData1/2; reply into LinkFrameCReply1/2. [reviewed]
+
+Requested by LinkRequestFlags bit 5 (set in CODE1265). Purpose not decoded.
+
+## 1961 LinkError
+Error exit of the link exchange: flushes the SPI, raises PD5 and counts LinkRetryCount down. [reviewed]
+
+After ten failed exchanges in a row it pulses $0409 bit 3 low, which most likely resets the link
+chip, and clears $00F2 and LinkFrameCHeader.
+
+## 58A1 LinkRegisterUpdate
+Processes the reply of a register frame and prepares the next one. [reviewed]
+
+The reply is decoded against LinkRegLastAddress (the header of the frame before, the chip answers
+one frame late): $48 gives the switch input byte (SwitchInputs), $50 a 16-bit input word
+(LinkInputWordHi/Lo). Then the header cycles $50 (data OutputBits2/$00EF), $58 ($0176/$0177) and
+$48 ($00EC, 0), and LinkRequestFlags bit 6 is set. Original name
+ErrorCodeProcessingSomething_MM.
+
+## 45D2 PrepareCCDDataForXmit_MM_1
+Builds the next CCD message from the 128-slot schedule CCDDataStream_1 (index CcdTxSlot). [reviewed]
+
+The first message after start is $E0 with zero data. Each slot routine stores header and ID in
+CcdTxHeader/CcdTxId and returns the two data bytes in D. Sets LinkRequestFlags bit 7 so the next
+TOC1 tick sends the frame. Message list: docs/en/ccd_and_link.md.
+
+## 4602 PrepareCCDDataForXmit_MM_2
+Handles a received CCD message: calls CCDDataStream_2[CcdRxId & $0F]. [reviewed]
+
+Handlers exist for low nibbles 1 (CcdRx_1), 4 (CcdRx_4) and 8 (CcdRx_8). Afterwards, if the
+theft alarm is not disabled (CONFIG bit 2), it runs CCD_HandleAlarm.
+
+## 4703 CcdRx_1
+Received CCD message with ID low nibble 1: sets CCDFlags5 bit 6 (and CCDFlags4 bit 4 unless CCDFlags6 bit 7). Used by the theft alarm logic. [reviewed]
+
+## 4710 CcdRx_4
+Received CCD message with ID low nibble 4: stores data byte 1 in CcdRxValueA and restarts the CCD time-out (CcdRxTimeout). [reviewed]
+
+Set_ErrorBits_3_MM counts CcdRxTimeout up; at $75 it reports code 66 (no CCD messages).
+
+## 4728 CcdRx_8
+Received CCD message with ID low nibble 8: stores data byte 1 in CcdRxValueB. [reviewed]
+
+## 4629 CCD_HandleAlarm
+Vehicle theft alarm logic over CCD, kept in EEPROM4 bits 0-1. [reviewed - data flow]
+
+Runs only when the alarm is not disabled by CONFIG bit 2. Counts in CCDFlags6 and arms or disarms
+using the messages handled by CcdRx_1.
+
+## 476E CCD_EngineRPM
+CCD message $E4: EngineRpm_HB, MapValue. [reviewed]
+
+## 4785 CCD_CoolantTemp
+CCD message $8C: CoolantTemp, AmbientAirTemp. [reviewed]
+
+## 4791 CCD_BatVolts
+CCD message $D4: battery volts and target battery volts (scaled). [reviewed]
+
+## 47BE CCD_ThrottlePos
+CCD message $42: TPSOverMINTHR, cruise set speed / 2. [reviewed]
+
+## 47CB CCD_Baro
+CCD message $54: BaroPressure, ChargeTemp. [reviewed]
+
+## 47D7 CCD_VehicleSpeed
+CCD message $24: vehicle speed in two scalings. [reviewed]
+
+## 47F5 CCD_ToggleFlags
+CCD message $EC: fault and warning flags (from b58_IPL1, IPL1, CCDFlags4) and CCDCF3 bits. [reviewed]
+
+## 4836 CCD_SwitchState
+CCD message $A4: cruise, P/N, A/C clutch, check-engine lamp state and cruise status bits. [reviewed]
+
+## 48C7 CCD_EEPromData
+CCD message $CC: EEPROM1 and TargetIdleSpeedHB, both scaled by 4. [reviewed]
+
+## 477A CCD_ConfigConst1
+CCD message $AC: calibration word CCDCFG. [reviewed]
+
+## 4767 CCD_Blank
+CCD message $D8 header: nothing (empty slot). [reviewed]
+
+## 1E18 IsoValidateRequest
+Checks a received SAE J1979 request in the buffer at $048E: header $68 $6A $Fx, sum checksum, service and length. [reviewed]
+
+Service 1: PID table at $1AEA (PIDs $00-$15, PID $12 only with CONFIG2 bit 5). Service 2: table
+at $1B16 (PIDs $00-$0C), frame 0 only. Service 3: only when ObdDtcCount is not zero. Service 4:
+only with the engine stopped. Service 5: test IDs for O2 sensors 1 and 2. Returns carry set when
+the request is valid.
+
+## 1EEB IsoBuildResponse
+Builds the J1979 response (header $48 $6B $40) for the service in the request and runs the PID handler. [reviewed]
+
+Service 4 calls EraseErrorCodes. See docs/en/diagnostics.md.
+
+## 21CF ObdPid00_Supported
+Service 1 PID $00: supported PIDs $BE $3E $B8 $00 (PID $12 added with CONFIG2 bit 5). [reviewed]
+
+## 21F4 ObdPid01_MonitorStatus
+Service 1 PID $01: DTC count with the MIL bit (ObdStatusFlags bit 7), monitor support from calibration bytes $B81F/$B820 and completion from $0100. [reviewed]
+
+## 2221 ObdPid03_FuelSystem
+Service 1 PID $03: FuelSystemStatus. [reviewed]
+
+## 2232 ObdPid04_Load
+Service 1 PID $04: MaxRPMxMaxMAPFraction. [reviewed]
+
+## 223E ObdPid05_Coolant
+Service 1 PID $05: coolant temperature (CoolantTempVolts - $58). [reviewed]
+
+## 224F ObdPid06_ShortTermTrim
+Service 1 PID $06: short-term fuel trim from the O2 feedback counter. [reviewed]
+
+## 2261 ObdPid07_LongTermTrim
+Service 1 PID $07: long-term fuel trim (ValueFromAdaptiveMemory). [reviewed]
+
+## 2273 ObdPid0B_Map
+Service 1 PID $0B: MAP ($0219 × $69 / 256). [reviewed]
+
+## 2284 ObdPid0C_Rpm
+Service 1 PID $0C: engine RPM. [reviewed]
+
+## 2290 ObdPid0D_Speed
+Service 1 PID $0D: vehicle speed. [reviewed]
+
+## 22A7 ObdPid0E_Advance
+Service 1 PID $0E: spark advance (AdvanceTemporary + $80). [reviewed]
+
+## 22B5 ObdPid0F_IntakeAirTemp
+Service 1 PID $0F: charge air temperature (ChargeTempVolts - $58). [reviewed]
+
+## 22C6 ObdPid11_Throttle
+Service 1 PID $11: LastTpsVolts. [reviewed]
+
+## 22D2 ObdPid12_SecondaryAir
+Service 1 PID $12: secondary air status from OutputDriverBits bit 5 (1 or 4). [reviewed]
+
+## 22E5 ObdPid13_O2Present
+Service 1 PID $13: O2 sensors present, fixed $03 (bank 1 sensors 1 and 2). [reviewed]
+
+## 22F0 ObdPid14_O2Sensor1
+Service 1 PID $14: upstream O2 voltage. [reviewed]
+
+## 231D ObdPid15_O2Sensor2
+Service 1 PID $15: downstream O2 voltage. [reviewed]
+
+## 234A ObdFfPid00_Supported
+Service 2 PID $00: supported freeze frame PIDs. [reviewed]
+
+## 672B InitPeripheralRegisters
+Initialises HC11 peripherals and the I/O device registers. [reviewed]
+
+HC11: DDRD = $3A, OC1M = 0, TCTL2 = $1A, SPCR = $54 (SPI master, CPHA = 1, E/2 = 1 MHz), SCCR1/2 =
+$00/$0C, OPTION = $B9, HPRIO = $2B. I/O device: clears $0402 bits 4 and 6, $0403 bits 4-7, $0404,
+$040B, $040C and $040F bits 4-7; $0407 = $1B, $0408 bits 4-7 set, $040A bits 0/1/3/4 set and
+2/5/7 cleared, $040D = $33. The meaning of the device registers is not known.
 

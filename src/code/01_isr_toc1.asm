@@ -43,8 +43,8 @@ Isr_TOC1_Periodic:
         ldab    <L00F2
         cmpb    #$07
         bcc     L1285
-        brset   <L00EA,#$20,L128D
-        brclr   <L00EB,#$20,L1262
+        brset   <LinkRequestFlags,#$20,L128D
+        brclr   <LinkStatusFlags,#$20,L1262
         ldaa    >L0162
         lsra
         lsra
@@ -57,7 +57,7 @@ Isr_TOC1_Periodic:
         cmpb    #$07
         bcc     L1285
 L1262:
-        ldaa    >L015F
+        ldaa    >LinkFrameCHeader
 
 ;---------------------------------------------------------------------------------------------------
 ; CODE1265  ($1265)
@@ -69,13 +69,13 @@ CODE1265:
         ldx     #L1204
         abx
         ldaa    $00,x
-        staa    >L015F
+        staa    >LinkFrameCHeader
         inx
 L1275:
         ldd     $00,x
-        std     >$0160
-        bset    <L00EA,#$20
-        bclr    <L00EB,#$20
+        std     >LinkFrameCData1
+        bset    <LinkRequestFlags,#$20
+        bclr    <LinkStatusFlags,#$20
         ldx     #REGS
         bra     L12AE
 
@@ -89,18 +89,18 @@ L128D:
         bra     L1296
 
 L1293:
-        bset    <L00EA,#$10
+        bset    <LinkRequestFlags,#$10
 L1296:
         brset   $00,y,#$08,L12AE
-        brset   <L00EA,#$80,L12AE
+        brset   <LinkRequestFlags,#$80,L12AE
         ldd     #$D800
-        std     >CCDOutputVarTemp1
-        staa    >CCDOutputVarTemp3
-        staa    >CCDOutputVarTemp4
-        bset    <L00EA,#$80
+        std     >CcdTxHeader
+        staa    >CcdTxData1
+        staa    >CcdTxData2
+        bset    <LinkRequestFlags,#$80
 L12AE:
         ldx     #REGS
-        brclr   <L00EA,#$F0,L12C5
+        brclr   <LinkRequestFlags,#$F0,L12C5
         bclr    $03,y,#$01
         bset    $00,y,#$08
         bset    $02,y,#$08

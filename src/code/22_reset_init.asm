@@ -338,7 +338,7 @@ L9080:
         staa    >ChargeTempVolts
         ldx     #REGS
         ldd     $31,x                                ; ADR1: A/D result 1
-        std     >AnalogUnused16e
+        std     >AnalogMux01_AN4
         ldy     #$0400
         bclr    $00,y,#$01
         bset    $00,y,#$02
@@ -354,7 +354,7 @@ L90AB:
         ldx     #REGS
         ldy     #$0400
         ldd     $31,x                                ; ADR1: A/D result 1
-        staa    >Analog170
+        staa    >AsdOutputVolts
         stab    >AmbientAirTempVolts
         ldaa    >LCEA9
         bne     L90C3
@@ -411,11 +411,11 @@ L9125:
         bcc     L9140
         inc     >Timer_ThermostatDiagnostics
 L9140:
-        bclr    <BitFlagsED,#$80
+        bclr    <SwitchInputs,#$80
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bita    #$20
         bne     L914D
-        bset    <BitFlagsED,#$80
+        bset    <SwitchInputs,#$80
 L914D:
         ldaa    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         cmpa    #$80

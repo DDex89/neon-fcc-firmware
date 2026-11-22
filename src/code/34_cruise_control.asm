@@ -228,7 +228,7 @@ LF14B:
         cmpa    >CRUZ22_UnknownConstForCruiseControl22 ; CRUZ22 (UnknownConstForCruiseControl22)
         bcc     LF1A7
         inc     >Counter_Cruise_1
-        brset   <BitFlagsED,#$40,LF1A7
+        brset   <SwitchInputs,#$40,LF1A7
         brclr   <StartupSwitchMirror1,#$08,LF172
         bset    <Counter_Cruise_1,#$0D
         bclr    <Counter_Cruise_1,#$02
@@ -239,7 +239,7 @@ LF172:
         ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bita    #$20
         beq     LF188
-        brclr   <BitFlagsED,#$20,LF1A7
+        brclr   <SwitchInputs,#$20,LF1A7
         inc     >Counter_Cruise_1
         inc     >Counter_Cruise_1
         bra     LF1DB
@@ -292,12 +292,12 @@ LF1DB:
         bne     LF1ED
         brclr   <L00EF,#$10,LF24C
 LF1ED:
-        ldab    >CCDFlagsX
+        ldab    >OutputDriverStatus
         eorb    <CCDFlags3
         andb    #$C0
         beq     LF24C
         tba
-        eorb    >CCDFlagsX
+        eorb    >OutputDriverStatus
         staa    <Temp1
         andb    <Temp1
         stab    <Temp1

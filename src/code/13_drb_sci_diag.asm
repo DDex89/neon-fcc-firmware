@@ -695,7 +695,7 @@ SwitchTest:
 ; L52A7  ($52A7)
 ;---------------------------------------------------------------------------------------------------
 L52A7:
-        ldaa    <BitFlagsED
+        ldaa    <SwitchInputs
         bra     SerialOutput1a
 
 

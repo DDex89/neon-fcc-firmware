@@ -227,7 +227,7 @@ LE659:
 LE65C:
         bitb    #$08
         bne     LE681
-        brclr   <BitFlagsED,#$40,LE681
+        brclr   <SwitchInputs,#$40,LE681
         ldaa    <EngineRpm_HB
         cmpa    >RPMTHR_ThrottleSelfCalibrationRpmThreshold ; RPMTHR (ThrottleSelfCalibrationRpmThreshold)
         bcs     LE681
@@ -275,7 +275,7 @@ LE697:
         ldaa    >L01EF
         inca
         beq     LE6E0
-        ldaa    >L01E2
+        ldaa    >CcdRxValueB
         anda    #$05
         cmpa    #$01
         beq     LE6CC
@@ -285,7 +285,7 @@ LE6BB:
         ldaa    >L01EF
         inca
         beq     LE6E0
-        ldaa    >L01E2
+        ldaa    >CcdRxValueB
         anda    #$05
         cmpa    #$01
         bne     LE6CC
@@ -305,7 +305,7 @@ LE6E0:
         ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
         bita    #$20
         beq     LE737
-        brset   <BitFlagsED,#$20,LE6FA
+        brset   <SwitchInputs,#$20,LE6FA
         brclr   <BitFlags_AIS,#$08,LE744
         bclr    <BitFlags_AIS,#$08
         ldaa    #$FF
@@ -467,7 +467,7 @@ LE802:
         ldab    >SwitchPortAccessReg1
         bitb    #$40
         bne     LE836
-        ldaa    <BitFlagsED
+        ldaa    <SwitchInputs
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     LE824
@@ -496,7 +496,7 @@ LE836:
 LE83E:
         bset    <BitFlags_AIS,#$40
 LE841:
-        ldaa    <BitFlagsED
+        ldaa    <SwitchInputs
         ldab    >CONFIG2_ConfigurationFlags2         ; CONFIG2: These are the factory configuration options.
         bitb    #$20
         beq     LE850

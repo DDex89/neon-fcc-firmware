@@ -137,7 +137,7 @@ LFD39:
         ldaa    >LCE74
         bita    #$80
         beq     LFD44
-        brclr   <BitFlagsED,#$40,LFD67
+        brclr   <SwitchInputs,#$40,LFD67
 LFD44:
         ldaa    >VarRevLimitCounterA
         cmpa    >LCE76
@@ -206,7 +206,7 @@ LFDB8:
         ldaa    >LCE74
         bita    #$80
         beq     LFDC3
-        brclr   <BitFlagsED,#$40,TurnOffVariableRevLimit2
+        brclr   <SwitchInputs,#$40,TurnOffVariableRevLimit2
 LFDC3:
         brclr   <L0036,#$80,TurnOffVariableRevLimit2
         ldaa    <Temp0

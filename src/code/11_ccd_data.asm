@@ -11,14 +11,14 @@
 
 CCDDataStream_2:
         dc.w    CCD_Return_A
-        dc.w    L4703
+        dc.w    CcdRx_1
         dc.w    CCD_Return_B
         dc.w    CCD_Return_C
-        dc.w    L4710
+        dc.w    CcdRx_4
         dc.w    CCD_Return_D
         dc.w    CCD_Return_A
         dc.w    CCD_Return_A
-        dc.w    L4728
+        dc.w    CcdRx_8
         dc.w    CCD_Return_A
         dc.w    CCD_Return_A
         dc.w    CCD_Return_A
@@ -164,32 +164,39 @@ L45BF:
 ;---------------------------------------------------------------------------------------------------
 ; PrepareCCDDataForXmit_MM_1  ($45D2)
 ;
+; Builds the next CCD message from the 128-slot schedule CCDDataStream_1 (index CcdTxSlot).
+; [reviewed]
+;
+; The first message after start is $E0 with zero data. Each slot routine stores header and ID in
+; CcdTxHeader/CcdTxId and returns the two data bytes in D. Sets LinkRequestFlags bit 7 so the next
+; TOC1 tick sends the frame. Message list: docs/en/ccd_and_link.md.
+;
 ; Called from: SubLoopA
 ;---------------------------------------------------------------------------------------------------
 PrepareCCDDataForXmit_MM_1:
-        brset   <L00EA,#$80,L4601
+        brset   <LinkRequestFlags,#$80,L4601
         brset   <BitFlags68,#$08,L45E9
         ldaa    #$E0
         clrb
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         clra
-        std     >CCDOutputVarTemp3
+        std     >CcdTxData1
         bset    <BitFlags68,#$08
         bra     L45FE
 
 L45E9:
         ldx     #CCDDataStream_1
-        ldab    >L017C
+        ldab    >CcdTxSlot
         asld
         addb    #$02
         abx
         lsrd
-        stab    >L017C
+        stab    >CcdTxSlot
         ldx     $00,x
         jsr     $00,x
-        std     >CCDOutputVarTemp3
+        std     >CcdTxData1
 L45FE:
-        bset    <L00EA,#$80
+        bset    <LinkRequestFlags,#$80
 L4601:
         rts
 
@@ -197,21 +204,26 @@ L4601:
 ;---------------------------------------------------------------------------------------------------
 ; PrepareCCDDataForXmit_MM_2  ($4602)
 ;
+; Handles a received CCD message: calls CCDDataStream_2[CcdRxId & $0F]. [reviewed]
+;
+; Handlers exist for low nibbles 1 (CcdRx_1), 4 (CcdRx_4) and 8 (CcdRx_8). Afterwards, if the
+; theft alarm is not disabled (CONFIG bit 2), it runs CCD_HandleAlarm.
+;
 ; Called from: MainSubLoop
 ;---------------------------------------------------------------------------------------------------
 PrepareCCDDataForXmit_MM_2:
-        brset   <L00EB,#$80,L4609
+        brset   <LinkStatusFlags,#$80,L4609
         jmp     >L46B3
 
 L4609:
-        ldab    >CCDVar1
+        ldab    >CcdRxId
         aslb
         andb    #$1F
         ldx     #CCDDataStream_2
         abx
         ldx     $00,x
         jsr     $00,x
-        bclr    <L00EB,#$80
+        bclr    <LinkStatusFlags,#$80
         ldaa    <CountdownTimerFromKeyOn
         bne     L4628
         ldaa    >CONFIG_ConfigurationFlags           ; CONFIG: These are the factory configuration options.
@@ -224,6 +236,11 @@ L4628:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_HandleAlarm  ($4629)
+;
+; Vehicle theft alarm logic over CCD, kept in EEPROM4 bits 0-1. [reviewed - data flow]
+;
+; Runs only when the alarm is not disabled by CONFIG bit 2. Counts in CCDFlags6 and arms or
+; disarms using the messages handled by CcdRx_1.
 ;---------------------------------------------------------------------------------------------------
 CCD_HandleAlarm:
         ldaa    >PPROG
@@ -349,9 +366,12 @@ L4702:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L4703  ($4703)
+; CcdRx_1  ($4703)
+;
+; Received CCD message with ID low nibble 1: sets CCDFlags5 bit 6 (and CCDFlags4 bit 4 unless
+; CCDFlags6 bit 7). Used by the theft alarm logic. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-L4703:
+CcdRx_1:
         bset    <CCDFlags5,#$40
         brset   <CCDFlags6,#$80,CCD_Return_A
         bset    <CCDFlags4,#$10
@@ -378,18 +398,23 @@ CCD_Return_C:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L4710  ($4710)
+; CcdRx_4  ($4710)
+;
+; Received CCD message with ID low nibble 4: stores data byte 1 in CcdRxValueA and restarts the
+; CCD time-out (CcdRxTimeout). [reviewed]
+;
+; Set_ErrorBits_3_MM counts CcdRxTimeout up; at $75 it reports code 66 (no CCD messages).
 ;---------------------------------------------------------------------------------------------------
-L4710:
-        clr     >L0216
-        ldaa    >CCDVar3
+CcdRx_4:
+        clr     >CcdRxTimeout
+        ldaa    >CcdRxData2
         bita    #$08
         beq     L471D
         clr     >L01EF
 L471D:
         bclr    <b5a_IPL3,#$80
-        ldaa    >CCDVar2
-        staa    >L01E1
+        ldaa    >CcdRxData1
+        staa    >CcdRxValueA
         rts
 
 
@@ -401,11 +426,13 @@ CCD_Return_D:
 
 
 ;---------------------------------------------------------------------------------------------------
-; L4728  ($4728)
+; CcdRx_8  ($4728)
+;
+; Received CCD message with ID low nibble 8: stores data byte 1 in CcdRxValueB. [reviewed]
 ;---------------------------------------------------------------------------------------------------
-L4728:
-        ldaa    >CCDVar2
-        staa    >L01E2
+CcdRx_8:
+        ldaa    >CcdRxData1
+        staa    >CcdRxValueB
         rts
 
 
@@ -423,12 +450,12 @@ Set_ErrorBits_3_MM:
         deca
 L473E:
         staa    >L01EF
-        ldaa    >L0216
+        ldaa    >CcdRxTimeout
         inca
         bne     L4748
         deca
 L4748:
-        staa    >L0216
+        staa    >CcdRxTimeout
         cmpa    #$75
         bcs     L4766
         brset   <b5a_IPL3,#$80,L4766
@@ -437,7 +464,7 @@ L4748:
         bcc     L4766
         bset    <b5a_IPL3,#$80
         ldaa    #$80
-        staa    >L01E1
+        staa    >CcdRxValueA
         bra     L4766
 
 L4766:
@@ -446,21 +473,25 @@ L4766:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_Blank  ($4767)
+;
+; CCD message $D8 header: nothing (empty slot). [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_Blank:
         ldaa    #$D8
         clrb
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_EngineRPM  ($476E)
+;
+; CCD message $E4: EngineRpm_HB, MapValue. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_EngineRPM:
         ldaa    #$D0
         ldab    #$E4
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldaa    <EngineRpm_HB
         ldab    <MapValue
         rts
@@ -468,22 +499,26 @@ CCD_EngineRPM:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_ConfigConst1  ($477A)
+;
+; CCD message $AC: calibration word CCDCFG. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_ConfigConst1:
         ldaa    #$D0
         ldab    #$AC
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldd     >CCDCFG_CCDConfigConstant            ; CCDCFG: CCD Bus configuration constant. Not sure of usage.
         rts
 
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_CoolantTemp  ($4785)
+;
+; CCD message $8C: CoolantTemp, AmbientAirTemp. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_CoolantTemp:
         ldaa    #$D0
         ldab    #$8C
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldaa    <CoolantTemp
         ldab    <AmbientAirTemp
         rts
@@ -491,11 +526,13 @@ CCD_CoolantTemp:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_BatVolts  ($4791)
+;
+; CCD message $D4: battery volts and target battery volts (scaled). [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_BatVolts:
         ldaa    #$D0
         ldab    #$D4
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldaa    <BatteryVolts
         bsr     L47A3
         pshb
@@ -534,11 +571,13 @@ L47BC:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_ThrottlePos  ($47BE)
+;
+; CCD message $42: TPSOverMINTHR, cruise set speed / 2. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_ThrottlePos:
         ldaa    #$D0
         ldab    #$42
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldaa    <TPSOverMINTHR
         ldab    <CruiseSpeedSetpoint
         lsrb
@@ -547,11 +586,13 @@ CCD_ThrottlePos:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_Baro  ($47CB)
+;
+; CCD message $54: BaroPressure, ChargeTemp. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_Baro:
         ldaa    #$D0
         ldab    #$54
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldaa    <BaroPressure
         ldab    <ChargeTemp
         rts
@@ -559,11 +600,13 @@ CCD_Baro:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_VehicleSpeed  ($47D7)
+;
+; CCD message $24: vehicle speed in two scalings. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_VehicleSpeed:
         ldaa    #$D0
         ldab    #$24
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldd     <VehicleSpeed_HB
         asld
         asld
@@ -585,11 +628,14 @@ L47E9:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_ToggleFlags  ($47F5)
+;
+; CCD message $EC: fault and warning flags (from b58_IPL1, IPL1, CCDFlags4) and CCDCF3 bits.
+; [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_ToggleFlags:
         ldaa    #$D0
         ldab    #$EC
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         clra
         brclr   <b58_IPL1,#$02,L4803
         oraa    #$01
@@ -622,11 +668,14 @@ L4835:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_SwitchState  ($4836)
+;
+; CCD message $A4: cruise, P/N, A/C clutch, check-engine lamp state and cruise status bits.
+; [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_SwitchState:
         ldaa    #$D0
         ldab    #$A4
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         clra
         ldab    >CruiseControlSwitchStateAnalog
         cmpb    #$FD
@@ -645,7 +694,7 @@ L485D:
         brclr   <BitFlags_AIS,#$08,L4863
         oraa    #$40
 L4863:
-        brclr   <BitFlagsED,#$40,L4869
+        brclr   <SwitchInputs,#$40,L4869
         oraa    #$04
 L4869:
         brclr   <OutputDriverBits,#$01,L486F
@@ -706,11 +755,13 @@ L48C6:
 
 ;---------------------------------------------------------------------------------------------------
 ; CCD_EEPromData  ($48C7)
+;
+; CCD message $CC: EEPROM1 and TargetIdleSpeedHB, both scaled by 4. [reviewed]
 ;---------------------------------------------------------------------------------------------------
 CCD_EEPromData:
         ldaa    #$D0
         ldab    #$CC
-        std     >CCDOutputVarTemp1
+        std     >CcdTxHeader
         ldaa    >PPROG
         bita    #$02
         bne     L48E4

@@ -67,7 +67,8 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - [Input / output map](docs/en/io_map.md): port pins, A/D channels, the I/O device at $0400, the SPI
   output driver
 - [PCM connector pinout](docs/en/pcm_connector.md)
-- [Diagnostics and communication](docs/en/diagnostics.md): DRB commands, actuator tests, ISO 9141, lamps
+- [Diagnostics and communication](docs/en/diagnostics.md): DRB commands, actuator tests, ISO 9141 / J1979, lamps
+- [Companion chip link and CCD bus](docs/en/ccd_and_link.md): SPI frames, CCD messages sent and received
 - [Fault codes](docs/en/fault_codes.md) (generated): all 160 fault descriptors with flash and OBD-II codes
 - [RAM map](docs/en/ram_map.md) (generated): every RAM and I/O address with its readers and writers
 - [Calibration table reference](docs/en/calibration_tables.md) (generated)
@@ -78,10 +79,10 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
 - Byte-identical rebuild of both variants, checked in CI.
 - 20,075 instructions identified. All code reached through pointer tables is now traced; only 7
   instructions in four unreferenced fragments remain, marked as dead code.
-- 614 routine headers with call graph; 123 routines described by hand, 87 of them checked (fully or partly) against the
+- 617 routine headers with call graph; 166 routines described by hand, 131 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
 - 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
-- RAM map with readers and writers of every address; 239 of 612 addresses still have a placeholder
+- RAM map with readers and writers of every address; 222 of 655 addresses still have a placeholder
   name (`L0123`).
 
 Help is welcome: improving the knowledge base means editing `annotations/routines.md` or
@@ -90,10 +91,11 @@ Help is welcome: improving the knowledge base means editing `annotations/routine
 ## Roadmap
 
 1. Finish annotating the code. Done: engine position and scheduling, fuel, spark, knock, idle,
-   fault codes, DRB / ISO protocols. Open: CCD messages, ISO 9141 services, the remaining RAM names.
+   fault codes, DRB / ISO 9141 / J1979 protocols, the companion chip link and CCD messages. Open: the
+   remaining RAM names, the meaning of the received CCD messages.
 2. Map the hardware completely. Done: connector pinout, timer pins, A/D channels, output drivers.
-   Open: switch input bits, fuel level input, the receiver of the second output byte, the registers
-   $0402-$040F.
+   Open: most switch input bits, the fuel level input, the registers of the I/O device at $0400 and
+   the companion chip, which cannot be decoded further without their documentation.
 3. Port the annotations to the factory code base B559.
 4. "Enhanced Edition": a modified firmware for the same hardware (higher resolution tables, wideband
    input, faster logging, better diagnostics). Built on top of the verified source. The OBD-II

@@ -50,7 +50,7 @@ L4914:
         beq     O2_UsingFeedback
 L491B:
         ldaa    #$04
-        staa    >L043B
+        staa    >FuelSystemStatus
         bra     O2_StopUsingFeedback
 
 L4922:
@@ -137,7 +137,7 @@ L4993:
         staa    <AdaptiveCellUpdateTimer_IncrementedEveryCamRisingEdge
         staa    <Timer_CLTIME_ClosedLoopTimer
         ldaa    #$08
-        staa    >L043B
+        staa    >FuelSystemStatus
         bclr    <BitFlags65,#$10
 L49A4:
         ldaa    <BitFlags65
@@ -270,12 +270,12 @@ L4A98:
         clra
         brclr   <BitFlags66,#$10,L4AA3
         ldaa    #$04
-        staa    >L043B
+        staa    >FuelSystemStatus
         rts
 
 L4AA3:
         ldaa    #$02
-        staa    >L043B
+        staa    >FuelSystemStatus
         ldy     #$043D
         ldaa    #$FF
         ldab    >DownstreamO2Volts
@@ -894,7 +894,7 @@ HandleAmTimer_MM:
         staa    <Timer_CLTIME_ClosedLoopTimer
         bclr    <BitFlags65,#$20
         ldaa    #$01
-        staa    >L043B
+        staa    >FuelSystemStatus
 
 ;---------------------------------------------------------------------------------------------------
 ; AMTimer_EngineRunning  ($4E5C)

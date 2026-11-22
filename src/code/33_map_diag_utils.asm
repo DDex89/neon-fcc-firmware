@@ -567,7 +567,7 @@ CaptureFreezeFrame:
         staa    $06,x
         ldaa    <EngineRpm_HB
         staa    $07,x
-        ldaa    >L043B
+        ldaa    >FuelSystemStatus
         staa    $01,x
         ldaa    >MaxRPMxMaxMAPFraction
         staa    $02,x

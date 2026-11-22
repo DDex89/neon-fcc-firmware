@@ -69,7 +69,7 @@ A2DAndStoreTPS_and_CruiseVolts_MM:
 LE26C:
         brclr   $30,x,#$80,LE26C
         ldd     $31,x
-        std     >AnalogUnused16e
+        std     >AnalogMux01_AN4
         ldd     $33,x
         std     >LastTpsVolts
         cli
@@ -94,7 +94,7 @@ LE28F:
         cmpa    #$0A
         bcs     LE28F
         ldd     >ADR1
-        std     >Analog170
+        std     >AsdOutputVolts
         cli
         rts
 
@@ -116,7 +116,7 @@ LE2AB:
         cmpa    #$0A
         bcs     LE2AB
         ldd     >ADR1
-        std     >AnalogUnused172
+        std     >AnalogMux11_AN4
         cli
 
 ;---------------------------------------------------------------------------------------------------
