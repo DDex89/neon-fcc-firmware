@@ -58,9 +58,12 @@ The timer runs at E-clock / 4. With the usual 8 MHz crystal (2 MHz E-clock) one 
 | TOF | `Isr_TOF` | Timer overflow count for long periods |
 | TOC1 | `Isr_TOC1_Periodic` | Periodic interrupt every $03B9 ticks (about 1.9 ms) |
 | TOC3 (PA5) | `Interrupt_DwellTimerA` | Ignition coil A driver: dwell start and spark |
-| TOC4 | `Isr_TOC4_KnockSample` | End of the knock window: samples the knock sensor through the A/D |
+| TOC4 (PA4) | `Isr_TOC4_KnockSample` | End of the knock window: samples the knock sensor through the A/D |
 | TOC5 (PA3) | `Interrupt_DwellTimerB` | Ignition coil B driver: dwell start and spark |
 | TOC2, IRQ, XIRQ, SWI, illegal opcode, COP, clock monitor, SCI, SPI, RTI | `Trap_*` | Not used: these handlers record the cause and restart the controller |
+
+Reset sets TCTL2 = $1A (IC1 on rising edges, IC2 and IC3 on falling edges) and TCTL1 = $2A (OC3, OC4
+and OC5 clear their pins on compare; OC2 is disconnected from its pin).
 
 The register names in the original disassembly (inherited from the turbo SMEC) call OC3 and OC4
 injector drivers and OC2 "wastegate". On the FCC the coils use OC3/OC5 directly, while the four

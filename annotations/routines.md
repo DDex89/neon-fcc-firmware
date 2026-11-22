@@ -96,8 +96,10 @@ Timer overflow interrupt: increments the overflow counter $0478 used with input 
 Input capture 1 (PA2) interrupt: crank sensor edge - the main engine position event. [reviewed - partially]
 
 Time-stamps the edge (TIC1) and measures it against the last input capture 3 time and the number of
-timer overflows since the previous pulse; IC1 and IC3 appear to capture the two edges of the same
-crank signal, which gives the slot width used to recognise the reference slots. When the engine is
+timer overflows since the previous pulse. Reset programs TCTL2 = $1A: IC1 captures rising edges and
+IC3 falling edges, so TIC1 - TIC3 is the low time before this rising edge. That separates the slots
+inside a group (short low time) from the first edge after the long gap between groups. Each group of
+the crank wheel has four rising edges, one per event phase (see docs/en/engine_control.md). When the engine is
 synchronised (SyncFlags75 bit 5 or 6, depending on the phase bit in SyncFlags74 bit 7) it increments
 CrankEventCounter and calls one of four handlers from CrankPickupIntrAddressTable, selected by the
 low two bits of SyncFlags75: CrankInterrupt_FallingEdge, CrankInterrupt_HandleCamSensorRisingEdgeA,

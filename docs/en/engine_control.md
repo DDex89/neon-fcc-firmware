@@ -38,8 +38,23 @@ checked against the code.
 - **MAP** is sampled at a fixed crank angle: phase 3 starts an A/D scan of channels 0-3 (`ADCTL = $10`).
 - **Knock window:** phase 3 sets `TOC4 = edge time + 2 x tooth time x factor / 256`, a fixed fraction of
   the tooth period after the edge, and `Isr_TOC4_KnockSample` reads the knock sensor when it expires.
-- **Still open:** the exact slot pattern of the crank wheel and which physical edge is phase 0. That
-  needs a scope capture of the crank and cam signals on a running engine.
+- **Sensor signals** (scope captures at idle, about 880 rpm; one from the project owner's car, one
+  published reference capture):
+  - **Crank:** one group of four pulses every 180 degrees of crankshaft (one group per cylinder
+    event, about 34 ms apart at idle). Inside a group the rising edges are about 3.8 ms apart, which
+    is roughly 20 degrees. In every second group the first pulse is wide (it starts about 60 degrees
+    earlier), which marks the two halves of a revolution.
+  - **Cam:** windows of two different lengths, roughly 0.83 and 1.17 times the group spacing,
+    arranged long - short - short - long over 720 degrees, so four cam edges per cycle.
+  - **Match with the code:** IC1 sees the four rising edges of each group, which are the four event
+    phases, so the four handlers are the four slots of one cylinder event. The long low time before
+    the first rising edge of a group is what the slot-width check in `Isr_TIC1_CrankEvent` detects.
+    Doing the MAP sample and the knock window in phase 3 (the last slot, closest to TDC) fits this
+    picture. `Isr_PAI_CamPhase` reads the crank level at each cam edge: some cam edges fall inside a
+    wide crank pulse (level high), others in a gap (level low), which identifies the cylinder.
+  - Still to confirm: the signal polarity at the HC11 pins (the input buffer may invert it) and the
+    exact slot angles relative to TDC, which need a timing reference (for example the coil or #1
+    injector signal on a third channel).
 
 ## Input coordinates
 
