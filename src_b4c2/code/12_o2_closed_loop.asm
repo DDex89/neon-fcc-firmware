@@ -42,7 +42,7 @@ L4902:
 L4907:
         brclr   <BitFlags65,#$10,L4922               ; closed loop (O2 feedback in use)
         brset   <BitFlags65,#$01,L491B               ; wide-open throttle
-        ldaa    >LC5D6                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5D6
         anda    #$04
 L4914:
         beq     O2_UsingFeedback
@@ -157,7 +157,7 @@ L49B4:
         staa    <Timer_CLTIME_ClosedLoopTimer
 L49B6:
         clra
-        ldx     #LC44D                               ; RIDLST: Open loop enrich factor when setting min throttle blade opening (actua
+        ldx     #LC44D
         ldy     #$010E
         brclr   $00,y,#$04,L49C8
         ldx     #LCCB6
@@ -168,7 +168,7 @@ L49C8:
         brclr   $00,y,#$04,L49DD
         ldy     #$043D
         brclr   $00,y,#$08,L49DD
-        ldx     #LCB84                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldx     #LCB84
 L49DD:
         ldy     #$0112
         brclr   $00,y,#$04,L49E9
@@ -279,7 +279,7 @@ L4AA3:
         ldy     #$043D
         ldaa    #$FF
         ldab    >DownstreamO2Volts
-        ldx     #LCB8E                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldx     #LCB8E
         cmpb    $00,x
         bcc     L4ABD
         inca
@@ -355,7 +355,7 @@ L4B46:
         brclr   $00,y,#$04,L4B64
         ldy     #$043D
         brclr   $00,y,#$08,L4B64
-        ldx     #LCB86                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldx     #LCB86
         brclr   <BitFlags65,#$04,L4B60               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4B60:
@@ -450,7 +450,7 @@ L4BCD:
         brclr   $00,y,#$04,L4BEC
         ldy     #$043D
         brclr   $00,y,#$08,L4BEC
-        ldx     #LCB8A                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldx     #LCB8A
         brclr   <BitFlags65,#$04,L4BE7               ; O2 rich/lean state, flips on each O2 switch
         inx
 L4BE7:
@@ -483,7 +483,7 @@ L4C09:
         ldaa    <Timer_O2ToggleDuration
         ldy     #$0115
         brclr   $00,y,#$04,L4C1A
-        suba    >EGR6_ExhGasRecircConst6             ; SCRMP1 (SecondaryRampSubtractor1)
+        suba    >SCRMP1_SecondaryRampSubtractor1     ; SCRMP1: Subtracted from the O2 toggle time in the secondary ramp (WorkWithSeco
         bra     O2_FullThrottle
 
 L4C1A:
@@ -862,27 +862,27 @@ L4E00:
 ;---------------------------------------------------------------------------------------------------
 ClearO2SensorFeedbackCounterSigned_MM:
         ldaa    <Counter_O2SensorFeedbackCount_Signed
-        cmpa    >LC46E                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC46E
         bcc     L4E3B
         ldaa    >Temp1_X
-        cmpa    >LC46F                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC46F
         ble     L4E3B
         ldaa    <MapValue
         ldab    <BaroPressure
-        subb    >LC470                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        subb    >LC470
         bcc     L4E1C
         clrb
 L4E1C:
         cba
         bls     L4E3B
         ldaa    <CoolantTemp
-        cmpa    >LC471                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC471
         bls     L4E3B
         ldaa    <VehicleSpeed_HB
-        cmpa    >LC472                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC472
         bcc     L4E3B
         ldaa    <EngineRunningTimeMaxFF
-        cmpa    >LC473                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC473
         bls     L4E3B
         brclr   <BitFlags37,#$80,L4E3B
         clr     >Counter_O2SensorFeedbackCount_Signed

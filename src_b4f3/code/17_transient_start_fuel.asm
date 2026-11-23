@@ -39,7 +39,7 @@ L6D93:
         subb    <MapPrevious
         stab    <Temp0
         bcs     TransFuel_CalculateDecreasingMAPTransientFuel
-        ldx     #AETIME_EnrichmentTime_FromTemp      ; DCELTM: O2CNTR inhibit after MAP/THR leanout is done (times 11 ms)
+        ldx     #AETIME_EnrichmentTime_FromTemp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Factor_LeanoutOrEnrichTime_MAP
         clra
@@ -99,9 +99,9 @@ L6DF6:
         beq     L6E0D
         adda    >DECHYS_DeltaMapHysteresisonTriggerLevels ; DECHYS: delta map hysteresis on trigger levels
 L6E0D:
-        cmpa    >LC337                               ; DECTRG: delta map trigger level for no incremental leanout
+        cmpa    >DECTRG_DeltaMapTriggerForNoIncrementalLeanout ; DECTRG: delta map trigger level for no incremental leanout
         bcs     L6E2C
-        cmpa    >DECTRG_DeltaMapTriggerForNoIncrementalLeanoutp ; DTRG2: delta map trigger level for max leanout on decel
+        cmpa    >DTRG2_DeltaMapTriggerForMaxLeanout  ; DTRG2: delta map trigger level for max leanout on decel
         bcs     L6E26
         ldaa    >DCELTM_O2CNTRInhibitAfterLeanoutDone ; DCELTM: O2CNTR inhibit after MAP/THR leanout is done (times 11 ms)
         staa    <Timer_O2InhibitSwitchingRichIdleToClosedLoop
@@ -156,7 +156,7 @@ TransFuel_IncludeTPSTransients:
         stab    >Temp1_X
         stab    <Temp0
         bcs     TransFuel_CalculateDecreasingTPSTransientFuel
-        ldx     #THRTCN_EnrichmentTime_FromTemp      ; DCELTM: O2CNTR inhibit after MAP/THR leanout is done (times 11 ms)
+        ldx     #THRTCN_EnrichmentTime_FromTemp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Factor_LeanoutOrEnrichTime_TPS
         clra
@@ -203,7 +203,7 @@ TransFuel_CalculateDecreasingTPSTransientFuel:
         beq     L6EBE
         adda    >LOTHYS_LeanoutDeltaThrottleHysteresis ; LOTHYS: hysteresis about delta THR trigger levels
 L6EBE:
-        cmpa    >LOTTRG_DeltaTriggerForDecelLeanout  ; LOTTHR: Decel leanout factor - THR based. When Y is zero, factor is 1.00
+        cmpa    >LOTTRG_DeltaTriggerForDecelLeanout  ; LOTTRG: Main trigger (Delta trigger level for THR leanout) - Delta THR. MP Tun
         bcs     TransFuel_ClearLeanOutFactor
         cmpa    >LOTRG2_SecondDecelLeanoutTrigger    ; LOTRG2: Second trigger - leanout inc toward 1 when between triggers
         bcs     L6ED2
@@ -292,7 +292,7 @@ L6F3F:
         bcs     L6F70
         clr     >AISEnleanmentPW
         ldaa    >DeltaToDesiredAISPos
-        ldx     #AISPL1_AISEnrichmentFactorFromAISPulse ; AISNLC: AISEnleanmentPWFromCoolantTemp
+        ldx     #AISPL1_AISEnrichmentFactorFromAISPulse
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         psha
         ldaa    <CoolantTemp

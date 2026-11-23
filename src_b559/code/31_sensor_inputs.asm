@@ -153,9 +153,9 @@ SomethingWithAmbientSensor_SM:
         bita    #$20
         bne     LE2E0
         ldaa    >BatteryTempVolts
-        cmpa    >BATTMH_BatteryTempVoltsHigh         ; BATVLT (BatteryVoltsTable)
+        cmpa    >BATTMH_BatteryTempVoltsHigh
         bcc     LE2CD
-        cmpa    >BATTML_BatteryTempVoltsLow          ; BATVLT (BatteryVoltsTable)
+        cmpa    >BATTML_BatteryTempVoltsLow
         bls     LE2CD
         bra     LE2E0
 
@@ -171,9 +171,9 @@ LE2E0:
         bita    #$08
         bne     LE311
         ldaa    >AmbientAirTempVolts
-        cmpa    >LE01D                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE01D
         bcc     LE2F6
-        cmpa    >LE01C                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE01C
         bls     LE2F6
         bra     LE311
 

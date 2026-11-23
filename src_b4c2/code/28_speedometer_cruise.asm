@@ -245,7 +245,7 @@ ControlCruiseServo1_MM:
         brclr   <BitFlags71,#$20,LB169
         brclr   <BitFlags68,#$20,LB169
         clra
-        ldab    >LC83C                               ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        ldab    >LC83C
         addd    <TargetIdleSpeedHB
         bcc     LB161
         ldd     #$FFFF
@@ -288,7 +288,7 @@ LB19C:
         bcs     LB1C0
         ldd     >RPMDLT_RollingAisMinRpm             ; RPMDLT (RollingAisMinRpm)
         brset   <BitFlags77,#$80,LB1AA
-        ldd     >LC880                               ; RPMDLT (RollingAisMinRpm)
+        ldd     >LC880
 LB1AA:
         addd    <TargetIdleSpeedHB
         cpd     <EngineRpm_HB

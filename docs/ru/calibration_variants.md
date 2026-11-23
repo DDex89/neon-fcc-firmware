@@ -143,15 +143,16 @@
 | `$CB31` | `EGR23` | 1 | ExhGasRecircConstFromMAP1 |
 | `$CB32` | `EGR24` | 1 | ExhGasRecircConstFromMAP2 |
 | `$CB35` | `EGR27` | 7 | ExhGasRecircConstFromCoolantTemp |
-| `$CB46` | `EGR18` | 2 | ExhGasRecircConstLoLimit18 |
-| `$CB48` | `EGR15` | 2 | ExhGasRecircConstFromRPMLoLimit15 |
-| `$CB4A` | `EGR9` | 3 | ExhGasRecircConstFromTimeEngRunning9 |
-| `$CB50` | `EGR16` | 1 | ExhGasRecircConstLoLimit16 |
-| `$CB51` | `EGR16A` | 1 | ExhGasRecircConstHiLimit16a |
-| `$CB52` | `EGR17A` | 1 | ExhGasRecircConstHiLimit17a |
-| `$CB53` | `EGR19` | 1 | ExhGasRecircConstLoLimit19 |
-| `$CB55` | `EGR6` | 1 | ExhGasRecircConst6 |
-| `$CB57` | `SCRMP1` | 110 | SecondaryRampSubtractor1 |
+| `$CB46` | `EGR18` | 2 | EGR flow monitor (MonitorEgrFlow), first phase: MAP window low limit (high limit at $CB47). MP Tune long name: ExhGasRecircConstLoLimit18. |
+| `$CB48` | `EGR15` | 2 | EGR flow monitor, first phase: engine rpm window low limit (high limit at $CB49). |
+| `$CB4A` | `EGR9` | 3 | EGR flow monitor, first phase: throttle above MINTHR, window low limit (high limit at $CB4B). MP Tune long name: ExhGasRecircConstFromTimeEngRunning9. |
+| `$CB50` | `EGR16` | 1 | EGR flow monitor, second phase (EGR switched): MAP window low limit. |
+| `$CB51` | `EGR16A` | 1 | EGR flow monitor, second phase: MAP window high limit. |
+| `$CB52` | `EGR17A` | 1 | EGR flow monitor, second phase: engine rpm window low limit. MP Tune long name: ExhGasRecircConstHiLimit17a. |
+| `$CB53` | `EGR19` | 1 | EGR flow monitor, second phase: engine rpm window high limit. MP Tune long name: ExhGasRecircConstLoLimit19. |
+| `$CB55` | `EGR6` | 1 | EGR flow monitor, second phase: throttle above MINTHR, window high limit. MP Tune long name: ExhGasRecircConst6. |
+| `$CB56` | `EGR15A` | 1 | EGR flow monitor: samples (EgrMonSampleCount, word) before the result is judged. MP Tune long name: ExhGasRecircConstFromRPMHiLimit15a. |
+| `$CB58` | `SCRMP1` | 109 | Subtracted from the O2 toggle time in the secondary ramp (WorkWithSecondaryRamp). MP Tune definition lists it at $CB57; the code reads it at $CB58. |
 | `$CDA8` | `COILHI` | 49 | HiLimitBatteryVoltsForCoilVerify |
 | `$CF5D` | `RPMSCL` | 15 | Output is used as the input to the 3D tables |
 | `$CFDF` | `RPMTHS` | 47 | AISPos from RPM |

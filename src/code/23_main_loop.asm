@@ -472,7 +472,7 @@ L9543:
         ldy     #REGS
         bset    $23,y,#$40                           ; TFLG1: Timer interrupt flags 1 (write 1 to clear)
         ldd     >TCNT
-        addd    #$C350                               ; DCELTM: O2CNTR inhibit after MAP/THR leanout is done (times 11 ms)
+        addd    #$C350
         std     >TOC2
         ldx     #$010A
         ldd     #$0001

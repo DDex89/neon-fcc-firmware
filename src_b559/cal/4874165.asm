@@ -760,8 +760,19 @@ DLTKNK_KnockSensorVoltageForKnockFromRpm:
         dc.b    $8D,$5B,$01,$62            ; x=141 y= 91 slope=$0162
         dc.b    $AF,$8A,$02,$1B            ; x=175 y=138 slope=$021B
         dc.b    $C2,$B2                    ; x=194 y=178 (end)
+
+; ==================================================================================================
+; RTRDRT - KnockRetardRateNoBoost
+;   Retard rate from Knock, no boost. In half degreesn. MP Tune definition lists it at $1BB9; the
+;   code reads it at $BBAA.
+;   group: 2 - Spark / Knock Retard / Normal Knock
+;   axes: x = in_desc 0 255 in | y = Deg 0 128 Degrees
+;   value scale (MP Tune display, approximate): raw x 0.5 Degrees
+; ==================================================================================================
 RTRDRT_KnockRetardRateNoBoost:
-        dc.b    $01,$FF,$FF,$FF,$FF,$FF,$FF
+        dc.b    $01                     ; 1 breakpoints (x, y, slope16 ... last x, y)
+        dc.b    $FF,$FF                    ; x=255 y=255 (end)
+        dc.b    $FF,$FF,$FF,$FF
 
 ; ==================================================================================================
 ; KNKLIM - MaxKnockRetard
@@ -1071,8 +1082,17 @@ TPSRT2_RetardFromDeltaTPSOverMINTHR_WithAR2:
         dc.b    $FF
 LBC30:
         dc.b    $FF,$FF
+
+; ==================================================================================================
+; MCTDRE - MinimumCoolantTempForDeltaRPMEvaluation
+;   MP Tune definition lists it at $BC34; the code reads it at $BC32. The byte at $BC34 is the rpm
+;   limit MRPDRE.
+;   group: 2 - Spark / Normal Advance / DeltaRPMRetard
+;   axes: x = in_desc 0 255 in | y = CoolantTemp -200 260 degF
+;   value scale (MP Tune display, approximate): raw x 1.797 -200 degF
+; ==================================================================================================
 MCTDRE_MinimumCoolantTempForDeltaRPMEvaluation:
-        dc.b    $C2
+        dc.b    $C2                         ; 194
 
 ; ==================================================================================================
 ; MMPDRE - MinimumMAPForDeltaRPMEvaluation
@@ -1082,15 +1102,8 @@ MCTDRE_MinimumCoolantTempForDeltaRPMEvaluation:
 ; ==================================================================================================
 MMPDRE_MinimumMAPForDeltaRPMEvaluation:
         dc.b    $20                         ; 32
-
-; ==================================================================================================
-; MCTDRE - MinimumCoolantTempForDeltaRPMEvaluation
-;   group: 2 - Spark / Normal Advance / DeltaRPMRetard
-;   axes: x = in_desc 0 255 in | y = CoolantTemp -200 260 degF
-;   value scale (MP Tune display, approximate): raw x 1.797 -200 degF
-; ==================================================================================================
 MRPDRE_MinimumRPMForDeltaRPMEvaluation:
-        dc.b    $0D                         ; 13
+        dc.b    $0D
 
 ; ==================================================================================================
 ; MSPDRE - MinimumMPHForDeltaRPMEvaluation
@@ -1879,8 +1892,17 @@ LOTTHR_DecelLeanoutFactor_FromTemp:
         dc.b    $7F,$C8,$01,$43            ; x=127 y=200 slope=$0143
         dc.b    $92,$E0                    ; x=146 y=224 (end)
         dc.b    $FF,$FF,$FF,$FF
+
+; ==================================================================================================
+; LOTTRG - DeltaTriggerForDecelLeanout
+;   Main trigger (Delta trigger level for THR leanout) - Delta THR. MP Tune definition lists it at
+;   $186B; the code reads it at $C325.
+;   group: 1 - Fuel / Transient Enrichment / Decel LO / Decreasing TPS LO
+;   axes: x = in_desc -200 260 degrees | y = factor 0 1 factor
+;   value scale (MP Tune display, approximate): raw x 0.003906 factor
+; ==================================================================================================
 LOTTRG_DeltaTriggerForDecelLeanout:
-        dc.b    $15
+        dc.b    $15                         ; 21
 
 ; ==================================================================================================
 ; LOTRG2 - SecondDecelLeanoutTrigger
@@ -1920,7 +1942,7 @@ NEGSL2_DeltaMAPLeanout_FromTemp:
 ;   axes: x = in_desc 0 255 in | y = DeltaMAP 0 14.7 psi
 ;   value scale (MP Tune display, approximate): raw x 0.05742 psi
 ; ==================================================================================================
-LC337:
+DECTRG_DeltaMapTriggerForNoIncrementalLeanout:
         dc.b    $15                         ; 21
 
 ; ==================================================================================================
@@ -1930,7 +1952,7 @@ LC337:
 ;   axes: x = in_desc 0 255 in | y = DeltaMAP 0 14.7 psi
 ;   value scale (MP Tune display, approximate): raw x 0.05742 psi
 ; ==================================================================================================
-DECTRG_DeltaMapTriggerForNoIncrementalLeanoutp:
+DTRG2_DeltaMapTriggerForMaxLeanout:
         dc.b    $19                         ; 25
 
 ; ==================================================================================================
@@ -2060,13 +2082,6 @@ AISNLC_AISEnleanmentPWFromCoolantTemp:
         dc.b    $FF,$20                    ; x=255 y= 32 (end)
         dc.b    $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
         dc.b    $FF,$FF,$FF,$FF
-
-; ==================================================================================================
-; AISNLC - AISEnleanmentPWFromCoolantTemp
-;   AISEnleanmentPWFromCoolantTemp
-;   group: 1 - Fuel / O2 Feedback Control
-;   axes: x = AISPulse 0 255 out | y = out_desc 0 255 out
-; ==================================================================================================
 AISPL1_AISEnrichmentFactorFromAISPulse:
         dc.b    $02,$07,$01,$01,$59
 LC43F:
@@ -2075,10 +2090,26 @@ LC440:
         dc.b    $20
 LC441:
         dc.b    $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
+; ==================================================================================================
+; O2ITIM - TimeO2InhibitedSwitchingRichIdleToClosedLoop
+;   O2 is inhibited for this time when switching from rich idle to closed loop idle. MP Tune
+;   definition lists it at $802C; the code reads it at $C449.
+;   group: 3 - Idle / Special setup
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
 O2ITIM_TimeO2InhibitedSwitchingRichIdleToClosedLoop:
-        dc.b    $FF
+        dc.b    $FF                         ; 255
+
+; ==================================================================================================
+; IDLDEF - TargetIdleSpeedDefault
+;   MP Tune definition lists it at $802D; the code reads it at $C44A.
+;   group: 3 - Idle / Special setup
+;   axes: x = in_desc 0 255 in | y = RPM 0 8192 rpm
+;   value scale (MP Tune display, approximate): raw x 32 rpm
+; ==================================================================================================
 IDLDEF_TargetIdleSpeedDefault:
-        dc.b    $7D
+        dc.b    $7D                         ; 125
 
 ; ==================================================================================================
 ; RICHSA - OpenLoopEnrichFactorWhenSettingBasicTiming
@@ -2595,7 +2626,7 @@ TRNTIM_OverboostFuelShutoffDelay:
 ;   axes: x = in_desc 0 255 in | y = Boost 0 14.7 psi
 ;   value scale (MP Tune display, approximate): raw x 0.05742 psi
 ; ==================================================================================================
-LC525:
+LMPSHF_OverboostFuelShutoffDisablePointFromMap_Limp:
         dc.b    $4F                         ; 79
 LC526:
         dc.b    $1C
@@ -2852,7 +2883,7 @@ COMNRP_MinimumRPMOverIdleForCutoutCalculation:
 ;   axes: x = in_desc 0 255 in | y = rpm 0 8160 rpm
 ;   value scale (MP Tune display, approximate): raw x 31.88 rpm
 ; ==================================================================================================
-DFRPMX_2050RPM_DecelFuelShutoffTurnonLimitX:
+DFRPM1_2050RPM_DecelFuelShutoffTurnonLimit:
         dc.b    $11                         ; 17
         dc.b    $30
 
@@ -4340,9 +4371,9 @@ CRMSK2_CruiseMask2:
 ;   group: 5 - Aux Functions / Cruise Control
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
-CRMSK3_CruiseMask3:
-        dc.b    $F9                         ; 249
 CRMSK7_CruiseMask7:
+        dc.b    $F9                         ; 249
+LCAB0:
         dc.b    $01
 
 ; ==================================================================================================
@@ -4366,7 +4397,7 @@ CRMSK6_CruiseMask6:
 ;   group: 5 - Aux Functions / Cruise Control
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
-CRMSK5_CruiseMask5:
+CRMSK3_CruiseMask3:
         dc.b    $E1                         ; 225
 
 ; ==================================================================================================
@@ -4710,107 +4741,138 @@ LCB42:
         dc.b    $10,$08
 LCB44:
         dc.b    $26
-LCB45:
+EgrMonVacuumMin:
         dc.b    $31
 
 ; ==================================================================================================
-; EGR18 - ExhGasRecircConstLoLimit18
+; EGR18 - EgrMonMapLow1
+;   EGR flow monitor (MonitorEgrFlow), first phase: MAP window low limit (high limit at $CB47). MP
+;   Tune long name: ExhGasRecircConstLoLimit18.
 ;   group: 5 - Aux Functions / EGR
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
-EGR9_ExhGasRecircConstFromTimeEngRunning9:
+EGR18_EgrMonMapLow1:
         dc.b    $5F                         ; 95
-LCB47:
+EgrMonMapHigh1:
         dc.b    $7A
 
 ; ==================================================================================================
 ; EGR15 - ExhGasRecircConstFromRPMLoLimit15
-;   group: 5 - Aux Functions / EGR
-;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
-; ==================================================================================================
-EGR18_ExhGasRecircConstLoLimit:
-        dc.b    $46                         ; 70
-LCB49:
-        dc.b    $59
-
-; ==================================================================================================
-; EGR9 - ExhGasRecircConstFromTimeEngRunning9
+;   EGR flow monitor, first phase: engine rpm window low limit (high limit at $CB49).
 ;   group: 5 - Aux Functions / EGR
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
 EGR15_ExhGasRecircConstFromRPMLoLimit15:
+        dc.b    $46                         ; 70
+EgrMonRpmHigh1:
+        dc.b    $59
+
+; ==================================================================================================
+; EGR9 - EgrMonTpsLow1
+;   EGR flow monitor, first phase: throttle above MINTHR, window low limit (high limit at $CB4B).
+;   MP Tune long name: ExhGasRecircConstFromTimeEngRunning9.
+;   group: 5 - Aux Functions / EGR
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+EGR9_EgrMonTpsLow1:
         dc.b    $03                         ; 3
-LCB4B:
+EgrMonTpsHigh1:
         dc.b    $4B
-EGR14_ExhGasRecircConstFromTPSVoltsLoLimit14:
+EgrMonSampleCount1:
         dc.b    $00
 LCB4D:
         dc.b    $3E
-LCB4E:
+EgrMonO2CountMax:
         dc.b    $35
-LCB4F:
+EgrMonFilterWeight:
         dc.b    $0A
 
 ; ==================================================================================================
 ; EGR16 - ExhGasRecircConstLoLimit16
-;   group: 5 - Aux Functions / EGR
-;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
-; ==================================================================================================
-LCB50:
-        dc.b    $56                         ; 86
-
-; ==================================================================================================
-; EGR16A - ExhGasRecircConstHiLimit16a
-;   group: 5 - Aux Functions / EGR
-;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
-; ==================================================================================================
-LCB51:
-        dc.b    $7F                         ; 127
-
-; ==================================================================================================
-; EGR17A - ExhGasRecircConstHiLimit17a
+;   EGR flow monitor, second phase (EGR switched): MAP window low limit.
 ;   group: 5 - Aux Functions / EGR
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
 EGR16_ExhGasRecircConstLoLimit16:
+        dc.b    $56                         ; 86
+
+; ==================================================================================================
+; EGR16A - ExhGasRecircConstHiLimit16a
+;   EGR flow monitor, second phase: MAP window high limit.
+;   group: 5 - Aux Functions / EGR
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+EGR16A_ExhGasRecircConstHiLimit16a:
+        dc.b    $7F                         ; 127
+
+; ==================================================================================================
+; EGR17A - EgrMonRpmLow2
+;   EGR flow monitor, second phase: engine rpm window low limit. MP Tune long name:
+;   ExhGasRecircConstHiLimit17a.
+;   group: 5 - Aux Functions / EGR
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+EGR17A_EgrMonRpmLow2:
         dc.b    $44                         ; 68
+
+; ==================================================================================================
+; EGR19 - EgrMonRpmHigh2
+;   EGR flow monitor, second phase: engine rpm window high limit. MP Tune long name:
+;   ExhGasRecircConstLoLimit19.
+;   group: 5 - Aux Functions / EGR
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+EGR19_EgrMonRpmHigh2:
         dc.b    $5A                         ; 90
 
 ; ==================================================================================================
-; EGR19A - ExhGasRecircConstHiLimit19a
+; EGR19A - EgrMonTpsLow2
+;   EGR flow monitor, second phase: throttle above MINTHR, window low limit. MP Tune long name:
+;   ExhGasRecircConstHiLimit19a.
 ;   group: 5 - Aux Functions / EGR
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
-EGR17a_ExhGasRecircConstHiLimit17a:
+EGR19A_EgrMonTpsLow2:
         dc.b    $03                         ; 3
+
+; ==================================================================================================
+; EGR6 - EgrMonTpsHigh2
+;   EGR flow monitor, second phase: throttle above MINTHR, window high limit. MP Tune long name:
+;   ExhGasRecircConst6.
+;   group: 5 - Aux Functions / EGR
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+EGR6_EgrMonTpsHigh2:
         dc.b    $4B                         ; 75
 
 ; ==================================================================================================
-; EGR15A - ExhGasRecircConstFromRPMHiLimit15a
+; EGR15A - EgrMonSampleCount2
+;   EGR flow monitor: samples (EgrMonSampleCount, word) before the result is judged. MP Tune long
+;   name: ExhGasRecircConstFromRPMHiLimit15a.
 ;   group: 5 - Aux Functions / EGR
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
-EGR19_ExhGasRecircConstLoLimit19:
-        dc.b    $00                         ; 0
+EGR15A_EgrMonSampleCount2:
+        dc.w    $0065                       ; 101
 
 ; ==================================================================================================
 ; SCRMP1 - SecondaryRampSubtractor1
+;   Subtracted from the O2 toggle time in the secondary ramp (WorkWithSecondaryRamp). MP Tune
+;   definition lists it at $CB57; the code reads it at $CB58.
 ;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
 ;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
 ; ==================================================================================================
-EGR19a_ExhGasRecircConstHiLimit19a:
-        dc.b    $65                         ; 101
-EGR6_ExhGasRecircConst6:
-        dc.b    $02
-EGR15a_ExhGasRecircConstFromRPMHiLimit:
-        dc.b    $1A
 SCRMP1_SecondaryRampSubtractor1:
+        dc.b    $02                         ; 2
+EgrMonResultMin:
+        dc.b    $1A
+EgrMonResultMax:
         dc.b    $4A
-LCB5B:
+EgrMonFaultCount:
         dc.b    $03
 LCB5C:
         dc.b    $03
-LCB5D:
+EgrMonSettleTime:
         dc.b    $C8
 LCB5E:
         dc.b    $BE
@@ -5644,25 +5706,27 @@ MPRPML_DisableMapCheckUnderThisRpm_600:
         dc.w    $0C80                       ; 3200
 
 ; ==================================================================================================
+; MPRPMH - DisableMapCheckAboveThisRpm_1500
+;   MP Tune definition lists it at $CECC; the code reads it at $CECD.
+;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+MPRPMH_DisableMapCheckAboveThisRpm_1500:
+        dc.w    $2EE0                       ; 12000
+
+; ==================================================================================================
 ; MPDAGL - DisableMapCheckBelowThisMap
+;   MP Tune definition lists it at $CECD; the code reads it at $CECF.
 ;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
 ;   axes: x = in_desc 0 255 in | y = MAP -14.7 0 psi
 ;   value scale (MP Tune display, approximate): raw x 0.05742 -14.7 psi
 ; ==================================================================================================
-MPRPMH_DisableMapCheckAboveThisRpm_1500:
-        dc.b    $2E                         ; 46
-        dc.b    $E0                         ; 224
-
-; ==================================================================================================
-; MPRMPD - CheckMapAtZeroSpeedAndThisDeltaRpm
-;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
-;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
-; ==================================================================================================
 MPDAGL_DisableMapCheckBelowThisMap:
-        dc.b    $1E
+        dc.b    $1E                         ; 30
 
 ; ==================================================================================================
-; BAROSW - CheckMapAtZeroSpeedAndThisBaroSwitch
+; MPDAGH - DisableMapCheckAboveThisMap
+;   MP Tune definition lists it at $CECE; the code reads it at $CED0.
 ;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
 ;   axes: x = in_desc 0 255 in | y = MAP -14.7 0 psi
 ;   value scale (MP Tune display, approximate): raw x 0.05742 -14.7 psi
@@ -5671,24 +5735,33 @@ MPDAGH_DisableMapCheckAboveThisMap:
         dc.b    $F6                         ; 246
 
 ; ==================================================================================================
-; MPVACD - AllowMapToTestGoodThisNearBaro
+; MPRMPD - CheckMapAtZeroSpeedAndThisDeltaRpm
+;   MP Tune definition lists it at $CECF; the code reads it at $CED1.
+;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
+;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
+; ==================================================================================================
+MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm:
+        dc.w    $0200                       ; 512
+
+; ==================================================================================================
+; BAROSW - CheckMapAtZeroSpeedAndThisBaroSwitch
+;   MP Tune definition lists it at $CED0; the code reads it at $CED3.
 ;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
 ;   axes: x = in_desc 0 255 in | y = MAP -14.7 0 psi
 ;   value scale (MP Tune display, approximate): raw x 0.05742 -14.7 psi
 ; ==================================================================================================
-MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm:
-        dc.b    $02                         ; 2
-        dc.b    $00                         ; 0
-
-; ==================================================================================================
-; MPDELX - DeltaMapThatChecksGoodX
-;   group: 5 - Aux Functions / On-Board Diagnostics / T-Stat Diagnostics
-;   axes: x = in_desc 0 255 in | y = out_desc 0 255 out
-; ==================================================================================================
 BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch:
         dc.b    $E3                         ; 227
+
+; ==================================================================================================
+; MPVACD - AllowMapToTestGoodThisNearBaro
+;   MP Tune definition lists it at $CED1; the code reads it at $CED4.
+;   group: 5 - Aux Functions / On-Board Diagnostics / MAP Sensor
+;   axes: x = in_desc 0 255 in | y = MAP -14.7 0 psi
+;   value scale (MP Tune display, approximate): raw x 0.05742 -14.7 psi
+; ==================================================================================================
 MPVACD_AllowMapToTestGoodThisNearBaro:
-        dc.b    $20
+        dc.b    $20                         ; 32
 LCED5:
         dc.b    $01
 LCED6:

@@ -683,7 +683,7 @@ LA052:
         cmpa    <AutoCalCellEnd
         blt     LA070
         ldaa    <CoolantTemp
-        cmpa    >LC99D                               ; CLTRP4 (Cyl4TrimValueForPurgeVolume)
+        cmpa    >LC99D
         bls     LA070
         ldaa    <CylTrimFlags
         anda    #$38
@@ -692,7 +692,7 @@ LA052:
         staa    <AutoCalCellEnd
 LA070:
         ldaa    <CoolantTemp
-        cmpa    >LC4F6                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
+        cmpa    >LC4F6
         bcc     LA0CC
         ldaa    <CylTrimFlags
         bita    #$38
@@ -704,7 +704,7 @@ LA070:
         ldab    $00,x
         sba
         blt     LA090
-        suba    >LC4F7                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
+        suba    >LC4F7
         bcc     LA091
 LA090:
         clra
@@ -734,13 +734,13 @@ LA0B3:
         bcc     LA0B8
         tba
 LA0B8:
-        suba    >LC4F7                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
+        suba    >LC4F7
         bcc     LA0BE
         clra
 LA0BE:
         staa    >Var_0472
         bset    <BitFlagsE3,#$80
-        ldaa    >LC4F8                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
+        ldaa    >LC4F8
         staa    >Var_0470
         bra     LA0CF
 

@@ -93,7 +93,7 @@ No ROM dump is needed to build. Dumps are only needed to regenerate the source w
   instructions in four unreferenced fragments remain, marked as dead code.
 - 616 routine headers with call graph; 209 routines described by hand, 198 of them checked (fully or partly) against the
   code instruction by instruction (`[reviewed]`), the rest based on the original names (`[from name]`).
-- 463 calibration tables named and formatted; 3D maps and curves are laid out row by row.
+- 460 calibration tables named and formatted; 3D maps and curves are laid out row by row.
 - RAM map with readers and writers of every address; every directly accessed address is named.
   Where the meaning is not decoded, the name says who owns the variable (`MonEvap_0205`) or that it
   is shared (`Var_0183`).

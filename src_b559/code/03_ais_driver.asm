@@ -34,7 +34,7 @@ AisDriveRoutine:
         brset   $00,x,#$04,L15D9
 L1575:
         ldaa    <BatteryVolts
-        cmpa    >BTVAIS_MinVoltageForAis             ; MPHREF: Switch point between Decel or Idle AIS control. Note there is also a 1
+        cmpa    >BTVAIS_MinVoltageForAis
         bcs     L15D9
         ldaa    <CountdownTimerFromKeyOn
         bne     L15D9
@@ -191,7 +191,7 @@ L1689:
         cmpa    #$06
         bne     L1699
         ldab    <BatteryVolts
-        cmpb    >BTVAIS_MinVoltageForAis             ; MPHREF: Switch point between Decel or Idle AIS control. Note there is also a 1
+        cmpb    >BTVAIS_MinVoltageForAis
         bcs     L16A7
         bset    <BitFlags69,#$02
         bra     L16A7

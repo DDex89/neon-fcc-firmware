@@ -112,7 +112,7 @@ L8E7B:
         ldaa    >SystemStatusFlag_4b6
         oraa    #$02
         staa    >SystemStatusFlag_4b6
-        ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        ldaa    >LB820
         staa    >ObdMonitorsComplete
         bclr    <BitFlags_AIS,#$40
         bset    <BitFlags_AIS,#$20
@@ -141,7 +141,7 @@ L8EDF:
         iny
         cpy     #$02FF
         bls     L8EDF
-        ldaa    >LCB90                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldaa    >LCB90
         inca
         cmpa    >RpmScaleA
         bcs     L8EFA
@@ -150,9 +150,9 @@ L8EDF:
         cmpa    >RpmScaleA
         bls     L8F06
 L8EFA:
-        ldd     >LCB90                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldd     >LCB90
         std     >RpmScaleA
-        ldd     >LCB92                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldd     >LCB92
         std     >RpmScaleB
 L8F06:
         ldy     #$0400
@@ -172,9 +172,9 @@ L8F1D:
         std     <O2SensorVolts
         ldd     >ADR1
         stab    <BatteryVolts
-        cmpa    >MinMAPVolts                         ; BATVLT (BatteryVoltsTable)
+        cmpa    >MinMAPVolts
         bhi     StoreMAPVoltsAndCalcMAPValue
-        ldaa    >DefaultVoltsForBadMAP               ; BATVLT (BatteryVoltsTable)
+        ldaa    >DefaultVoltsForBadMAP
         staa    <MapVolts
         staa    >MAPTemp_A
         staa    >MAPTemp_B
@@ -402,7 +402,7 @@ L9120:
 L9125:
         jsr     >CODE2e08
         ldaa    <CoolantTemp
-        ldx     #LCB37                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
+        ldx     #LCB37
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    >Egr_0460
         cmpa    >TTEMPL_TstatDiagnosticsMinTempToArmDiagnosticsAtStartup ; TTEMPL (TstatDiagnosticsMinTempToArmDiagnosticsAtStartup)
@@ -493,7 +493,7 @@ L91DD:
         stab    <TpsAverageValue_HB
         jsr     >CheckCoolantTempStatus2_SM
         bset    <BitFlags67,#$04
-        ldaa    >LC8BF                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8BF
         staa    >AcTimer
         jsr     >IncludeCylTrimWithAdaptiveCells
         clra
@@ -548,7 +548,7 @@ L925D:
         bne     L926C
         bclr    <BitFlags36,#$80
 L926C:
-        ldd     >LC0B9                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        ldd     >LC0B9
         std     >Code7886_0213
         ldx     #REGS
         ldd     $0E,x                                ; TCNT: Free-running timer counter (16 bit)

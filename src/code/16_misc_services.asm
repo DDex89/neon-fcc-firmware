@@ -480,12 +480,14 @@ L6A21:
 ; MonitorEgrFlow  ($6A22)
 ;
 ; OBD-II monitor. EGR flow (P0401). Needs engine time LCB44, coolant LCB5E, speed above
-; LCB5F/LCB60, closed loop, steady state, vacuum LCB45 and MAP / TPS / RPM windows (EGR9, EGR15,
-; EGR18; second phase LCB50, EGR17a, EGR16). Averages the short-term trim with EGR in its normal
-; state (EGR_Temp_1) and with EGR switched (EGR_Temp_2); passes when the difference falls inside
-; the window at $CB59/$CB5A (MP Tune names EGR15a / SCRMP1, which do not fit this use), fails
-; after EGR19 samples, fault after LCB5B fails. DRB override target 4 suspends it. [reviewed -
-; data flow]
+; LCB5F/LCB60, closed loop, steady state, vacuum EgrMonVacuumMin and MAP / TPS / RPM windows
+; (first phase $CB46-$CB4B, EGR18 / EGR9 / EGR15; second phase $CB50-$CB55, EGR16 / EGR19A /
+; EGR17A, each a low/high pair checked by EGR_CheckHiLoLimits). Averages the O2 feedback count
+; with EGR in its normal state (EGR_Temp_1) and with EGR switched (EGR_Temp_2), weighted by
+; EgrMonFilterWeight; passes when the difference falls inside EgrMonResultMin/EgrMonResultMax
+; after EgrMonSampleCount2 samples, fault after EgrMonFaultCount fails. Several MP Tune long names
+; in this block do not fit the code; the names here follow the code and the tables keep the MP
+; Tune long name in their description. DRB override target 4 suspends it. [reviewed - data flow]
 ;
 ; Status byte ObdMonStatus_Egr: bit 7 enabled, 6 completed this trip, 3 failed, 2 test running, 0
 ; fault to report. Part of the dormant OBD-II monitor set: only ObdMonitorScheduler would run it,
@@ -518,19 +520,19 @@ L6A48:
         bita    #$01
         bne     L6A83
         ldaa    <KeyOnOrEngineRunningTime
-        cmpa    >LCB44                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
+        cmpa    >LCB44
         bcs     L6A83
         ldaa    <CoolantTemp
-        cmpa    >LCB5E                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB5E
         bcs     L6A83
         ldaa    <VehicleSpeed_HB
         brset   <BitFlags6E,#$08,L6A6A
-        cmpa    >LCB5F                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB5F
         bcc     L6A74
         bra     L6A83
 
 L6A6A:
-        cmpa    >LCB60                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB60
         bcc     L6A74
         bclr    <BitFlags6E,#$08
         bra     L6A83
@@ -547,32 +549,32 @@ L6A86:
         ldaa    <BaroPressure
         suba    <MapValue
         bcs     L6AF1
-        cmpa    >LCB45                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
+        cmpa    >EgrMonVacuumMin
         bcs     L6AF1
         ldx     >EgrMonSampleCount
         ldaa    >ObdMonStatus_Egr
         bita    #$04
         bne     L6ADE
-        cpx     >EGR14_ExhGasRecircConstFromTPSVoltsLoLimit14 ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
+        cpx     >EgrMonSampleCount1
         bhi     EGR_ResetEGRVars
         ldaa    <MapValue
-        ldx     #EGR9_ExhGasRecircConstFromTimeEngRunning9 ; EGR18 (ExhGasRecircConstLoLimit18)
+        ldx     #EGR18_EgrMonMapLow1                 ; EGR18: EGR flow monitor (MonitorEgrFlow), first phase: MAP window low limit (
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
         ldaa    <TpsVolts
         suba    <MINTHR_LowestSessionTPS
         bls     L6AF1
-        ldx     #EGR15_ExhGasRecircConstFromRPMLoLimit15 ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
+        ldx     #EGR9_EgrMonTpsLow1                  ; EGR9: EGR flow monitor, first phase: throttle above MINTHR, window low limit
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
         ldaa    <EngineRpm_HB
-        ldx     #EGR18_ExhGasRecircConstLoLimit      ; EGR15 (ExhGasRecircConstFromRPMLoLimit15)
+        ldx     #EGR15_ExhGasRecircConstFromRPMLoLimit15 ; EGR15: EGR flow monitor, first phase: engine rpm window low limit (high limit
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
         ldaa    <Counter_O2SensorFeedbackCount_Signed
-        cmpa    >LCB4E                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
+        cmpa    >EgrMonO2CountMax
         bge     L6AF1
         ldx     >EgrMonSampleCount
         inx
         stx     >EgrMonSampleCount
-        ldab    >LCB4F                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
+        ldab    >EgrMonFilterWeight
         suba    >EGR_Temp_1
         bvc     L6AE0
         bmi     L6AE2
@@ -644,24 +646,24 @@ EGR_ResetEGRVars:
 ; CODE6b1d  ($6B1D)
 ;---------------------------------------------------------------------------------------------------
 CODE6b1d:
-        cpx     >EGR19_ExhGasRecircConstLoLimit19    ; EGR15A (ExhGasRecircConstFromRPMHiLimit15a)
+        cpx     >EGR15A_EgrMonSampleCount2           ; EGR15A: EGR flow monitor: samples (EgrMonSampleCount, word) before the result
         bcc     CODE6b91
 L6B22:
         inx
         stx     >EgrMonSampleCount
         ldaa    <MapValue
-        ldx     #LCB50                               ; EGR16 (ExhGasRecircConstLoLimit16)
+        ldx     #EGR16_ExhGasRecircConstLoLimit16    ; EGR16: EGR flow monitor, second phase (EGR switched): MAP window low limit.
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
         ldaa    <TpsVolts
         suba    <MINTHR_LowestSessionTPS
         bls     L6AF1
-        ldx     #EGR17a_ExhGasRecircConstHiLimit17a  ; EGR19A (ExhGasRecircConstHiLimit19a)
+        ldx     #EGR19A_EgrMonTpsLow2                ; EGR19A: EGR flow monitor, second phase: throttle above MINTHR, window low limi
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
         ldaa    <EngineRpm_HB
-        ldx     #EGR16_ExhGasRecircConstLoLimit16    ; EGR17A (ExhGasRecircConstHiLimit17a)
+        ldx     #EGR17A_EgrMonRpmLow2                ; EGR17A: EGR flow monitor, second phase: engine rpm window low limit. MP Tune l
         bsr     EGR_CheckHiLoLimits                  ; Checks A against the low/high limit pair at 0,X and 1,X; aborts the caller (PULX) if outsi
         ldaa    <Counter_O2SensorFeedbackCount_Signed
-        ldab    >LCB4F                               ; EGR9 (ExhGasRecircConstFromTimeEngRunning9)
+        ldab    >EgrMonFilterWeight
         suba    >EGR_Temp_2
         bvc     L6B52
         bmi     L6B54
@@ -690,14 +692,14 @@ L6B57:
 L6B69:
         ldaa    #$80
 L6B6B:
-        cmpa    >EGR15a_ExhGasRecircConstFromRPMHiLimit ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >EgrMonResultMin
         blt     L6BC2
-        cmpa    >SCRMP1_SecondaryRampSubtractor1     ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >EgrMonResultMax
         bgt     L6BC2
         ldx     >EgrMonSampleCount
-        cpx     >EGR19_ExhGasRecircConstLoLimit19    ; EGR15A (ExhGasRecircConstFromRPMHiLimit15a)
+        cpx     >EGR15A_EgrMonSampleCount2           ; EGR15A: EGR flow monitor: samples (EgrMonSampleCount, word) before the result
         bcs     L6BC2
-        ldaa    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldaa    >EgrMonSettleTime
         staa    >ObdTrimSettleTimer
         ldaa    >ObdMonStatus_Egr
         anda    #$FB
@@ -717,9 +719,9 @@ CODE6b91:
         ldab    >EgrMonFailCount
         incb
         stab    >EgrMonFailCount
-        cmpb    >LCB5B                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpb    >EgrMonFaultCount
         bcs     L6BBD
-        ldab    >LCB5D                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldab    >EgrMonSettleTime
         stab    >ObdTrimSettleTimer
         oraa    #$48
         bita    #$10

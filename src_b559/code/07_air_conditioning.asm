@@ -301,7 +301,7 @@ L254A:
 ;---------------------------------------------------------------------------------------------------
 AC_Rout2:
         bset    <OutputDriverBits,#$01               ; A/C clutch relay
-        ldaa    >LC8C0                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8C0
         staa    <Ac_00E9
         inc     >AcState
         rts
@@ -313,7 +313,7 @@ AC_Rout2:
 AC_Rout3:
         ldd     <Pulsewidth_PartThrottleEnrichment_HB
         beq     L2561
-        ldaa    >LC8C1                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8C1
         staa    >AcTimer
 L2561:
         ldab    <Counter_MainLoop
@@ -344,7 +344,7 @@ L2580:
 AR_Rout4:
         ldd     <Pulsewidth_PartThrottleEnrichment_HB
         beq     L2596
-        ldaa    >LC8C1                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8C1
         staa    >AcTimer
         ldaa    >AcState
         anda    #$F0
@@ -354,9 +354,9 @@ AR_Rout4:
 
 L2596:
         ldd     <EngineRpm_HB
-        cmpa    >LC8BD                               ; FANTMP6: Detailed Description3
+        cmpa    >LC8BD
         bcc     L25C4
-        cpd     >LC8BB                               ; FANTMP6: Detailed Description3
+        cpd     >LC8BB
         bcs     L25C4
         brset   <BitFlags67,#$04,L25C4
         ldaa    <EngineRpm_HB
@@ -364,7 +364,7 @@ L2596:
         bra     L25B4
 
 L25AF:
-        cmpa    >LC5E2                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5E2
         bcs     L25C4
 L25B4:
         ldx     #ACSubroutineTable2
@@ -423,7 +423,7 @@ L25F9:
         beq     L2613
         ldab    <TPSOverMINTHR
 L2602:
-        cmpb    >LC8C7                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C7
         bcc     CODE2609
         bra     L2613
 
@@ -433,21 +433,21 @@ L2602:
 ;---------------------------------------------------------------------------------------------------
 CODE2609:
         ldab    >AcTimer
-        cmpb    >LC8C8                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C8
         bcs     L264D
         bra     L264A
 
 L2613:
         ldx     <VehicleSpeed_HB
-        cpx     >LC8CC                               ; FANTMP6: Detailed Description3
+        cpx     >LC8CC
         bcc     L2642
         ldab    <EngineRpm_HB
-        cmpb    >LC8CA                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CA
         bcc     L2642
         ldab    <TPSOverMINTHR
-        cmpb    >LC8CB                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CB
         bcs     L2642
-        cmpb    >LC8C6                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C6
         bcs     L2637
         ldaa    >AcState
         oraa    #$10
@@ -456,7 +456,7 @@ L2613:
 
 L2637:
         ldaa    >AcTimer
-        cmpa    >LC8C9                               ; FANTMP6: Detailed Description3
+        cmpa    >LC8C9
         bcs     L264D
         bset    <BitFlags6E,#$02
 L2642:
@@ -495,7 +495,7 @@ AC_Rout7:
         ldaa    >Var_04AE
         bne     L2679
         bclr    <OutputDriverBits,#$01               ; A/C clutch relay
-        ldaa    >LC8B1                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8B1
         staa    >AcTimer
         inc     >AcState
         bset    <BitFlags77,#$40
@@ -511,18 +511,18 @@ AC_Rout8:
         bitb    #$0F
         bne     L26AF
         ldd     <EngineRpm_HB
-        cpd     >LC8BB                               ; FANTMP6: Detailed Description3
+        cpd     >LC8BB
         bcs     L26A3
         ldaa    <TPSOverMINTHR
-        cmpa    >LC8C6                               ; FANTMP6: Detailed Description3
+        cmpa    >LC8C6
         bhi     L26A3
-        cmpa    >LC8C3                               ; FANTMP6: Detailed Description3
+        cmpa    >LC8C3
         bcs     L26A7
         ldaa    <CoolantTemp
-        cmpa    >LC8C2                               ; FANTMP6: Detailed Description3
+        cmpa    >LC8C2
         bcs     L26A7
         ldd     <VehicleSpeed_HB
-        cpd     >LC8C4                               ; FANTMP6: Detailed Description3
+        cpd     >LC8C4
         bcc     L26A7
 L26A3:
         clra
@@ -544,18 +544,18 @@ L26B7:
 ;---------------------------------------------------------------------------------------------------
 AC_Rout9:
         ldd     <EngineRpm_HB
-        cpd     >LC8BB                               ; FANTMP6: Detailed Description3
+        cpd     >LC8BB
         bcc     L26C3
         jmp     >AC_Rout15
 
 L26C3:
-        ldaa    >LC8C8                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8C8
         beq     L26F4
         ldaa    >AcState
         bita    #$10
         bne     L26E1
         ldab    <TPSOverMINTHR
-        cmpb    >LC8C6                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C6
         bcs     L26F4
         ldaa    >AcState
         anda    #$F0
@@ -565,7 +565,7 @@ L26C3:
 
 L26E1:
         ldab    <TPSOverMINTHR
-        cmpb    >LC8C7                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C7
         bcs     L26EA
         bra     L2730
 
@@ -583,27 +583,27 @@ CODE26ed:
 L26F4:
         brclr   <BitFlags6E,#$02,L2704
         ldab    <TPSOverMINTHR
-        cmpb    >LC8CB                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CB
         bhi     L2730
         bclr    <BitFlags6E,#$02
         bra     L2730
 
 L2704:
         ldab    <CoolantTemp
-        cmpb    >LC8C2                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C2
         bcs     L2730
         ldab    <TPSOverMINTHR
-        cmpb    >LC8C3                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C3
         bcs     L2730
         ldx     <VehicleSpeed_HB
-        cpx     >LC8C4                               ; FANTMP6: Detailed Description3
+        cpx     >LC8C4
         bcc     L2730
         ldab    <EngineRpm_HB
         addb    #$04
         bcc     L2720
         clrb
 L2720:
-        cmpb    >LC8CA                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CA
         bcc     L2730
         ldaa    >AcState
         anda    #$F0
@@ -686,13 +686,13 @@ L279A:
 ; AC_Rout11  ($279B)
 ;---------------------------------------------------------------------------------------------------
 AC_Rout11:
-        ldaa    >LC8C8                               ; FANTMP6: Detailed Description3
+        ldaa    >LC8C8
         beq     L27CC
         ldaa    >AcState
         bita    #$10
         bne     L27B9
         ldab    <TPSOverMINTHR
-        cmpb    >LC8C6                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C6
         bcs     L27CC
         ldaa    >AcState
         anda    #$F0
@@ -702,7 +702,7 @@ AC_Rout11:
 
 L27B9:
         ldab    <TPSOverMINTHR
-        cmpb    >LC8CB                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CB
         bcs     L27C2
         bra     L2808
 
@@ -715,27 +715,27 @@ L27C2:
 L27CC:
         brclr   <BitFlags6E,#$02,L27DC
         ldab    <TPSOverMINTHR
-        cmpb    >LC8CB                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CB
         bhi     L2808
         bclr    <BitFlags6E,#$02
         bra     L2808
 
 L27DC:
         ldab    <CoolantTemp
-        cmpb    >LC8C2                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C2
         bcs     L2808
         ldab    <TPSOverMINTHR
-        cmpb    >LC8C3                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8C3
         bcs     L2808
         ldx     <VehicleSpeed_HB
-        cpx     >LC8C4                               ; FANTMP6: Detailed Description3
+        cpx     >LC8C4
         bcc     L2808
         ldab    <EngineRpm_HB
         addb    #$04
         bcc     L27F8
         clrb
 L27F8:
-        cmpb    >LC8CA                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8CA
         bcc     L2808
         ldaa    >AcState
         anda    #$F0

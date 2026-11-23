@@ -1,6 +1,6 @@
 # Справочник калибровочных таблиц
 
-Сгенерировано `tools/gen_cal_docs.py` из описаний таблиц (взятых из файлов определений MP Tune). Адреса одинаковы для всех калибровок на коде B4CC. Описания оставлены в оригинале на английском; многие из них пока заглушки.
+Сгенерировано `tools/gen_cal_docs.py` из описаний таблиц (взятых из файлов определений MP Tune). Адреса одинаковы для всех калибровок на коде B4CC. Описания оставлены в оригинале на английском (многие из них пока заглушки), кроме мест, где адрес или полное имя из MP Tune не совпадает с кодом: там описание говорит, что делает код, и приводит адрес или имя из MP Tune.
 
 Коды типов: 0 = 2D-кривая «точка-наклон», 2 = 2D-кривая (другой формат), 3 = байтовая константа, 4 = 16-битная константа, 5 = битовые флаги, 7 = 3D-карта (строки x столбцы), 9 = список адресов, 11 = таблица шагов лямбда-регулятора, 17 = 3D-карта со своей осью.
 
@@ -124,12 +124,6 @@
 | `$C2CA` | `AIRTMP` | FuelEnrichmentFromChargeTemp | 0 | Charge Temp Factor. Note that this is an unfiltered charge temp voltage, so higher numbers are lower temps |
 | `$C2DD` | `AIRMAP` | MAPMultiplierForAIRTMP | 0 | Charge temp enrichment factor multiplier from MAP |
 
-## 1 - Fuel / O2 Feedback Control
-
-| Адрес | Имя | Полное имя | Тип | Описание |
-|---|---|---|---|---|
-| `$C43A` | `AISNLC` | AISEnleanmentPWFromCoolantTemp | 0 | AISEnleanmentPWFromCoolantTemp |
-
 ## 1 - Fuel / O2 Feedback Control / Adaptive Memory Timer
 
 | Адрес | Имя | Полное имя | Тип | Описание |
@@ -239,9 +233,9 @@
 
 | Адрес | Имя | Полное имя | Тип | Описание |
 |---|---|---|---|---|
-| `$186B` | `LOTTRG` | DeltaTriggerForDecelLeanout | 3 | Main trigger (Delta trigger level for THR leanout) - Delta THR |
 | `$C307` | `AESLOP` | DeltaMAPEnrichment FromTemp | 0 | Transient Enrichment PW Addition |
 | `$C316` | `LOTTHR` | DecelLeanoutFactor FromTemp | 0 | Decel leanout factor - THR based. When Y is zero, factor is 1.00 |
+| `$C325` | `LOTTRG` | DeltaTriggerForDecelLeanout | 3 | Main trigger (Delta trigger level for THR leanout) - Delta THR. MP Tune definition lists it at $186B; the code reads it at $C325. |
 | `$C326` | `LOTRG2` | SecondDecelLeanoutTrigger | 3 | Second trigger - leanout inc toward 1 when between triggers |
 | `$C353` | `LMAPTC` | TimeConstant | 0 | lean out time constant based on MAP |
 
@@ -300,7 +294,6 @@
 
 | Адрес | Имя | Полное имя | Тип | Описание |
 |---|---|---|---|---|
-| `$1BB9` | `RTRDRT` | KnockRetardRateNoBoost | 0 | Retard rate from Knock, no boost. In half degreesn |
 | `$BAE6` | `WOTMRP` | AdvanceFromMAPAndRPMWarmFull | 7 |  |
 | `$BB87` | `ARSUBC` | AdaptiveRetardFactorSubtract | 3 |  |
 | `$BB88` | `KNAMAP` | MinMAPForAverageKnockVoltCalc | 3 |  |
@@ -315,6 +308,7 @@
 | `$BB91` | `KNADF2` | DefaultKnockVoltsAverage2 | 3 |  |
 | `$BB92` | `KNATPS` | MinThrotPosForAverageKnockVoltCalc | 3 |  |
 | `$BB93` | `DLTKNK` | KnockSensorVoltageForKnock FromRpm | 0 | Input from the knock sensor that is above this voltage is considered Knock. |
+| `$BBAA` | `RTRDRT` | KnockRetardRateNoBoost | 0 | Retard rate from Knock, no boost. In half degreesn. MP Tune definition lists it at $1BB9; the code reads it at $BBAA. |
 | `$BBB1` | `KNKLIM` | MaxKnockRetard | 3 | Knock Limit in 1/2 degrees. MaxRetard = KNKLIM if throttle is above THRKNK and RPM is below KLMRPM |
 | `$BBB2` | `THRKNK` | DeltaAbove MINTHR | 3 | Delta above MINTHR for knock detect |
 | `$BBB3` | `KLMRPM` | MinKnockDetectRpm | 3 | RPMS for Knock |
@@ -354,8 +348,8 @@
 | Адрес | Имя | Полное имя | Тип | Описание |
 |---|---|---|---|---|
 | `$BC27` | `TPSRT2` | RetardFromDeltaTPSOverMINTHR WithAR2 | 2 | Retard from deltaTPS. |
+| `$BC32` | `MCTDRE` | MinimumCoolantTempForDeltaRPMEvaluation | 3 | MP Tune definition lists it at $BC34; the code reads it at $BC32. The byte at $BC34 is the rpm limit MRPDRE. |
 | `$BC33` | `MMPDRE` | MinimumMAPForDeltaRPMEvaluation | 3 |  |
-| `$BC34` | `MCTDRE` | MinimumCoolantTempForDeltaRPMEvaluation | 3 |  |
 | `$BC35` | `MSPDRE` | MinimumMPHForDeltaRPMEvaluation | 3 |  |
 | `$BD69` | `RTSPMP` | MinimumMAPForRetardFromSpeed | 3 |  |
 
@@ -456,10 +450,10 @@
 
 | Адрес | Имя | Полное имя | Тип | Описание |
 |---|---|---|---|---|
-| `$802C` | `O2ITIM` | TimeO2InhibitedSwitchingRichIdleToClosedLoop | 3 | O2 is inhibited for this time when switching from rich idle to closed loop idle |
-| `$802D` | `IDLDEF` | TargetIdleSpeedDefault | 3 |  |
 | `$B819` | `IPLMSK3` | PowerLossLightMask3 | 5 | Illuminate PowerLoss Light Mask3. These errors alert the driver. |
 | `$B827` | `SPKSET` | ConstantSparkAdvanceWhenSettingBasicTiming | 3 | Constant spark advance setting when setting basic timing (stock 12 degrees) |
+| `$C449` | `O2ITIM` | TimeO2InhibitedSwitchingRichIdleToClosedLoop | 3 | O2 is inhibited for this time when switching from rich idle to closed loop idle. MP Tune definition lists it at $802C; the code reads it at $C449. |
+| `$C44A` | `IDLDEF` | TargetIdleSpeedDefault | 3 | MP Tune definition lists it at $802D; the code reads it at $C44A. |
 | `$C44B` | `RICHSA` | OpenLoopEnrichFactorWhenSettingBasicTiming | 3 | Open loop enrich factor when setting mechanical basic timing |
 
 ## 4 - OB, Speed, and Rev Limiter / Decel Fuel Cut
@@ -597,16 +591,16 @@
 | `$CB33` | `EGR25` | ExhGasRecircConstFromBaro1 | 3 |  |
 | `$CB34` | `EGR26` | ExhGasRecircConstFromBaro2 | 3 |  |
 | `$CB35` | `EGR27` | ExhGasRecircConstFromCoolantTemp | 3 |  |
-| `$CB46` | `EGR18` | ExhGasRecircConstLoLimit18 | 3 |  |
-| `$CB48` | `EGR15` | ExhGasRecircConstFromRPMLoLimit15 | 3 |  |
-| `$CB4A` | `EGR9` | ExhGasRecircConstFromTimeEngRunning9 | 3 |  |
-| `$CB50` | `EGR16` | ExhGasRecircConstLoLimit16 | 3 |  |
-| `$CB51` | `EGR16A` | ExhGasRecircConstHiLimit16a | 3 |  |
-| `$CB52` | `EGR17A` | ExhGasRecircConstHiLimit17a | 3 |  |
-| `$CB53` | `EGR19` | ExhGasRecircConstLoLimit19 | 3 |  |
-| `$CB54` | `EGR19A` | ExhGasRecircConstHiLimit19a | 3 |  |
-| `$CB55` | `EGR6` | ExhGasRecircConst6 | 3 |  |
-| `$CB56` | `EGR15A` | ExhGasRecircConstFromRPMHiLimit15a | 3 |  |
+| `$CB46` | `EGR18` | EgrMonMapLow1 | 3 | EGR flow monitor (MonitorEgrFlow), first phase: MAP window low limit (high limit at $CB47). MP Tune long name: ExhGasRecircConstLoLimit18. |
+| `$CB48` | `EGR15` | ExhGasRecircConstFromRPMLoLimit15 | 3 | EGR flow monitor, first phase: engine rpm window low limit (high limit at $CB49). |
+| `$CB4A` | `EGR9` | EgrMonTpsLow1 | 3 | EGR flow monitor, first phase: throttle above MINTHR, window low limit (high limit at $CB4B). MP Tune long name: ExhGasRecircConstFromTimeEngRunning9. |
+| `$CB50` | `EGR16` | ExhGasRecircConstLoLimit16 | 3 | EGR flow monitor, second phase (EGR switched): MAP window low limit. |
+| `$CB51` | `EGR16A` | ExhGasRecircConstHiLimit16a | 3 | EGR flow monitor, second phase: MAP window high limit. |
+| `$CB52` | `EGR17A` | EgrMonRpmLow2 | 3 | EGR flow monitor, second phase: engine rpm window low limit. MP Tune long name: ExhGasRecircConstHiLimit17a. |
+| `$CB53` | `EGR19` | EgrMonRpmHigh2 | 3 | EGR flow monitor, second phase: engine rpm window high limit. MP Tune long name: ExhGasRecircConstLoLimit19. |
+| `$CB54` | `EGR19A` | EgrMonTpsLow2 | 3 | EGR flow monitor, second phase: throttle above MINTHR, window low limit. MP Tune long name: ExhGasRecircConstHiLimit19a. |
+| `$CB55` | `EGR6` | EgrMonTpsHigh2 | 3 | EGR flow monitor, second phase: throttle above MINTHR, window high limit. MP Tune long name: ExhGasRecircConst6. |
+| `$CB56` | `EGR15A` | EgrMonSampleCount2 | 4 | EGR flow monitor: samples (EgrMonSampleCount, word) before the result is judged. MP Tune long name: ExhGasRecircConstFromRPMHiLimit15a. |
 
 ## 5 - Aux Functions / On-Board Diagnostics
 
@@ -662,7 +656,7 @@
 
 | Адрес | Имя | Полное имя | Тип | Описание |
 |---|---|---|---|---|
-| `$CB57` | `SCRMP1` | SecondaryRampSubtractor1 | 3 |  |
+| `$CB58` | `SCRMP1` | SecondaryRampSubtractor1 | 3 | Subtracted from the O2 toggle time in the secondary ramp (WorkWithSecondaryRamp). MP Tune definition lists it at $CB57; the code reads it at $CB58. |
 | `$CD62` | `THROFF` | OffsetAddedToCalcThrottle | 3 |  |
 | `$CDA5` | `THRHIG` | ThrottleUpperLimit | 3 |  |
 | `$CDA8` | `COILHI` | HiLimitBatteryVoltsForCoilVerify | 3 |  |
@@ -671,13 +665,12 @@
 | `$CEC9` | `MPDELT` | DeltaMapThatChecksGood | 3 |  |
 | `$CECA` | `MPDELA` | MatureMapLimpinWhenDeltaAbove MPDELT plus MPDELA | 3 |  |
 | `$CECB` | `MPRPML` | DisableMapCheckUnderThisRpm 600 | 4 |  |
-| `$CECC` | `MPRPMH` | DisableMapCheckAboveThisRpm 1500 | 4 |  |
-| `$CECD` | `MPDAGL` | DisableMapCheckBelowThisMap | 3 |  |
-| `$CECE` | `MPDAGH` | DisableMapCheckAboveThisMap | 3 |  |
-| `$CECF` | `MPRMPD` | CheckMapAtZeroSpeedAndThisDeltaRpm | 4 |  |
-| `$CED0` | `BAROSW` | CheckMapAtZeroSpeedAndThisBaroSwitch | 3 |  |
-| `$CED1` | `MPVACD` | AllowMapToTestGoodThisNearBaro | 3 |  |
-| `$CED2` | `MPVAC2` | AllowMapToTestGoodThisNearBaro2 | 3 |  |
+| `$CECD` | `MPRPMH` | DisableMapCheckAboveThisRpm 1500 | 4 | MP Tune definition lists it at $CECC; the code reads it at $CECD. |
+| `$CECF` | `MPDAGL` | DisableMapCheckBelowThisMap | 3 | MP Tune definition lists it at $CECD; the code reads it at $CECF. |
+| `$CED0` | `MPDAGH` | DisableMapCheckAboveThisMap | 3 | MP Tune definition lists it at $CECE; the code reads it at $CED0. |
+| `$CED1` | `MPRMPD` | CheckMapAtZeroSpeedAndThisDeltaRpm | 4 | MP Tune definition lists it at $CECF; the code reads it at $CED1. |
+| `$CED3` | `BAROSW` | CheckMapAtZeroSpeedAndThisBaroSwitch | 3 | MP Tune definition lists it at $CED0; the code reads it at $CED3. |
+| `$CED4` | `MPVACD` | AllowMapToTestGoodThisNearBaro | 3 | MP Tune definition lists it at $CED1; the code reads it at $CED4. |
 
 ## 5 - Aux Functions / On-Board Diagnostics / O2 Sensor Diagnostics
 
@@ -691,7 +684,6 @@
 
 | Адрес | Имя | Полное имя | Тип | Описание |
 |---|---|---|---|---|
-| `$CED3` | `MPDELX` | DeltaMapThatChecksGoodX | 3 |  |
 | `$CEDB` | `TTEMPL` | TstatDiagnosticsMinTempToArmDiagnosticsAtStartup | 3 |  |
 | `$CEDC` | `TTEMPH` | TstatDiagnosticsMaxTempToArmDiagnosticsAtStartup | 3 |  |
 | `$CEDD` | `TDAGTP` | TstatDiagnosticsTemperatureGoalWithin HOTIME | 3 |  |

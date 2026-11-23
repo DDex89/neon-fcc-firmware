@@ -313,12 +313,26 @@ class Gen:
         n = self.data_ref(a)
         return n if n else hx(a, 2)
 
+    def table_size(self, a):
+        """Bytes of the calibration item at a, from its type (MP Tune type codes)."""
+        typ, b = self.tables[a].get("type", ""), self.rom.byte
+        if typ in ("3", "5"):
+            return 1
+        if typ == "4":
+            return 2
+        if typ == "0" and 1 <= b(a) <= 32:
+            return 4 * b(a) - 1
+        if typ == "7" and b(a) and b(a + 1):
+            return 3 + b(a) * b(a + 1)
+        return 64                       # other formats: up to the next item (at most 64 bytes)
+
     def table_of(self, a):
+        """The calibration item that contains address a (its start if a is inside it), else None."""
         if a in self.tables:
             return a
         ks = sorted(self.tables)
         i = bisect.bisect_right(ks, a) - 1
-        if i >= 0 and a - ks[i] < 64:
+        if i >= 0 and a - ks[i] < min(64, self.table_size(ks[i])):
             return ks[i]
         return None
 

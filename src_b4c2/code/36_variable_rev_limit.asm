@@ -31,14 +31,14 @@ CalculateVariableRevLimit_MM:
         asld
         staa    <Temp0
         ldaa    <BaroPressure
-        ldab    >VarRevLimitBaroFactor               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldab    >VarRevLimitBaroFactor
         mul
         adca    #$00
         staa    >VarRevLimitMAPRef
         brset   <b58_IPL1,#$40,JumpTo_VarRevLimitOnNow
         brclr   <b58_IPL1,#$A0,TPSandMAP_OK
         ldaa    <TPSOverMINTHR
-        ldx     #RevLimitFromTPSOverMinThr           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldx     #RevLimitFromTPSOverMinThr
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    >VariableRevLimit
 
@@ -78,7 +78,7 @@ LFCB9:
         ldaa    #$FF
         brclr   <BitFlags36,#$80,StoreVariableRevLimit
         ldaa    <TPSOverMINTHR
-        ldx     #RevLimitFromTPSOverMinThr           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldx     #RevLimitFromTPSOverMinThr
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
 
 ;---------------------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ LFD44:
 LFD52:
         bset    <BitFlags36,#$80
         ldaa    <TPSOverMINTHR
-        ldx     #RevLimitFromTPSOverMinThr           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldx     #RevLimitFromTPSOverMinThr
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    >VariableRevLimit
         ldy     #ErrBytes_CODE14_a
@@ -217,7 +217,7 @@ LFDB8:
 LFDC3:
         brclr   <BitFlags36,#$80,TurnOffVariableRevLimit2
         ldaa    <Temp0
-        ldx     #TABLEcdc6                           ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldx     #TABLEcdc6
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    >VariableRevLimit
         bra     VarRevLimit_Return

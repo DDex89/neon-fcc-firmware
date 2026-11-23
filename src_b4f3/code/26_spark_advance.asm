@@ -225,10 +225,10 @@ LA874:
         cmpb    >MMPDRE_MinimumMAPForDeltaRPMEvaluation ; MMPDRE (MinimumMAPForDeltaRPMEvaluation)
         bls     ClearKnockVoltsAvgCounter
         ldab    <CoolantTemp
-        cmpb    >MCTDRE_MinimumCoolantTempForDeltaRPMEvaluation ; TPSRT2: Retard from deltaTPS.
+        cmpb    >MCTDRE_MinimumCoolantTempForDeltaRPMEvaluation ; MCTDRE: MP Tune definition lists it at $BC34; the code reads it at $BC32. The
         bls     ClearKnockVoltsAvgCounter
         ldd     <EngineRpm_HB
-        cmpa    >MRPDRE_MinimumRPMForDeltaRPMEvaluation ; MCTDRE (MinimumCoolantTempForDeltaRPMEvaluation)
+        cmpa    >MRPDRE_MinimumRPMForDeltaRPMEvaluation
         bhi     LA8A2
 
 ;---------------------------------------------------------------------------------------------------
@@ -498,10 +498,10 @@ CheckConditionsForDeltaRPMRetard:
         cmpb    >MSPDRE_MinimumMPHForDeltaRPMEvaluation ; MSPDRE (MinimumMPHForDeltaRPMEvaluation)
         bls     LAA3A
         ldab    <EngineRpm_HB
-        cmpb    >MRPDRE_MinimumRPMForDeltaRPMEvaluation ; MCTDRE (MinimumCoolantTempForDeltaRPMEvaluation)
+        cmpb    >MRPDRE_MinimumRPMForDeltaRPMEvaluation
         bls     LAA3A
         ldab    <CoolantTemp
-        cmpb    >MCTDRE_MinimumCoolantTempForDeltaRPMEvaluation ; TPSRT2: Retard from deltaTPS.
+        cmpb    >MCTDRE_MinimumCoolantTempForDeltaRPMEvaluation ; MCTDRE: MP Tune definition lists it at $BC34; the code reads it at $BC32. The
         bls     LAA3A
         ldab    <MapValue
         cmpb    >MMPDRE_MinimumMAPForDeltaRPMEvaluation ; MMPDRE (MinimumMAPForDeltaRPMEvaluation)
@@ -574,7 +574,7 @@ LAAB5:
         cmpa    #$01
         bne     LAB1D
         ldaa    <SignedDeltaRPM
-        ldx     #TABLEd003                           ; RPMTHS: AISPos from RPM
+        ldx     #TABLEd003
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldaa    <MapValue
         ldx     #TABLEbc9e
@@ -607,11 +607,11 @@ LAAB5:
         beq     LAB09
         staa    >SparkDrpm_0199
 LAB09:
-        cmpa    >LBC3A                               ; RPMFC1 (RPMAveragingFactor1)
+        cmpa    >LBC3A
         bcc     LAB17
         ldab    <SignedDeltaRPM
         subb    <AverageRPMIncremental
-        cmpb    >LBC39                               ; RPMFC1 (RPMAveragingFactor1)
+        cmpb    >LBC39
         bgt     LAB1D
 LAB17:
         clr     >SparkDrpm_0199
@@ -631,7 +631,7 @@ LAB1D:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Temp1
         ldaa    >ScaledDistPWForCruiseControl
-        ldx     #TABLEd016                           ; RPMTHS: AISPos from RPM
+        ldx     #TABLEd016
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldab    <Temp1
         ldx     #TABLEbcba

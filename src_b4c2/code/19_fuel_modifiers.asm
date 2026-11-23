@@ -75,14 +75,14 @@ L7344:
         cmpb    <Temp1
         bls     L7372
         ldab    <EngineRpm_HB
-        cmpb    >LC08E                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
+        cmpb    >LC08E
         bhi     L7363
         ldab    >Pte_04B1
-        cmpb    >LC08F                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
+        cmpb    >LC08F
         bcs     L7372
 L7363:
         ldab    <TempA
-        cmpb    >LC090                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
+        cmpb    >LC090
         bcc     L7372
         addb    $01,x
         bne     L7370
@@ -94,7 +94,7 @@ L7372:
         cmpb    <Temp1
         bls     L739D
         ldab    >Pte_04B1
-        cmpb    >LC090                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
+        cmpb    >LC090
         bcc     L739D
         addb    $01,x
         stab    >Pte_04B1
@@ -154,7 +154,7 @@ L73DF:
         bset    <BitFlags65,#$02                     ; part-throttle enrichment active
 L73E2:
         ldaa    <EngineRpm_HB
-        cmpa    >LC08E                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
+        cmpa    >LC08E
         bls     L73F1
         ldaa    <MapValue
         cmpa    <Temp1
@@ -166,7 +166,7 @@ L73F1:
         cmpa    <Temp1
         bls     L73FF
         ldaa    >Pte_04B1
-        cmpa    >LC08F                               ; PTENUM: No of PTENRD below PTELMT that PT enrich must be to return to HOTMAP s
+        cmpa    >LC08F
         bcc     L7400
 L73FF:
         clrb
@@ -182,10 +182,10 @@ L7402:
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
         psha
         ldd     >Var_0211
-        cpd     >LC0B7                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        cpd     >LC0B7
         bls     L7404
         ldaa    <EngineRpm_HB
-        ldx     #TABLEc0bb                           ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        ldx     #TABLEc0bb
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         pulb
         pshb
@@ -378,7 +378,7 @@ L7552:
         bcs     L754C
         staa    >Var_01E6
         staa    <Temp0
-        suba    >LC362                               ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
+        suba    >LC362
         bcs     L754C
         brset   <CCDFlags5,#$20,L754C
         brset   <BitFlags71,#$80,L754C               ; engine not running (stopped or cranking)
@@ -389,9 +389,9 @@ L7552:
         bcc     L757C
         ldaa    #$FF
 L757C:
-        cmpa    >LC361                               ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
+        cmpa    >LC361
         bcc     L754C
-        ldx     #TABLEc381                           ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
+        ldx     #TABLEc381
         ldaa    <TPSOverMINTHR
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         lsrb
@@ -429,7 +429,7 @@ L75B0:
         ldaa    $00,x
         beq     L754C
         staa    <Temp0
-        ldx     #TABLEc363                           ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
+        ldx     #TABLEc363
         ldaa    <CoolantTemp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldaa    <Temp0
@@ -443,7 +443,7 @@ L75B0:
 L75D3:
         staa    <Temp0
         ldaa    <ChargeTemp
-        ldx     #TABLEc372                           ; LOTIME: Leanout Time Constant based on Delta THR - uses average throttle
+        ldx     #TABLEc372
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldaa    <Temp0
         mul
@@ -575,7 +575,7 @@ CalculateSumOfAllFuelModifiers_MM:
         bra     L76D5
 
 L76BD:
-        ldaa    >LC4F8                               ; AMLIML: AutoCal Range Of Authority where MinMultiplier=.5+AMLIML/512 (cannot b
+        ldaa    >LC4F8
         staa    >Var_0470
         ldaa    >Var_0471
         beq     L76CC
@@ -830,7 +830,7 @@ L7864:
         brclr   <Timer_FuelEnrich,#$FF,LOAD_FUELENRICHVAR
         tsta
         bne     LOAD_FUELENRICHVAR
-        ldaa    >O2ITIM_TimeO2InhibitedSwitchingRichIdleToClosedLoop ; AISNLC: AISEnleanmentPWFromCoolantTemp
+        ldaa    >O2ITIM_TimeO2InhibitedSwitchingRichIdleToClosedLoop ; O2ITIM: O2 is inhibited for this time when switching from rich idle to closed
         staa    <Timer_O2InhibitSwitchingRichIdleToClosedLoop
 
 ;---------------------------------------------------------------------------------------------------
@@ -858,10 +858,10 @@ L7878:
 ; CODE7886  ($7855)
 ;---------------------------------------------------------------------------------------------------
 CODE7886:
-        cmpa    >LC0B5                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        cmpa    >LC0B5
         bls     L78A8
         ldaa    <EngineRpm_HB
-        cmpa    >LC0B6                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        cmpa    >LC0B6
         bls     L78A8
         ldd     >Var_0211
         addd    #$0001
@@ -869,7 +869,7 @@ CODE7886:
         ldd     #$FFFF
 L789D:
         std     >Var_0211
-        ldd     >LC0B9                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        ldd     >LC0B9
         std     >Code7886_0213
         bra     L78DB
 
@@ -879,10 +879,10 @@ L78A8:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         cmpa    <MapValue
         bhi     L78C3
-        ldd     >LC0B9                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        ldd     >LC0B9
         std     >Code7886_0213
         ldaa    <CoolantTemp
-        cmpa    >LC0B5                               ; UNLOAD (DeltaThrottleFrom_MINTHR_ToUnloadCrankingFuel)
+        cmpa    >LC0B5
         bls     L78D0
         bra     L78DB
 

@@ -46,7 +46,7 @@ LB1DF:
         bra     LB213
 
 LB1F4:
-        cmpa    >LCB36                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
+        cmpa    >LCB36
         bcs     LB1FF
         brset   <BitFlags65,#$10,LB218               ; closed loop (O2 feedback in use)
         bra     LB213
@@ -106,7 +106,7 @@ LB256:
 LB261:
         brclr   <BitFlags66,#$01,LB270
         ldaa    >Var_045F
-        cmpa    >LCB42                               ; EGR27 (ExhGasRecircConstFromCoolantTemp)
+        cmpa    >LCB42
         bcs     LB270
         bclr    <BitFlags66,#$01
 LB270:
@@ -120,7 +120,7 @@ LB275:
 LB27D:
         brset   <BitFlags66,#$01,LB28C
         ldaa    >Var_045F
-        cmpa    >LCB42+1                             ; EGR27 (ExhGasRecircConstFromCoolantTemp)
+        cmpa    >LCB42+1
         bcs     LB28C
         bset    <BitFlags66,#$01
 LB28C:
@@ -163,14 +163,14 @@ LB2BA:
         brset   $00,x,#$04,LB2B7
         ldab    >Egr_01E8
         ldaa    <CoolantTemp
-        cmpa    >LCAB6                               ; CRMASK (CruiseMask)
+        cmpa    >LCAB6
         bhi     LB2D2
         andb    #$FE
-        ldaa    >LCABC                               ; CRMASK (CruiseMask)
+        ldaa    >LCABC
         bra     LB2D7
 
 LB2D2:
-        ldaa    >LCABB                               ; CRMASK (CruiseMask)
+        ldaa    >LCABB
         orab    #$01
 LB2D7:
         stab    >Egr_01E8
@@ -190,38 +190,38 @@ LB2F0:
         ldab    >Egr_01E8
         bitb    #$08
         bne     LB302
-        cmpa    >LCABE                               ; CRMASK (CruiseMask)
+        cmpa    >LCABE
         bhi     LB309
         orab    #$08
         bra     LB31D
 
 LB302:
-        cmpa    >LCABE+1                             ; CRMASK (CruiseMask)
+        cmpa    >LCABE+1
         bls     LB31D
         andb    #$F7
 LB309:
         bitb    #$10
         bne     LB316
-        cmpa    >LCAC0                               ; CRMASK (CruiseMask)
+        cmpa    >LCAC0
         bcs     LB31D
         orab    #$10
         bra     LB31D
 
 LB316:
-        cmpa    >LCAC0+1                             ; CRMASK (CruiseMask)
+        cmpa    >LCAC0+1
         bcc     LB31D
         andb    #$EF
 LB31D:
         ldaa    <CoolantTemp
         bitb    #$02
         bne     LB32C
-        cmpa    >LCAB6+1                             ; CRMASK (CruiseMask)
+        cmpa    >LCAB6+1
         bhi     LB335
         orab    #$02
         bra     LB349
 
 LB32C:
-        cmpa    >LCAB8                               ; CRMASK (CruiseMask)
+        cmpa    >LCAB8
         bls     LB349
         andb    #$FD
         bra     LB349
@@ -229,26 +229,26 @@ LB32C:
 LB335:
         bitb    #$04
         bne     LB342
-        cmpa    >LCAB8+1                             ; CRMASK (CruiseMask)
+        cmpa    >LCAB8+1
         bcs     LB349
         orab    #$04
         bra     LB349
 
 LB342:
-        cmpa    >LCABA                               ; CRMASK (CruiseMask)
+        cmpa    >LCABA
         bcc     LB349
         andb    #$FB
 LB349:
         ldaa    <EngineRpm_HB
         bitb    #$20
         bne     LB358
-        cmpa    >LCAC2                               ; CRMASK (CruiseMask)
+        cmpa    >LCAC2
         bhi     LB361
         orab    #$20
         bra     LB375
 
 LB358:
-        cmpa    >LCAC2+1                             ; CRMASK (CruiseMask)
+        cmpa    >LCAC2+1
         bls     LB375
         andb    #$DF
         bra     LB375
@@ -256,13 +256,13 @@ LB358:
 LB361:
         bitb    #$40
         bne     LB36E
-        cmpa    >LCAC4                               ; CRMASK (CruiseMask)
+        cmpa    >LCAC4
         bcs     LB375
         orab    #$40
         bra     LB375
 
 LB36E:
-        cmpa    >LCAC4+1                             ; CRMASK (CruiseMask)
+        cmpa    >LCAC4+1
         bcc     LB375
         andb    #$BF
 LB375:
@@ -299,7 +299,7 @@ LB3A8:
         beq     LB3C6
         andb    #$FE
         stab    >Egr_01E9
-        ldaa    >LCABC+1                             ; CRMASK (CruiseMask)
+        ldaa    >LCABC+1
         staa    >Var_01E7
 LB3BE:
         bclr    <OutputDriverBits,#$20               ; purge on/off output (secondary air with that option)

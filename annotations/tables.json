@@ -1,40 +1,4 @@
 {
- "186B": {
-  "cname": "LOTTRG",
-  "desc": "Main trigger (Delta trigger level for THR leanout) - Delta THR",
-  "group": "1_-_Fuel\\Transient_Enrichment\\Decel_LO\\Decreasing_TPS_LO\\",
-  "lname": "DeltaTriggerForDecelLeanout",
-  "type": "3",
-  "xaxis": "in_desc -200 260 degrees",
-  "yaxis": "factor 0 1 factor"
- },
- "1BB9": {
-  "cname": "RTRDRT",
-  "desc": "Retard rate from Knock, no boost. In half degreesn",
-  "group": "2_-_Spark\\Knock_Retard\\Normal_Knock\\",
-  "lname": "KnockRetardRateNoBoost",
-  "type": "0",
-  "xaxis": "in_desc 0 255 in",
-  "yaxis": "Deg 0 128 Degrees"
- },
- "802C": {
-  "cname": "O2ITIM",
-  "desc": "O2 is inhibited for this time when switching from rich idle to closed loop idle",
-  "group": "3_-_Idle\\Special_setup\\",
-  "lname": "TimeO2InhibitedSwitchingRichIdleToClosedLoop",
-  "type": "3",
-  "xaxis": "in_desc 0 255 in",
-  "yaxis": "out_desc 0 255 out"
- },
- "802D": {
-  "cname": "IDLDEF",
-  "desc": "Detailed Description",
-  "group": "3_-_Idle\\Special_setup\\",
-  "lname": "TargetIdleSpeedDefault",
-  "type": "3",
-  "xaxis": "in_desc 0 255 in",
-  "yaxis": "RPM 0 8192 rpm"
- },
  "B800": {
   "cname": "IDCODE_1",
   "desc": "Desc",
@@ -647,6 +611,15 @@
   "xaxis": "RPM 0 8192 rpm",
   "yaxis": "A2D 0 5 volts"
  },
+ "BBAA": {
+  "cname": "RTRDRT",
+  "desc": "Retard rate from Knock, no boost. In half degreesn. MP Tune definition lists it at $1BB9; the code reads it at $BBAA.",
+  "group": "2_-_Spark\\Knock_Retard\\Normal_Knock\\",
+  "lname": "KnockRetardRateNoBoost",
+  "type": "0",
+  "xaxis": "in_desc 0 255 in",
+  "yaxis": "Deg 0 128 Degrees"
+ },
  "BBB1": {
   "cname": "KNKLIM",
   "desc": "Knock Limit in 1/2 degrees. MaxRetard = KNKLIM if throttle is above THRKNK and RPM is below KLMRPM",
@@ -926,6 +899,15 @@
   "xaxis": "DeltaTPS 0 5 volts",
   "yaxis": "Retard 0 128 degrees"
  },
+ "BC32": {
+  "cname": "MCTDRE",
+  "desc": "MP Tune definition lists it at $BC34; the code reads it at $BC32. The byte at $BC34 is the rpm limit MRPDRE.",
+  "group": "2_-_Spark\\Normal_Advance\\DeltaRPMRetard\\",
+  "lname": "MinimumCoolantTempForDeltaRPMEvaluation",
+  "type": "3",
+  "xaxis": "in_desc 0 255 in",
+  "yaxis": "CoolantTemp -200 260 degF"
+ },
  "BC33": {
   "cname": "MMPDRE",
   "desc": "desc",
@@ -934,15 +916,6 @@
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "MAP -14.7 0 psi"
- },
- "BC34": {
-  "cname": "MCTDRE",
-  "desc": "desc",
-  "group": "2_-_Spark\\Normal_Advance\\DeltaRPMRetard\\",
-  "lname": "MinimumCoolantTempForDeltaRPMEvaluation",
-  "type": "3",
-  "xaxis": "in_desc 0 255 in",
-  "yaxis": "CoolantTemp -200 260 degF"
  },
  "BC35": {
   "cname": "MSPDRE",
@@ -1412,6 +1385,15 @@
   "xaxis": "Temp -200 260 degrees",
   "yaxis": "out_desc 0 1 scale"
  },
+ "C325": {
+  "cname": "LOTTRG",
+  "desc": "Main trigger (Delta trigger level for THR leanout) - Delta THR. MP Tune definition lists it at $186B; the code reads it at $C325.",
+  "group": "1_-_Fuel\\Transient_Enrichment\\Decel_LO\\Decreasing_TPS_LO\\",
+  "lname": "DeltaTriggerForDecelLeanout",
+  "type": "3",
+  "xaxis": "in_desc -200 260 degrees",
+  "yaxis": "factor 0 1 factor"
+ },
  "C326": {
   "cname": "LOTRG2",
   "desc": "Second trigger - leanout inc toward 1 when between triggers",
@@ -1529,14 +1511,23 @@
   "xaxis": "CoolantTemp -200 260 degF",
   "yaxis": "out_desc 0 255 out"
  },
- "C43A": {
-  "cname": "AISNLC",
-  "desc": "AISEnleanmentPWFromCoolantTemp",
-  "group": "1_-_Fuel\\O2_Feedback_Control\\",
-  "lname": "AISEnleanmentPWFromCoolantTemp",
-  "type": "0",
-  "xaxis": "AISPulse 0 255 out",
+ "C449": {
+  "cname": "O2ITIM",
+  "desc": "O2 is inhibited for this time when switching from rich idle to closed loop idle. MP Tune definition lists it at $802C; the code reads it at $C449.",
+  "group": "3_-_Idle\\Special_setup\\",
+  "lname": "TimeO2InhibitedSwitchingRichIdleToClosedLoop",
+  "type": "3",
+  "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
+ },
+ "C44A": {
+  "cname": "IDLDEF",
+  "desc": "MP Tune definition lists it at $802D; the code reads it at $C44A.",
+  "group": "3_-_Idle\\Special_setup\\",
+  "lname": "TargetIdleSpeedDefault",
+  "type": "3",
+  "xaxis": "in_desc 0 255 in",
+  "yaxis": "RPM 0 8192 rpm"
  },
  "C44B": {
   "cname": "RICHSA",
@@ -3493,16 +3484,16 @@
  },
  "CB46": {
   "cname": "EGR18",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor (MonitorEgrFlow), first phase: MAP window low limit (high limit at $CB47). MP Tune long name: ExhGasRecircConstLoLimit18.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConstLoLimit18",
+  "lname": "EgrMonMapLow1",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
  "CB48": {
   "cname": "EGR15",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, first phase: engine rpm window low limit (high limit at $CB49).",
   "group": "5_-_Aux_Functions\\EGR\\",
   "lname": "ExhGasRecircConstFromRPMLoLimit15",
   "type": "3",
@@ -3511,16 +3502,16 @@
  },
  "CB4A": {
   "cname": "EGR9",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, first phase: throttle above MINTHR, window low limit (high limit at $CB4B). MP Tune long name: ExhGasRecircConstFromTimeEngRunning9.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConstFromTimeEngRunning9",
+  "lname": "EgrMonTpsLow1",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
  "CB50": {
   "cname": "EGR16",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, second phase (EGR switched): MAP window low limit.",
   "group": "5_-_Aux_Functions\\EGR\\",
   "lname": "ExhGasRecircConstLoLimit16",
   "type": "3",
@@ -3529,7 +3520,7 @@
  },
  "CB51": {
   "cname": "EGR16A",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, second phase: MAP window high limit.",
   "group": "5_-_Aux_Functions\\EGR\\",
   "lname": "ExhGasRecircConstHiLimit16a",
   "type": "3",
@@ -3538,52 +3529,52 @@
  },
  "CB52": {
   "cname": "EGR17A",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, second phase: engine rpm window low limit. MP Tune long name: ExhGasRecircConstHiLimit17a.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConstHiLimit17a",
+  "lname": "EgrMonRpmLow2",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
  "CB53": {
   "cname": "EGR19",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, second phase: engine rpm window high limit. MP Tune long name: ExhGasRecircConstLoLimit19.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConstLoLimit19",
+  "lname": "EgrMonRpmHigh2",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
  "CB54": {
   "cname": "EGR19A",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, second phase: throttle above MINTHR, window low limit. MP Tune long name: ExhGasRecircConstHiLimit19a.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConstHiLimit19a",
+  "lname": "EgrMonTpsLow2",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
  "CB55": {
   "cname": "EGR6",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor, second phase: throttle above MINTHR, window high limit. MP Tune long name: ExhGasRecircConst6.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConst6",
+  "lname": "EgrMonTpsHigh2",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
  "CB56": {
   "cname": "EGR15A",
-  "desc": "Detailed Description",
+  "desc": "EGR flow monitor: samples (EgrMonSampleCount, word) before the result is judged. MP Tune long name: ExhGasRecircConstFromRPMHiLimit15a.",
   "group": "5_-_Aux_Functions\\EGR\\",
-  "lname": "ExhGasRecircConstFromRPMHiLimit15a",
-  "type": "3",
+  "lname": "EgrMonSampleCount2",
+  "type": "4",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
- "CB57": {
+ "CB58": {
   "cname": "SCRMP1",
-  "desc": "Detailed Description",
+  "desc": "Subtracted from the O2 toggle time in the secondary ramp (WorkWithSecondaryRamp). MP Tune definition lists it at $CB57; the code reads it at $CB58.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "SecondaryRampSubtractor1",
   "type": "3",
@@ -3824,77 +3815,59 @@
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
- "CECC": {
+ "CECD": {
   "cname": "MPRPMH",
-  "desc": "Detailed Description",
+  "desc": "MP Tune definition lists it at $CECC; the code reads it at $CECD.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "DisableMapCheckAboveThisRpm_1500",
   "type": "4",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
- "CECD": {
+ "CECF": {
   "cname": "MPDAGL",
-  "desc": "Detailed Description",
+  "desc": "MP Tune definition lists it at $CECD; the code reads it at $CECF.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "DisableMapCheckBelowThisMap",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "MAP -14.7 0 psi"
  },
- "CECE": {
+ "CED0": {
   "cname": "MPDAGH",
-  "desc": "Detailed Description",
+  "desc": "MP Tune definition lists it at $CECE; the code reads it at $CED0.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "DisableMapCheckAboveThisMap",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "MAP -14.7 0 psi"
  },
- "CECF": {
+ "CED1": {
   "cname": "MPRMPD",
-  "desc": "Detailed Description",
+  "desc": "MP Tune definition lists it at $CECF; the code reads it at $CED1.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "CheckMapAtZeroSpeedAndThisDeltaRpm",
   "type": "4",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "out_desc 0 255 out"
  },
- "CED0": {
+ "CED3": {
   "cname": "BAROSW",
-  "desc": "Detailed Description",
+  "desc": "MP Tune definition lists it at $CED0; the code reads it at $CED3.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "CheckMapAtZeroSpeedAndThisBaroSwitch",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "MAP -14.7 0 psi"
  },
- "CED1": {
+ "CED4": {
   "cname": "MPVACD",
-  "desc": "Detailed Description",
+  "desc": "MP Tune definition lists it at $CED1; the code reads it at $CED4.",
   "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
   "lname": "AllowMapToTestGoodThisNearBaro",
   "type": "3",
   "xaxis": "in_desc 0 255 in",
   "yaxis": "MAP -14.7 0 psi"
- },
- "CED2": {
-  "cname": "MPVAC2",
-  "desc": "Detailed Description",
-  "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\MAP_Sensor\\",
-  "lname": "AllowMapToTestGoodThisNearBaro2",
-  "type": "3",
-  "xaxis": "in_desc 0 255 in",
-  "yaxis": "MAP -14.7 0 psi"
- },
- "CED3": {
-  "cname": "MPDELX",
-  "desc": "Detailed Description",
-  "group": "5_-_Aux_Functions\\On-Board_Diagnostics\\T-Stat_Diagnostics\\",
-  "lname": "DeltaMapThatChecksGoodX",
-  "type": "3",
-  "xaxis": "in_desc 0 255 in",
-  "yaxis": "out_desc 0 255 out"
  },
  "CEDB": {
   "cname": "TTEMPL",

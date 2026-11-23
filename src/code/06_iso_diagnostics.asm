@@ -1140,9 +1140,9 @@ L21FD:
         oraa    #$80
 L2206:
         staa    >IsoRespData1
-        ldaa    >LB81F                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        ldaa    >LB81F
         staa    >IsoRespData2
-        ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        ldaa    >LB820
         staa    >IsoRespData3
         ldaa    >ObdMonitorsComplete
         staa    >IsoRespData4

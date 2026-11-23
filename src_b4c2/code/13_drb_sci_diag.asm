@@ -1081,7 +1081,7 @@ L5470:
         ldaa    >ObdMonStatus_Misfire
         anda    #$80
         staa    >ObdMonStatus_Misfire
-        ldaa    >LB820                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        ldaa    >LB820
         staa    >ObdMonitorsComplete
         ldx     #$012D
         bclr    $02,x,#$F2

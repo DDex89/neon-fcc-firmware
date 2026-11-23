@@ -882,7 +882,7 @@ L5C8B:
 L5C9A:
         ldx     #LMPINN_LimpinTableForMapFromThrottle ; LMPINN (LimpinTableForMapFromThrottle)
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
-        adda    >LCD61                               ; LMPINN (LimpinTableForMapFromThrottle)
+        adda    >LCD61
 L5CA3:
         rts
 
@@ -896,12 +896,12 @@ CheckForBadMAP:
         psha
         brset   <BitFlags71,#$80,L5CBE               ; engine not running (stopped or cranking)
         ldaa    >BadMAPCOunter
-        cmpa    >BadMAPCounterThreshold              ; BATVLT (BatteryVoltsTable)
+        cmpa    >BadMAPCounterThreshold
         bcc     L5CBE
         pula
         brset   <b58_IPL1,#$80,L5CBF
         brset   <b58_IPL1,#$20,L5CBF
-        ldaa    >DefaultVoltsForBadMAP               ; BATVLT (BatteryVoltsTable)
+        ldaa    >DefaultVoltsForBadMAP
         rts
 
 L5CBE:
@@ -922,7 +922,7 @@ IncrementBadMAPCounter_MM:
         cmpa    #$0F
         bne     L5CD8
         ldab    >BadMAPCOunter
-        cmpb    >BadMAPCounterThreshold              ; BATVLT (BatteryVoltsTable)
+        cmpb    >BadMAPCounterThreshold
         bcc     L5CD9
         incb
         stab    >BadMAPCOunter
@@ -972,15 +972,15 @@ L5D0D:
 IncrementBatteryVoltsOKCounter_MM:
         ldx     #$04B6
         ldaa    <EngineRunningTimeMaxFF
-        cmpa    >MinTimerForBatteryVoltsCounterOKUpdate ; O2MIDX (HighLimitForInMiddleDeterminationX)
+        cmpa    >MinTimerForBatteryVoltsCounterOKUpdate
         bls     L5D44
         ldaa    <BatteryVolts
-        cmpa    >BatVoltsLowLimitForCounterUpdate    ; O2MIDX (HighLimitForInMiddleDeterminationX)
+        cmpa    >BatVoltsLowLimitForCounterUpdate
         bcc     L5D3E
-        cmpa    >BatVoltsInMiddleForCounterUpdate    ; O2MIDX (HighLimitForInMiddleDeterminationX)
+        cmpa    >BatVoltsInMiddleForCounterUpdate
         bhi     L5D36
         ldaa    >Counter_BatteryVoltsOK
-        cmpa    >BatVoltsHighLimitForCounterUpdate   ; O2MIDX (HighLimitForInMiddleDeterminationX)
+        cmpa    >BatVoltsHighLimitForCounterUpdate
         bcc     L5D31
         inc     >Counter_BatteryVoltsOK
         bra     L5D44
@@ -991,7 +991,7 @@ L5D31:
 
 L5D36:
         ldaa    >Counter_BatteryVoltsOK
-        cmpa    >BatVoltsHighLimitForCounterUpdate   ; O2MIDX (HighLimitForInMiddleDeterminationX)
+        cmpa    >BatVoltsHighLimitForCounterUpdate
         bcc     L5D44
 L5D3E:
         bclr    $00,x,#$01
@@ -1210,7 +1210,7 @@ L5E5E:
         bne     L5E8C
         brclr   <BitFlags65,#$80,L5E8C               ; throttle open (off idle)
         ldaa    <MapValue
-        ldx     #TABLEcd9a                           ; DEFCHG (DefaultChargeTemp_Limpin)
+        ldx     #TABLEcd9a
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         cmpa    <EngineRpm_HB
         bcc     L5E8C
@@ -1319,14 +1319,14 @@ VerifyOperationOfAmbientTempSensor_MM:
         bcc     L5F1D
         nega
 L5F1D:
-        cmpa    >LE019                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE019
         bhi     L5F3A
         ldaa    <AmbientAirTemp
         suba    <ChargeTemp
         bcc     L5F29
         nega
 L5F29:
-        cmpa    >LE019                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE019
         bls     L5F3A
         ldy     #ErrBytes_CODE23_b
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1358,15 +1358,15 @@ VerifyOperationOfMapSensor_MM:
         coma
         comb
 L5F5C:
-        cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPVACD (AllowMapToTestGoodThisNearBaro)
+        cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPRMPD: MP Tune definition lists it at $CECF; the code reads it at $CED1.
         bcc     L5F86
         brset   <BitFlags71,#$80,L5F86               ; engine not running (stopped or cranking)
         ldaa    <BaroPressure
         tab
         suba    <MapValue
         bcs     L5F7A
-        ldx     #MPVACD_AllowMapToTestGoodThisNearBaro ; MPDELX (DeltaMapThatChecksGoodX)
-        cmpb    >BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch ; MPDELX (DeltaMapThatChecksGoodX)
+        ldx     #MPVACD_AllowMapToTestGoodThisNearBaro ; MPVACD: MP Tune definition lists it at $CED1; the code reads it at $CED4.
+        cmpb    >BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch ; BAROSW: MP Tune definition lists it at $CED0; the code reads it at $CED3.
         bcc     L5F76
         inx
 L5F76:
@@ -1713,7 +1713,7 @@ CalculateMaxRPMxMaxMAPFraction_MM:
 ; Called from: SubLoopA
 ;---------------------------------------------------------------------------------------------------
 CheckErrorMaskingAndSetCodes_MM:
-        ldaa    >LCDB5                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldaa    >LCDB5
         bne     L618B
         ldaa    >ScaledDistPWForCruiseControl
         clrb
@@ -1724,7 +1724,7 @@ L618B:
         jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    >ScaledDistPWForCruiseControl
-        ldab    >LCDB5                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldab    >LCDB5
         mul
         tsy
         subd    $00,y
@@ -1732,7 +1732,7 @@ L618B:
         addd    >FaultMask_01D2
 L61A5:
         std     >FaultMask_01D2
-        ldaa    >LCDB6                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldaa    >LCDB6
         bne     L61B2
         ldaa    <TpsVolts
         clrb
@@ -1743,7 +1743,7 @@ L61B2:
         jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         pshy
         ldaa    <TpsVolts
-        ldab    >LCDB6                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldab    >LCDB6
         mul
         tsy
         subd    $00,y
@@ -1806,13 +1806,13 @@ L61FA:
         brset   <b59_IPL2,#$08,L6270
         brset   <b58_IPL1,#$40,L6270
         ldaa    <BatteryVolts
-        cmpa    >LCDBD                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDBD
         bls     L6270
         ldx     #$04B6
         brclr   <OutputBits2,#$20,L62A9              ; TCC / PTU solenoid
         bset    $00,x,#$04
         ldaa    <VehicleSpeedScaled
-        cmpa    >LCDB9                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDB9
         bhi     L62DB
         tst     >FaultMask_01D4
         beq     L6273
@@ -1824,7 +1824,7 @@ L6270:
 
 L6273:
         ldaa    >FaultMask_01D9
-        cmpa    >LCDB2                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDB2
         bcc     L627E
         inc     >FaultMask_01D9
 L627E:
@@ -1836,7 +1836,7 @@ L627E:
         comb
         addd    #$0001
 L628E:
-        cpd     >LCDBA                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cpd     >LCDBA
         bcs     L6297
         clr     >FaultMask_01D9
 L6297:
@@ -1868,7 +1868,7 @@ L62CC:
         bclr    $00,x,#$04
 L62D2:
         ldd     >FaultMask_01D2
-        cpd     >LCDB7                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cpd     >LCDB7
         bcc     L62E1
 L62DB:
         clr     >FaultMask_01D4
@@ -1876,10 +1876,10 @@ L62DB:
 
 L62E1:
         ldaa    >FaultMask_01D9
-        cmpa    >LCDB2                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDB2
         bcs     L634B
         ldaa    <MINTHR_LowestSessionTPS
-        adda    >LCDB3                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        adda    >LCDB3
         bcc     L62F2
         ldaa    #$FF
 L62F2:
@@ -1895,7 +1895,7 @@ L6304:
         staa    <Temp0
         suba    >FaultMask_01D5
         bcs     L6315
-        cmpa    >LCDB4                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDB4
         bcs     L631A
         clr     >FaultMask_01DA
         bra     L634B
@@ -1910,10 +1910,10 @@ L631A:
         inca
         staa    >FaultMask_01D4
 L6325:
-        cmpa    >LCDB1                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDB1
         bcs     L634E
         ldaa    >FaultMask_01DA
-        cmpa    >LCDBC                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDBC
         bcs     L6340
         ldy     #ErrBytes_CODE
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1945,10 +1945,10 @@ Set_ErrorBits_16_MM:
         brset   <BitFlags71,#$80,L6384               ; engine not running (stopped or cranking)
         brset   <b58_IPL1,#$02,L6384
         ldaa    <KeyOnOrEngineRunningTime
-        cmpa    >LC475                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC475
         bcs     L6384
         ldaa    <CoolantTemp
-        cmpa    >LC474                               ; BOOSTP: Zero percent limit on lean O2CNTR if MAP gt BOOSTP and no PTE
+        cmpa    >LC474
         bcc     L637E
         ldy     #ErrBytes_CODE17_a
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature
@@ -1983,7 +1983,7 @@ IncrementOrClearDiagFaultCounter_SM:
         cmpa    #$25
         beq     L640C
         ldaa    <CoolantTemp
-        cmpa    >LE01E+1                             ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE01E+1
         bls     L640C
         ldd     >VehicleSpeed_HB
         bne     L640C
@@ -1991,9 +1991,9 @@ IncrementOrClearDiagFaultCounter_SM:
         subb    <MapValue
         bcs     L640C
         ldaa    <BaroPressure
-        cmpa    >BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpa    >BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch ; BAROSW: MP Tune definition lists it at $CED0; the code reads it at $CED3.
         bls     L63D0
-        cmpb    >MPVACD_AllowMapToTestGoodThisNearBaro ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpb    >MPVACD_AllowMapToTestGoodThisNearBaro ; MPVACD: MP Tune definition lists it at $CED1; the code reads it at $CED4.
         bls     L640C
         bra     L63E0
 
@@ -2004,7 +2004,7 @@ L63CE:
         bra     L6410
 
 L63D0:
-        cmpb    >LCED5                               ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpb    >LCED5
         bls     L640C
         ldaa    >IODev_0409
         bita    #$04
@@ -2066,18 +2066,18 @@ L6423:
         cmpa    >LE006
         bcc     L645B
         ldaa    <BaroPressure
-        cmpa    >BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpa    >BAROSW_CheckMapAtZeroSpeedAndThisBaroSwitch ; BAROSW: MP Tune definition lists it at $CED0; the code reads it at $CED3.
         bcs     L6443
         suba    <MapValue
         bcs     L645B
-        cmpa    >LCED5                               ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpa    >LCED5
         bls     L645B
         bra     L644C
 
 L6443:
         suba    <MapValue
         bcs     L645B
-        cmpa    >MPVACD_AllowMapToTestGoodThisNearBaro ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpa    >MPVACD_AllowMapToTestGoodThisNearBaro ; MPVACD: MP Tune definition lists it at $CED1; the code reads it at $CED4.
         bls     L645B
 L644C:
         ldaa    >LastTpsVolts
@@ -2149,16 +2149,16 @@ IncrementOrClearKnockDiagCounter_SM:
         beq     L64E9
         brclr   <IPL1,#$04,L64E9
         ldaa    <KnockVolts
-        cmpa    >LE020                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE020
         bhi     L64CA
         bra     L64CF
 
 L64CA:
-        cmpa    >LE020+1                             ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE020+1
         bcs     L64E6
 L64CF:
         ldaa    >DiagCounter_KnockSensorActive
-        cmpa    >LE022                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE022
         bcc     L64DD
         inca
         staa    >DiagCounter_KnockSensorActive
@@ -2269,18 +2269,18 @@ IncrementOrClearNormalOpCounter_SM:
         asla
         asla
         asla
-        cmpa    >LCDA9                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDA9
         bcs     L65C9
         ldaa    <EngineRpm_HB
-        cmpa    >LCDA9+1                             ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDA9+1
         bcs     L65C9
-        cmpa    >LCDAB                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDAB
         bhi     L65C9
         ldaa    <TPSOverMINTHR
-        cmpa    >LCDAB+1                             ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDAB+1
         bcs     L65C9
         ldaa    <BaroPressure
-        ldab    >LCDAD                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldab    >LCDAD
         mul
         adca    #$00
         cmpa    <MapValue
@@ -2288,7 +2288,7 @@ IncrementOrClearNormalOpCounter_SM:
         brset   <BitFlags_AIS,#$08,L65CC
         inc     >CounterOperatingNormal
         ldaa    >CounterOperatingNormal
-        cmpa    >LCDAD+1                             ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpa    >LCDAD+1
         bne     L65CC
         ldy     #ErrBytes_CODE37_d
         jsr     >ThrowNonCriticalError               ; Reports a failed test for the fault descriptor at 0,Y; stores the fault when it has mature

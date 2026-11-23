@@ -22,7 +22,7 @@
 ;---------------------------------------------------------------------------------------------------
 CalculateTargetIdleSpeed_MM:
         ldaa    <ChargeTemp
-        cmpa    >LC5D1                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5D1
         bcc     L32EF
         brclr   <BitFlags68,#$04,L32F1
         clr     >IdleTarget_01CB
@@ -45,7 +45,7 @@ L3306:
         ldd     $00,x
         cpd     #$FFFF
         beq     L3314
-        cpd     >LC5E4                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cpd     >LC5E4
         bcc     L331D
 L3314:
         cpx     #$B60E
@@ -56,14 +56,14 @@ L3314:
 
 L331D:
         ldab    >IdleTarget_01CA
-        cmpb    >LC5D4                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpb    >LC5D4
         bcs     L336E
         ldab    >IdleTarget_01CB
-        cmpb    >LC5D5                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpb    >LC5D5
         bcs     L336E
-        ldaa    >LC5E8                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5E8
         brset   <BitFlags_AIS,#$08,L3337
-        ldaa    >LC5E9                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5E9
 L3337:
         adda    #$06
         lsra
@@ -71,7 +71,7 @@ L3337:
         cmpa    <EngineRpm_HB
         bls     L334C
         ldaa    >Var_0183
-        cmpa    >LC5D9                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5D9
         bcc     L334C
         bclr    <BitFlags77,#$10
         bra     L3376
@@ -79,9 +79,9 @@ L3337:
 L334C:
         brset   <BitFlags77,#$10,L336E
         ldaa    <BatteryVolts
-        cmpa    >LC5D8                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5D8
         bcs     L3360
-        adda    >LC5E6                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        adda    >LC5E6
         bcs     L3370
         cmpa    <TargetBatteryVolts
         bcc     L3370
@@ -97,13 +97,13 @@ L336E:
         bra     L33EF
 
 L3370:
-        ldaa    >LC5D7                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5D7
         staa    >IdleTarget_01DF
 L3376:
         ldab    <AmbientAirTemp
-        ldaa    >LC5DA                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5DA
         brclr   <BitFlags77,#$08,L3382
-        ldaa    >LC5DB                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5DB
 L3382:
         cba
         bls     L338A
@@ -112,9 +112,9 @@ L3382:
 
 L338A:
         bclr    <BitFlags77,#$08
-        ldaa    >LC5DC                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5DC
         brclr   <BitFlags77,#$04,L3397
-        ldaa    >LC5DD                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5DD
 L3397:
         cba
         bcc     L339F
@@ -124,9 +124,9 @@ L3397:
 L339F:
         bclr    <BitFlags77,#$04
         ldab    <CoolantTemp
-        ldaa    >LC5DE                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5DE
         brclr   <BitFlags77,#$02,L33AE
-        ldaa    >LC5DF                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5DF
 L33AE:
         cba
         bls     L33B6
@@ -135,9 +135,9 @@ L33AE:
 
 L33B6:
         bclr    <BitFlags77,#$02
-        ldaa    >LC5E0                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5E0
         brclr   <BitFlags77,#$01,L33C3
-        ldaa    >LC5E1                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5E1
 L33C3:
         cba
         bcc     L33CB
@@ -147,16 +147,16 @@ L33C3:
 L33CB:
         bclr    <BitFlags77,#$01
         ldaa    <KeyOnOrEngineRunningTime
-        cmpa    >LC5D3                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5D3
         bcs     L33EF
         ldaa    <BaroPressure
-        cmpa    >LC5E7                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5E7
         bcs     L33EF
-        ldaa    >LC5E3                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5E3
         cmpa    <VehicleSpeed_HB
         bcc     L33F2
         ldaa    <ChargeTemp
-        cmpa    >LC5D2                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        cmpa    >LC5D2
         bcc     L33F2
         bclr    <BitFlags77,#$80
         bra     L33F2
@@ -194,7 +194,7 @@ L3429:
         ldaa    >SystemStatusFlag_4b6
         anda    #$7F
         staa    >SystemStatusFlag_4b6
-        ldaa    >IDLDEF_TargetIdleSpeedDefault       ; AISNLC: AISEnleanmentPWFromCoolantTemp
+        ldaa    >IDLDEF_TargetIdleSpeedDefault       ; IDLDEF: MP Tune definition lists it at $802D; the code reads it at $C44A.
         brset   <b58_IPL1,#$02,L34B6
         brset   <BitFlags6b,#$20,L34B6
         ldaa    #$30
@@ -204,11 +204,11 @@ L3445:
         ldaa    <CoolantTemp
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         brclr   <BitFlags77,#$80,L346D
-        ldx     #TABLEc5c6                           ; AISCLD: Idle Speed From temp in Drive, auto trans only
-        ldab    >LC5E8                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldx     #TABLEc5c6
+        ldab    >LC5E8
         brset   <BitFlags_AIS,#$08,L345E
-        ldx     #TABLEc5bb                           ; AISCLD: Idle Speed From temp in Drive, auto trans only
-        ldab    >LC5E9                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldx     #TABLEc5bb
+        ldab    >LC5E9
 L345E:
         cba
         bhi     L3462
@@ -225,7 +225,7 @@ L346D:
         ldab    >CcdRxValueB
         cmpb    #$02
         bne     L347B
-        ldab    >LC5EA                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldab    >LC5EA
         cba
         bhi     L347B
         tba
@@ -245,7 +245,7 @@ L348B:
         ldab    >CcdRxValueA
         andb    #$7F
         bne     L34A5
-        ldab    >LC5EB                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldab    >LC5EB
         cba
         bhi     L34B8
         stab    <Temp0
@@ -270,10 +270,10 @@ L34B8:
         ldab    <Counter_MainLoop
         andb    >DECAIS_RollingAisUpdateRate_01_03_07_0f_1f_3f_7f_ff ; DECAIS (RollingAisUpdateRate_01_03_07_0f_1f_3f_7f_ff)
         bne     L3500
-        adda    >LC886                               ; DECAIS (RollingAisUpdateRate_01_03_07_0f_1f_3f_7f_ff)
+        adda    >LC886
         brset   <BitFlags77,#$80,L34D1
         ldaa    <Temp0
-        adda    >LC887                               ; DECAIS (RollingAisUpdateRate_01_03_07_0f_1f_3f_7f_ff)
+        adda    >LC887
 L34D1:
         staa    <Temp0
         ldd     <TargetIdleSpeedHB
@@ -346,10 +346,10 @@ ControlAIS_MM:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Temp1
         ldaa    >Var_046F
-        ldx     #TABLEcff4                           ; RPMTHS: AISPos from RPM
+        ldx     #TABLEcff4
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldab    <Temp1
-        ldx     #TABLEc7af                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc7af
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
         staa    >Ais_046E
         ldaa    <ATMOffset
@@ -360,7 +360,7 @@ ControlAIS_MM:
         ldab    <AISSubIndex
         brclr   <BitFlags71,#$80,L355D               ; engine not running (stopped or cranking)
         ldaa    <EngineRpm_HB
-        cmpa    >BYTEc581                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
+        cmpa    >BYTEc581
         bcc     L3557
         andb    #$F0
         bra     L3565
@@ -426,12 +426,12 @@ AisState_Unused:
 AisState0_EngineStopped:
         brset   <BitFlags71,#$80,L35A5               ; engine not running (stopped or cranking)
         ldaa    <EngineRpm_HB
-        cmpa    >BYTEc581                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
+        cmpa    >BYTEc581
         bcs     L35A8
 L35A5:
         inc     >AISSubIndex
 L35A8:
-        ldaa    >BYTEc580                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
+        ldaa    >BYTEc580
         bra     L35C6
 
 
@@ -669,7 +669,7 @@ L371A:
 ; Called from: AisState12_ThrottleOpen, AisState4_ThrottleOpen
 ;---------------------------------------------------------------------------------------------------
 AIS_Init00DF:
-        ldaa    >LC83D                               ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        ldaa    >LC83D
         staa    >Ais_00DF
         bset    <BitFlags6D,#$01
         rts
@@ -689,7 +689,7 @@ CalculateAISPosition3:
         ldx     #RPMPOS_AisPosition_FromRpm          ; RPMPOS: AIS Position from RPMs
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldaa    <Temp0
-        ldx     #TABLEc690                           ; BARAIS: Barometric compensation factor for AIS control
+        ldx     #TABLEc690
         jsr     >Lookup3DTableRoutine_2              ; 3D table lookup with bilinear interpolation.
         staa    <Temp0
         ldaa    <CoolantTemp
@@ -707,7 +707,7 @@ L374F:
         staa    <Temp0
 L375D:
         ldaa    >Ais_046E
-        ldx     #TABLEc7a0                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc7a0
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <Temp0
         bcs     L37C3
@@ -829,7 +829,7 @@ BYTE3824:
 ; L382E  ($382E)
 ;---------------------------------------------------------------------------------------------------
 L382E:
-        ldaa    >LC773                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC773
         rts
 
 
@@ -837,7 +837,7 @@ L382E:
 ; L3832  ($3832)
 ;---------------------------------------------------------------------------------------------------
 L3832:
-        ldaa    >LC775                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC775
         rts
 
 
@@ -845,7 +845,7 @@ L3832:
 ; L3836  ($3836)
 ;---------------------------------------------------------------------------------------------------
 L3836:
-        ldaa    >LC774                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC774
         rts
 
 
@@ -888,7 +888,7 @@ L3856:
 ; L3858  ($3858)
 ;---------------------------------------------------------------------------------------------------
 L3858:
-        ldaa    >LC778                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC778
         rts
 
 
@@ -896,7 +896,7 @@ L3858:
 ; L385C  ($385C)
 ;---------------------------------------------------------------------------------------------------
 L385C:
-        ldaa    >LC777                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC777
         rts
 
 
@@ -904,7 +904,7 @@ L385C:
 ; L3860  ($3860)
 ;---------------------------------------------------------------------------------------------------
 L3860:
-        ldaa    >LC776                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC776
         rts
 
 
@@ -1004,7 +1004,7 @@ L38FD:
         ldaa    <BitFlags68
         anda    #$04
         ldab    <EngineRpm_HB
-        cmpb    >LC77C                               ; AISINC (AISPOSIncrementForSW2b7)
+        cmpb    >LC77C
         bcc     L3910
         ldx     #L3DA9
         jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
@@ -1106,11 +1106,11 @@ L39BD:
 L39C2:
         cmpa    >DCLRPH_EngineRPMLimitForDecelFuelShutoffHigh ; DCLRPH: High RPM to activate decel fuel shutoff. Should be lower than shutoff
         bls     L39DE
-        ldaa    >LC5D6                               ; AISCLD: Idle Speed From temp in Drive, auto trans only
+        ldaa    >LC5D6
         bita    #$08
         bne     L39D8
         brclr   <OutputDriverBits,#$01,L39DB         ; A/C clutch relay
-        ldaa    >BYTEc57f                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
+        ldaa    >BYTEc57f
         staa    >Var_04AE
 L39D8:
         bset    <BitFlags6a,#$02
@@ -1221,12 +1221,12 @@ L3A49:
         bne     L3A8A
         brclr   <BitFlags77,#$80,L3A8A
         ldaa    >Ais_046E
-        ldx     #TABLEc7a0                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc7a0
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldaa    <DesiredNewAisPosition
         sba
         bcs     L3A7C
-        suba    >LC88D                               ; CALPOS: AIS: Position electronics thinks motor is (at idle)
+        suba    >LC88D
         bcc     L3A7D
 L3A7C:
         clra
@@ -1251,7 +1251,7 @@ L3A8C:
         bita    #$20
         bne     L3AF7
         ldaa    <Counter_MainLoop
-        bita    >LC892                               ; DCALTM (DacalInhibitTimeAfterStartup)
+        bita    >LC892
         bne     L3AAC
         ldab    <Timer_DacalCountdown
         ldaa    <MAPReferenceValueAIS
@@ -1277,11 +1277,11 @@ L3AAC:
         bne     L3AF7
         ldab    >CALPOS_PositionAisMotorIsAtIdle     ; CALPOS: AIS: Position electronics thinks motor is (at idle)
         brclr   <BitFlags77,#$80,L3ACA
-        ldab    >LC88D                               ; CALPOS: AIS: Position electronics thinks motor is (at idle)
+        ldab    >LC88D
 L3ACA:
         stab    <Temp0
         ldaa    >Ais_046E
-        ldx     #TABLEc7a0                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc7a0
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <Temp0
         tab
@@ -1665,7 +1665,7 @@ L3D55:
         brset   <OutputDriverBits,#$01,L3D69         ; A/C clutch relay
         staa    <Temp0
         ldaa    <AISACCompensation
-        ldx     #TABLEc77d                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc77d
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <Temp0
         bcc     L3D69
@@ -1674,13 +1674,13 @@ L3D67:
 L3D69:
         staa    <Temp0
         brclr   <BitFlags68,#$04,L3D78
-        adda    >LC77A                               ; AISINC (AISPOSIncrementForSW2b7)
+        adda    >LC77A
         bcc     L3D76
         ldaa    #$FF
 L3D76:
         staa    <Temp0
 L3D78:
-        adda    >LC884                               ; DECAIS (RollingAisUpdateRate_01_03_07_0f_1f_3f_7f_ff)
+        adda    >LC884
         bcs     L3D8E
         ldab    <BaroAISComp
         beq     L3D8A
@@ -1694,7 +1694,7 @@ L3D8A:
         bcs     L3DA6
 L3D8E:
         ldaa    <Temp0
-        suba    >LC885                               ; DECAIS (RollingAisUpdateRate_01_03_07_0f_1f_3f_7f_ff)
+        suba    >LC885
         bcs     L3DA8
 
 ;---------------------------------------------------------------------------------------------------
@@ -1811,7 +1811,7 @@ L3E21:
 ; L3E22  ($3E22)
 ;---------------------------------------------------------------------------------------------------
 L3E22:
-        ldaa    >LC77A                               ; AISINC (AISPOSIncrementForSW2b7)
+        ldaa    >LC77A
         rts
 
 
@@ -1819,7 +1819,7 @@ L3E22:
 ; L3E26  ($3E26)
 ;---------------------------------------------------------------------------------------------------
 L3E26:
-        ldaa    >LC77B                               ; AISINC (AISPOSIncrementForSW2b7)
+        ldaa    >LC77B
         rts
 
 
@@ -1827,7 +1827,7 @@ L3E26:
 ; L3E2A  ($3E2A)
 ;---------------------------------------------------------------------------------------------------
 L3E2A:
-        ldaa    >LC76D                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC76D
         rts
 
 
@@ -1835,7 +1835,7 @@ L3E2A:
 ; L3E2E  ($3E2E)
 ;---------------------------------------------------------------------------------------------------
 L3E2E:
-        ldaa    >LC76F                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC76F
         rts
 
 
@@ -1843,7 +1843,7 @@ L3E2E:
 ; L3E32  ($3E32)
 ;---------------------------------------------------------------------------------------------------
 L3E32:
-        ldaa    >LC76E                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC76E
         rts
 
 
@@ -1853,7 +1853,7 @@ L3E32:
 L3E36:
         pshx
         ldaa    <AISACCompensation
-        ldx     #TABLEc77d                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc77d
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldab    <BaroAISComp
         beq     L3E4C
@@ -1873,13 +1873,13 @@ L3E4C:
 L3E4E:
         pshx
         ldaa    <AISACCompensation
-        ldx     #$C78C                               ; AISINC (AISPOSIncrementForSW2b7)
-        ldab    >LC83A                               ; DCLMIN (MinLimitOnDecelAisControlledMap)
+        ldx     #$C78C
+        ldab    >LC83A
         cmpb    <MAPReferenceValueAIS
         bls     L3E62
         cmpb    <MapValue
         bls     L3E62
-        ldx     #TABLEc77d                           ; AISINC (AISPOSIncrementForSW2b7)
+        ldx     #TABLEc77d
 L3E62:
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         ldab    <BaroAISComp
@@ -1898,7 +1898,7 @@ L3E72:
 ; L3E74  ($3E74)
 ;---------------------------------------------------------------------------------------------------
 L3E74:
-        ldaa    >LC772                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC772
         rts
 
 
@@ -1906,7 +1906,7 @@ L3E74:
 ; L3E78  ($3E78)
 ;---------------------------------------------------------------------------------------------------
 L3E78:
-        ldaa    >LC771                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC771
         rts
 
 
@@ -1914,7 +1914,7 @@ L3E78:
 ; L3E7C  ($3E7C)
 ;---------------------------------------------------------------------------------------------------
 L3E7C:
-        ldaa    >LC770                               ; DCALRT (DacalUpdateRate01_03_07_0f_1f_3f_7f_ff)
+        ldaa    >LC770
         rts
 
 
@@ -2060,7 +2060,7 @@ L3F39:
         ldaa    <BitFlags68
         anda    #$04
         ldab    <EngineRpm_HB
-        cmpb    >LC77C                               ; AISINC (AISPOSIncrementForSW2b7)
+        cmpb    >LC77C
         bcc     L3F52
         ldx     #L3DA9
         jsr     >AdjustAISPosition_A                 ; Applies one AIS load-step record (X): adds the step returned by the record's getter.
@@ -2127,7 +2127,7 @@ L3FC0:
         ldab    >CcdRxValueA
         andb    #$80
         beq     L3FD0
-        adda    >LC7DC                               ; DANOM2 (Base_nominalCal2)
+        adda    >LC7DC
         bra     L3FDC
 
 L3FD0:
@@ -2220,7 +2220,7 @@ CalculateAisPosition2:
         ldab    >CcdRxValueA
         andb    #$80
         beq     L4073
-        adda    >LC7DC                               ; DANOM2 (Base_nominalCal2)
+        adda    >LC7DC
         bra     L407F
 
 L4073:
@@ -2313,20 +2313,20 @@ L40FA:
 L40FD:
         brclr   <BitFlags6D,#$01,L4144
         ldab    <Timer_AisChanges
-        cmpb    >LC83E                               ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        cmpb    >LC83E
         bcs     L4114
         ldaa    <MAPReferenceValueAIS
-        cmpa    >LC83A                               ; DCLMIN (MinLimitOnDecelAisControlledMap)
+        cmpa    >LC83A
         bcc     L4116
         ldab    <MapValue
-        cmpb    >LC83A                               ; DCLMIN (MinLimitOnDecelAisControlledMap)
+        cmpb    >LC83A
 L4114:
         bcs     L4191
 L4116:
         suba    <MapValue
         bcc     L412E
         nega
-        ldx     #TABLEc840                           ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        ldx     #TABLEc840
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         tsta
         bpl     L412C
@@ -2339,7 +2339,7 @@ L412C:
         bra     L4185
 
 L412E:
-        ldx     #CALPOS1_PositionAisMotorIsAtIdle_FromMAP ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        ldx     #CALPOS1_PositionAisMotorIsAtIdle_FromMAP
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <DesiredNewAisPosition
         bcs     L413D
@@ -2353,19 +2353,19 @@ L4140:
 
 L4144:
         ldab    <Timer_AisChanges
-        cmpb    >LC83F                               ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        cmpb    >LC83F
         bcs     L4191
         ldaa    <MAPReferenceValueAIS
-        cmpa    >LC83A                               ; DCLMIN (MinLimitOnDecelAisControlledMap)
+        cmpa    >LC83A
         bcc     L4159
         ldab    <MapValue
-        cmpb    >LC83A                               ; DCLMIN (MinLimitOnDecelAisControlledMap)
+        cmpb    >LC83A
         bcs     L4191
 L4159:
         suba    <MapValue
         bcc     L4171
         nega
-        ldx     #TABLEc85e                           ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        ldx     #TABLEc85e
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         tsta
         bpl     L416F
@@ -2378,7 +2378,7 @@ L416F:
         bra     L4185
 
 L4171:
-        ldx     #CALPOS2_PositionAisMotorIsAtIdle_FromMAP ; DLYTIM: Decel AIS Delay after throttle closes when moving
+        ldx     #CALPOS2_PositionAisMotorIsAtIdle_FromMAP
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <DesiredNewAisPosition
         bcs     L4180
@@ -2422,7 +2422,7 @@ SelectAisStateA:
         brclr   <BitFlags65,#$80,L41BC               ; throttle open (off idle)
         ldaa    #$0C
         brclr   <SwitchInputs,#$40,L41BC
-        ldx     #TABLEc681                           ; BARAIS: Barometric compensation factor for AIS control
+        ldx     #TABLEc681
         ldaa    <TPSOverMINTHR
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         cmpa    <EngineRpm_HB
@@ -2459,7 +2459,7 @@ SelectAisStateB:
         brclr   <BitFlags65,#$80,L41EE               ; throttle open (off idle)
         ldaa    #$04
         brclr   <SwitchInputs,#$40,L41EE
-        ldx     #TABLEc681                           ; BARAIS: Barometric compensation factor for AIS control
+        ldx     #TABLEc681
         ldaa    <TPSOverMINTHR
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         cmpa    <EngineRpm_HB
@@ -2618,7 +2618,7 @@ L429E:
         ldx     #$043D
         brset   $00,x,#$04,L42B2
         ldaa    <CoolantTemp
-        cmpa    >LCB61                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB61
         bcc     L42AF
         jmp     >L449E
 
@@ -2630,17 +2630,17 @@ L42B2:
         asld
         asld
         asld
-        cmpa    >LCB6E                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB6E
         bcs     L42D9
         ldaa    >CatWarmupEstimate
         ldab    <Counter_MainLoop
         bne     L42E9
-        adda    >LCB70                               ; SCRMP1 (SecondaryRampSubtractor1)
+        adda    >LCB70
         bcs     L42D1
-        cmpa    >LCB6F                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB6F
         bls     L42D4
 L42D1:
-        ldaa    >LCB6F                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldaa    >LCB6F
 L42D4:
         staa    >CatWarmupEstimate
         bra     L42E9
@@ -2649,20 +2649,20 @@ L42D9:
         ldaa    >CatWarmupEstimate
         ldab    <Counter_MainLoop
         bne     L42E9
-        suba    >LCB72                               ; SCRMP1 (SecondaryRampSubtractor1)
+        suba    >LCB72
         bcc     L42E6
         clra
 L42E6:
         staa    >CatWarmupEstimate
 L42E9:
         brclr   <IPL1,#$02,L42F7
-        cmpa    >LCB73                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB73
         bcc     L42FF
         bclr    <IPL1,#$02
         bra     L42FF
 
 L42F7:
-        cmpa    >LCB71                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB71
         bcs     L42FF
         bset    <IPL1,#$02
 L42FF:
@@ -2672,10 +2672,10 @@ L42FF:
 L4306:
         ldx     #$011A
         brset   $00,x,#$01,L433F
-        ldy     #LCB64                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldy     #LCB64
         ldx     #$043D
         brclr   $00,x,#$10,L431C
-        ldy     #LCB68                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldy     #LCB68
 L431C:
         ldaa    <MapValue
         cmpa    $00,y
@@ -2700,7 +2700,7 @@ L4342:
         ldaa    >CatFailCounts
         anda    #$0F
         inca
-        cmpa    >LCB83                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpa    >LCB83
         bcs     L4364
         bset    $00,x,#$08
         bclr    $00,x,#$01
@@ -2714,7 +2714,7 @@ L4364:
         addd    #$0001
         beq     L4380
         std     >CatSettleTimer
-        cpd     >LCB6C                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cpd     >LCB6C
         bcs     L4394
 L4380:
         bset    $00,x,#$01
@@ -2723,7 +2723,7 @@ L4383:
         addd    #$0001
         beq     L4397
         std     >CatTestTimer
-        cpd     >LCB74                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cpd     >LCB74
         bcc     L4397
 L4394:
         jmp     >L449E
@@ -2733,7 +2733,7 @@ L4397:
         ldx     #$0000
         ldy     #$0443
         jsr     >CalculateVehicleSpeedOrEngineRpms
-        ldx     #LCB76                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldx     #LCB76
         ldab    >CatFailCounts
         andb    #$0F
         cmpb    #$02
@@ -2757,7 +2757,7 @@ L43B2:
         ldab    >CatPassTrips
         cmpb    #$03
         bcc     L43FD
-        ldx     #LCB7C                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldx     #LCB7C
         aslb
         abx
         xgdy
@@ -2789,7 +2789,7 @@ L4411:
         inca
         cmpa    #$0F
         bcc     L443C
-        cmpa    >LE01E                               ; BATVLT (BatteryVoltsTable)
+        cmpa    >LE01E
         bcc     L443C
         ldab    >CatFailCounts
         andb    #$F0
@@ -2818,7 +2818,7 @@ L443C:
         lsrb
         lsrb
         lsrb
-        cmpb    >LCB82                               ; SCRMP1 (SecondaryRampSubtractor1)
+        cmpb    >LCB82
         bcs     L447C
 L4462:
         ldy     #$0111

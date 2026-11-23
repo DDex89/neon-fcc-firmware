@@ -413,7 +413,7 @@ LF2C9:
         clra
         staa    <Temp2
         ldab    <Counter_Cruise_2
-        cmpb    >LCAA7                               ; CRUZ7 (UnknownTableForCruiseControl7)
+        cmpb    >LCAA7
         bcc     LF30C
         ldab    >SomethingForCruise
         bne     LF33A
@@ -429,25 +429,25 @@ LF2C9:
         nega
         tab
         ldaa    #$7F
-        cmpb    >LCAA4                               ; CRUZ7 (UnknownTableForCruiseControl7)
+        cmpb    >LCAA4
         bcc     LF334
         bra     LF2F6
 
 LF2EF:
         tab
         clra
-        cmpb    >LCAA4                               ; CRUZ7 (UnknownTableForCruiseControl7)
+        cmpb    >LCAA4
         bcc     LF334
 LF2F6:
         ldaa    <CruiseSpeedSetpoint
-        suba    >LCAA4+1                             ; CRUZ7 (UnknownTableForCruiseControl7)
+        suba    >LCAA4+1
         bcc     LF2FE
         clra
 LF2FE:
         staa    <CruiseSpeedSetpoint
         ldaa    #$1C
         staa    >SomethingForCruise
-        ldab    >LCAA6                               ; CRUZ7 (UnknownTableForCruiseControl7)
+        ldab    >LCAA6
         orab    #$80
         bra     LF343
 
@@ -458,7 +458,7 @@ LF30C:
 
 LF313:
         ldaa    <Counter_Cruise_3
-        ldab    >LCAAA                               ; CRUZ32 (UnknownConstForCruiseControl32)
+        ldab    >LCAAA
         addb    #$80
         bmi     LF323
         mul
@@ -592,7 +592,7 @@ LF3E8:
         suba    #$03
         cmpa    >MAXSET_CruiseControlMaxSetSpeedTimesTwo ; MAXSET (CruiseControlMaxSetSpeedTimesTwo)
         bhi     LF407
-        ldab    >LCA8F                               ; CRUZ99 (CruiseControlConstWas0x04)
+        ldab    >LCA8F
         ldaa    <CruiseControlVar3
         bmi     LF407
         aba
@@ -772,7 +772,7 @@ LF528:
         bra     LF541
 
 LF53B:
-        ldx     #$D000                               ; RPMTHS: AISPos from RPM
+        ldx     #$D000
         ldd     #$06DD
 LF541:
         brclr   <TimerOverflowsBetweenSpeedoPulses,#$FF,LF55D
@@ -846,16 +846,16 @@ LF5B8:
         staa    $02,x
         cmpa    >CRMSK2_CruiseMask2                  ; CRMSK2 (CruiseMask2)
         bgt     LF5D1
-        cmpa    >CRMSK3_CruiseMask3                  ; CRMSK7 (CruiseMask7)
+        cmpa    >CRMSK7_CruiseMask7                  ; CRMSK7 (CruiseMask7)
         bge     LF5E1
         subb    >CRMSK4_CruiseMask4                  ; CRMSK4 (CruiseMask4)
-        cmpb    >CRMSK5_CruiseMask5                  ; CRMSK3 (CruiseMask3)
+        cmpb    >CRMSK3_CruiseMask3                  ; CRMSK3 (CruiseMask3)
         bge     LF5DC
-        ldab    >CRMSK5_CruiseMask5                  ; CRMSK3 (CruiseMask3)
+        ldab    >CRMSK3_CruiseMask3                  ; CRMSK3 (CruiseMask3)
         bra     LF5DC
 
 LF5D1:
-        addb    >CRMSK7_CruiseMask7                  ; CRMSK7 (CruiseMask7)
+        addb    >LCAB0
         cmpb    >CRMSK6_CruiseMask6                  ; CRMSK6 (CruiseMask6)
         ble     LF5DC
         ldab    >CRMSK6_CruiseMask6                  ; CRMSK6 (CruiseMask6)
@@ -1113,7 +1113,7 @@ LF740:
         bpl     LF76C
         oraa    >CRUZ28_UnknownConstForCruiseControl28 ; CRUZ28 (UnknownConstForCruiseControl28)
         brclr   <CruiseStatus_1,#$10,LF751
-        adda    >LCA97                               ; CRUZ29 (UnknownConstForCruiseControl29)
+        adda    >LCA97
         bra     LF7A7
 
 LF751:

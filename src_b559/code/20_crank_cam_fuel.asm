@@ -470,15 +470,15 @@ L7B8B:
 L7B9E:
         ldaa    #$FF
         ldab    <DistributorFallingEdgePulsewidth_HB
-        cmpb    >LB823                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        cmpb    >LB823
         bcs     L7BC2
-        cmpb    >LB821                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        cmpb    >LB821
         bcs     L7BBD
         brclr   <BitFlags71,#$02,L7BB3               ; crank pulse seen since the last coil scheduling
         clra
         staa    <Ign_00C4
 L7BB3:
-        cmpb    >LB822                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        cmpb    >LB822
         bcs     L7BDA
         bset    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
         bra     L7BDA
@@ -490,14 +490,14 @@ L7BBD:
 L7BC2:
         staa    <Ign_00C4
         ldab    <CoolantTemp
-        cmpb    >LB826                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        cmpb    >LB826
         bls     L7BD2
-        cmpa    >LB824                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        cmpa    >LB824
         bcc     L7BD7
         bra     L7BDA
 
 L7BD2:
-        cmpa    >LB825                               ; IPLMSK3: Illuminate PowerLoss Light Mask3. These errors alert the driver.
+        cmpa    >LB825
         bcs     L7BDA
 L7BD7:
         bclr    <BitFlags71,#$02                     ; crank pulse seen since the last coil scheduling
@@ -642,7 +642,7 @@ L7CF3:
         ldaa    >Ign_017E
         anda    #$0F
         inca
-        cmpa    >LCED6                               ; MPDELX (DeltaMapThatChecksGoodX)
+        cmpa    >LCED6
         bcc     L7D2A
         inc     >Ign_017E
         jmp     >L7DBC
@@ -666,12 +666,12 @@ L7D2A:
         ldd     <EngineRpm_HB
         cpd     >MPRPML_DisableMapCheckUnderThisRpm_600 ; MPRPML (DisableMapCheckUnderThisRpm_600)
         bcs     L7DBC
-        cpd     >MPRPMH_DisableMapCheckAboveThisRpm_1500 ; MPDAGL (DisableMapCheckBelowThisMap)
+        cpd     >MPRPMH_DisableMapCheckAboveThisRpm_1500 ; MPRPMH: MP Tune definition lists it at $CECC; the code reads it at $CECD.
         bcc     L7DBC
         ldaa    <MapVolts
-        cmpa    >MPDAGL_DisableMapCheckBelowThisMap  ; MPRMPD (CheckMapAtZeroSpeedAndThisDeltaRpm)
+        cmpa    >MPDAGL_DisableMapCheckBelowThisMap  ; MPDAGL: MP Tune definition lists it at $CECD; the code reads it at $CECF.
         bcs     L7DBC
-        cmpa    >MPDAGH_DisableMapCheckAboveThisMap  ; BAROSW (CheckMapAtZeroSpeedAndThisBaroSwitch)
+        cmpa    >MPDAGH_DisableMapCheckAboveThisMap  ; MPDAGH: MP Tune definition lists it at $CECE; the code reads it at $CED0.
         bcs     L7D85
 L7D5F:
         bra     L7DBC
@@ -691,7 +691,7 @@ L7D61:
         coma
         comb
 L7D7F:
-        cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPVACD (AllowMapToTestGoodThisNearBaro)
+        cpd     >MPRMPD_CheckMapAtZeroSpeedAndThisDeltaRpm ; MPRMPD: MP Tune definition lists it at $CECF; the code reads it at $CED1.
         bcs     L7DB6
 L7D85:
         ldab    >Ign_017E
@@ -700,7 +700,7 @@ L7D85:
         orab    #$F0
 L7D8E:
         stab    >Ign_017E
-        ldab    >LCED6                               ; MPDELX (DeltaMapThatChecksGoodX)
+        ldab    >LCED6
         ldx     #POINTER7d0a
         abx
         ldaa    <EngineRpm_HB
@@ -980,7 +980,7 @@ L7F81:
         bcc     L7F97
         clra
 L7F97:
-        ldx     #$C549                               ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
+        ldx     #$C549
         ldab    $00,x
         inx
 L7F9D:
@@ -996,7 +996,7 @@ L7FA8:
         ldaa    $01,x
         psha
         ldaa    >Counter_FuelEngRunning_0450
-        ldx     #$C554                               ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
+        ldx     #$C554
         ldab    $00,x
         inx
 L7FB4:
@@ -1020,7 +1020,7 @@ L7FC8:
         ldaa    <Counter_FuelEngRunning
         bne     L7FE9
         ldaa    <EngineRpm_HB
-        ldx     #$CDE4                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldx     #$CDE4
         ldab    $00,x
         inx
 L7FD4:
@@ -1035,7 +1035,7 @@ L7FD4:
 L7FDF:
         ldab    $01,x
 L7FE1:
-        ldx     #$C55F                               ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
+        ldx     #$C55F
         abx
         ldaa    $00,x
         beq     L8007
@@ -1544,7 +1544,7 @@ L83A1:
         clra
         clrb
         std     <KeyOnOrEngineRunningTime
-        ldaa    >BYTEc582                            ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
+        ldaa    >BYTEc582
         staa    <Timer_CountdownFromStartRunForAisFeedback
         bset    <BitFlags76,#$08
         ldaa    <AdaptiveRetardIndex
@@ -1628,7 +1628,7 @@ L843D:
         subd    <LastCamFallingEdgeTime
         asld
         xgdy
-        ldaa    >TimeToAngleAdvanceConvFactor        ; ARCMS3 (AdaptiveRetardCounterMask3_FF)
+        ldaa    >TimeToAngleAdvanceConvFactor
         jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
         addd    <LastDistributorFallingEdgeTime
@@ -1767,8 +1767,8 @@ L853A:
         bra     L8550
 
 L8549:
-        ldd     >LCB94                               ; SCRMP1 (SecondaryRampSubtractor1)
-        ldy     >LCB96                               ; SCRMP1 (SecondaryRampSubtractor1)
+        ldd     >LCB94
+        ldy     >LCB96
 L8550:
         ldx     <DistributorFallingEdgePulsewidth_HB
         pshx
@@ -2321,7 +2321,7 @@ L8929:
         ldaa    <KnockVolts
         suba    <KnockSensorThreshold
         bls     L897E
-        ldx     #RTRDRT_KnockRetardRateNoBoost       ; DLTKNK: Input from the knock sensor that is above this voltage is considered K
+        ldx     #RTRDRT_KnockRetardRateNoBoost       ; RTRDRT: Retard rate from Knock, no boost. In half degreesn. MP Tune definition
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         staa    <Temp5
         beq     L897E
@@ -2472,7 +2472,7 @@ L8A54:
         ldaa    <Temp5
         sba
         staa    <SignedDeltaRPM
-        ldaa    >RPMFC2_RPMAveragingFactor2          ; RPMFC1 (RPMAveragingFactor1)
+        ldaa    >RPMFC2_RPMAveragingFactor2
         bne     L8A66
         ldaa    <SignedDeltaRPM
         clrb
@@ -2488,11 +2488,11 @@ L8A66:
 L8A72:
         jsr     >ScaleYbyA                           ; Y = Y x A / 256, rounded (16 x 8 bit fractional multiply).
         xgdy
-        suba    >RPMFC2_RPMAveragingFactor2          ; RPMFC1 (RPMAveragingFactor1)
+        suba    >RPMFC2_RPMAveragingFactor2
         pshb
         psha
 L8A7C:
-        ldab    >RPMFC2_RPMAveragingFactor2          ; RPMFC1 (RPMAveragingFactor1)
+        ldab    >RPMFC2_RPMAveragingFactor2
         ldaa    <SignedDeltaRPM
         bmi     L8A86
         mul
@@ -2500,7 +2500,7 @@ L8A7C:
 
 L8A86:
         mul
-        suba    >RPMFC2_RPMAveragingFactor2          ; RPMFC1 (RPMAveragingFactor1)
+        suba    >RPMFC2_RPMAveragingFactor2
 L8A8A:
         tsy
         subd    $00,y
@@ -2951,7 +2951,7 @@ L8D1F:
         bcc     L8D2D
         clra
 L8D2D:
-        ldx     #$C549                               ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
+        ldx     #$C549
         ldab    $00,x
         inx
 L8D33:
@@ -2967,7 +2967,7 @@ L8D3E:
         ldaa    $01,x
         psha
         ldaa    >Counter_FuelEngRunning_0450
-        ldx     #$C554                               ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
+        ldx     #$C554
         ldab    $00,x
         inx
 L8D4A:
@@ -2989,7 +2989,7 @@ L8D55:
 
 L8D5E:
         ldaa    <EngineRpm_HB
-        ldx     #$CDE4                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        ldx     #$CDE4
         ldab    $00,x
         inx
 L8D66:
@@ -3004,7 +3004,7 @@ L8D66:
 L8D71:
         ldab    $01,x
 L8D73:
-        ldx     #$C55F                               ; DFRPMX: DecelFuelShutoffTurnonLimitFrom0x046f
+        ldx     #$C55F
         abx
         ldaa    $00,x
         bne     L8D03

@@ -121,7 +121,7 @@ L2A95:
 ;---------------------------------------------------------------------------------------------------
 L2A96:
         jsr     >CODE2e08
-        ldab    >LC8A2                               ; FANTMP6: Detailed Description3
+        ldab    >LC8A2
         stab    >Fan_01FE
         inc     >CounterX
         rts
@@ -255,19 +255,19 @@ L2B4B:
 L2B50:
         ldx     #POINTER2b94
         ldd     <VehicleSpeed_HB
-        cpd     >LC8B9                               ; FANTMP6: Detailed Description3
+        cpd     >LC8B9
         bhi     CODE2b88
         ldab    >Fan_0473
-        cmpb    >LC8B6                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B6
         bhi     CODE2b88
         ldab    <EngineRpm_HB
-        cmpb    >LC8B7                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B7
         bhi     CODE2b88
         ldab    <CoolantTemp
-        cmpb    >FanTempA                            ; FANTMP6: Detailed Description3
+        cmpb    >FanTempA
         bhi     CODE2b88
         ldab    <TPSOverMINTHR
-        cmpb    >LC8B8                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B8
         bcs     CODE2b88
         ldaa    <Counter_MainLoop
         bita    #$3F
@@ -334,7 +334,7 @@ L2BC9:
 ;---------------------------------------------------------------------------------------------------
 CODE2bca:
         jsr     >TurnOnCEL_C
-        ldab    >LC8A1                               ; FANTMP6: Detailed Description3
+        ldab    >LC8A1
         stab    >Fan_01FE
         inc     >CounterX
         rts
@@ -408,20 +408,20 @@ L2C32:
         ldx     #$2C6A
 L2C3F:
         ldd     <VehicleSpeed_HB
-        cpd     >LC8B9                               ; FANTMP6: Detailed Description3
+        cpd     >LC8B9
         bls     L2C4A
         clr     >Fan_0473
 L2C4A:
-        cpd     >LC8B4                               ; FANTMP6: Detailed Description3
+        cpd     >LC8B4
         bcc     L2C6F
         ldab    <CoolantTemp
-        cmpb    >FanTempA                            ; FANTMP6: Detailed Description3
+        cmpb    >FanTempA
         bhi     L2C6F
         ldab    <TPSOverMINTHR
-        cmpb    >LC8B3                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B3
         bcs     L2C6F
         ldab    <EngineRpm_HB
-        cmpb    >LC8B7                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B7
         bhi     L2C6F
         ldab    >CoolantTempStatusFlags
         andb    #$00
@@ -479,7 +479,7 @@ POINTER2c7b:
 ;---------------------------------------------------------------------------------------------------
 CODE2cbb:
         jsr     >TurnOffCEL_C
-        ldab    >LC8A3                               ; FANTMP6: Detailed Description3
+        ldab    >LC8A3
         stab    >Fan_01FE
         inc     >CounterX
         rts
@@ -517,20 +517,20 @@ CODE2ce5:
         beq     L2D30
         ldx     #POINTER2d31
         ldd     <VehicleSpeed_HB
-        cpd     >LC8B9                               ; FANTMP6: Detailed Description3
+        cpd     >LC8B9
         bls     L2D00
         clr     >Fan_0473
 L2D00:
-        cpd     >LC8B4                               ; FANTMP6: Detailed Description3
+        cpd     >LC8B4
         bcc     L2D25
         ldab    <CoolantTemp
-        cmpb    >FanTempA                            ; FANTMP6: Detailed Description3
+        cmpb    >FanTempA
         bhi     L2D25
         ldab    <TPSOverMINTHR
-        cmpb    >LC8B3                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B3
         bcs     L2D25
         ldab    <EngineRpm_HB
-        cmpb    >LC8B7                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B7
         bhi     L2D25
         ldab    >CoolantTempStatusFlags
         andb    #$00
@@ -572,7 +572,7 @@ POINTER2d31:
 ;---------------------------------------------------------------------------------------------------
 CODE2d51:
         jsr     >TurnOffCEL_D
-        ldab    >LC8A4                               ; FANTMP6: Detailed Description3
+        ldab    >LC8A4
         stab    >Fan_01FE
         inc     >CounterX
         rts
@@ -610,14 +610,14 @@ CODE2d7b:
         beq     L2DB5
         ldx     #POINTER2db6
         ldab    <CoolantTemp
-        cmpb    >FanTempA                            ; FANTMP6: Detailed Description3
+        cmpb    >FanTempA
         bhi     L2DAA
         ldab    <TpsVolts
         subb    <MINTHR_LowestSessionTPS
-        cmpb    >LC8B3                               ; FANTMP6: Detailed Description3
+        cmpb    >LC8B3
         bcs     L2DAA
         ldd     <VehicleSpeed_HB
-        cpd     >LC8B4                               ; FANTMP6: Detailed Description3
+        cpd     >LC8B4
         bcc     L2DAA
         ldab    >CoolantTempStatusFlags
         andb    #$00

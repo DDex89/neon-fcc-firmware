@@ -116,7 +116,7 @@ LE594:
         ldab    <MINTHR_LowestSessionTPS
         addb    >MININC_Amount_MINTHR_IsIncreasedAtKeyOnOnly ; MININC (Amount_MINTHR_IsIncreasedAtKeyOnOnly)
         ldaa    <TpsVolts
-        adda    >LCB2D                               ; MTHROP (NumberOfBitsAbove_MINTHR_ToDetermineOffThrottleTransition)
+        adda    >LCB2D
         staa    <Temp0
         cmpb    <Temp0
         bhi     LE5AC
@@ -154,7 +154,7 @@ LE5E1:
         staa    >Timer_DelayBeforeUpdating_MINTHR
         andb    #$BF
 LE5EB:
-        ldaa    >CTMNTI_CounterMINTHRInit            ; MTHRMX (ValueOf_MINTHR_WhenBatteryDisconnected)
+        ldaa    >CTMNTI_CounterMINTHRInit
 LE5EE:
         staa    <Counter_MINTHR
         ldaa    >MTHRCL_NumberOfBitsAbove_MINTHR_ToDetermineOnThrottleTransition ; MTHRCL (NumberOfBitsAbove_MINTHR_ToDetermineOnThrottleTransition)
@@ -204,7 +204,7 @@ LE634:
         ldaa    <VehicleSpeedScaled
         cmpa    >MPHREF_SwitchPointForDecelIdleAisControl ; MPHREF: Switch point between Decel or Idle AIS control. Note there is also a 1
         bhi     CheckThrottle_VehicleSpeedStillAboveDecelIdle
-        ldx     #$C57C                               ; DFRPM1 (2050RPM_DecelFuelShutoffTurnonLimit)
+        ldx     #$C57C
         ldaa    >DLYTM3_AisDelayAfterThrottleClosesWhenRpmAbove_DLYRPM ; DLYTM3: Decel AIS Delay after throttle closes when MAP is below DCLMN2
         ldab    <EngineRpm_HB
         cmpb    >DLYRPM_RpmTriggerForAisDelay        ; DLYRPM: Decel AIS RPM trigger (third AIS delay)
@@ -462,7 +462,7 @@ LE800:
 LE802:
         brset   <BitFlags_AIS,#$40,LE841
         ldab    >Var_0217
-        cmpb    >LCDB0                               ; COILHI (HiLimitBatteryVoltsForCoilVerify)
+        cmpb    >LCDB0
         bcc     LE83E
         ldab    >SwitchPortAccessReg1
         bitb    #$40
@@ -536,7 +536,7 @@ HandleBaroReadRequirement_MM:
         brset   <BitFlags71,#$80,LE891               ; engine not running (stopped or cranking)
 LE865:
         ldaa    <EngineRpm_HB
-        ldx     #BARCMP_BaroCompensationFromRPM      ; CRMASK (CruiseMask)
+        ldx     #BARCMP_BaroCompensationFromRPM
         jsr     >Lookup4ByteTable                    ; 2D table lookup with linear interpolation ("point-slope" format).
         adda    <MapValue
         ldab    <BaroPressure
@@ -545,17 +545,17 @@ LE865:
         bls     LE880
 LE876:
         ldaa    <Timer_BaroReadInterval
-        cmpa    >MinTimerBaroRead_A                  ; CRMASK (CruiseMask)
+        cmpa    >MinTimerBaroRead_A
         bcs     LE8CA
         incb
         bra     LE8C2
 
 LE880:
         ldaa    <TPSOverMINTHR
-        cmpa    >MaxTPSForBaroRead                   ; CRMASK (CruiseMask)
+        cmpa    >MaxTPSForBaroRead
         bcs     LE8C7
         ldaa    <Timer_BaroReadInterval
-        cmpa    >MinTimerBaroRead_B                  ; CRMASK (CruiseMask)
+        cmpa    >MinTimerBaroRead_B
         bcs     LE8CA
         decb
         bra     LE8C2
@@ -565,7 +565,7 @@ LE891:
         ldaa    <Counter_MainLoop
         adda    <Timer_BaroReadInterval
         bcs     LE8A0
-        cmpa    >MinTimerBaroRead_C                  ; CRMASK (CruiseMask)
+        cmpa    >MinTimerBaroRead_C
         bcs     LE8D1
 LE8A0:
         ldaa    <MapVolts
@@ -574,12 +574,12 @@ LE8A0:
         staa    >Temp0_X
         pula
         tab
-        adda    >MAPOffsetForBaroRead                ; CRMASK (CruiseMask)
+        adda    >MAPOffsetForBaroRead
         bcs     LE8C4
         cmpa    >MAPTemp_A
         bcs     LE8C4
         tba
-        suba    >MAPOffsetForBaroRead                ; CRMASK (CruiseMask)
+        suba    >MAPOffsetForBaroRead
         bcs     LE8C4
         cmpa    >MAPTemp_B
         bls     LE8C4

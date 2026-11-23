@@ -132,13 +132,13 @@ L13DE:
         staa    >Var_0183
         clr     >Alt_0182
         ldaa    #$FF
-        suba    >LC79F                               ; AISINC (AISPOSIncrementForSW2b7)
+        suba    >LC79F
         ldab    >Var_046F
         mul
         adca    #$00
         psha
         ldaa    >Var_0183
-        ldab    >LC79F                               ; AISINC (AISPOSIncrementForSW2b7)
+        ldab    >LC79F
         mul
         adca    #$00
         pulb

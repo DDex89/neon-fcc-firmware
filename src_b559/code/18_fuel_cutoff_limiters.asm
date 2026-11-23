@@ -222,7 +222,7 @@ Cutout_UseHysteresisToDetermineWhenToTurnFuelBackOn:
         bcc     L7170
         clra
 L7170:
-        cmpa    >DFRPMX_2050RPM_DecelFuelShutoffTurnonLimitX ; DFRPM1 (2050RPM_DecelFuelShutoffTurnonLimit)
+        cmpa    >DFRPM1_2050RPM_DecelFuelShutoffTurnonLimit ; DFRPM1 (2050RPM_DecelFuelShutoffTurnonLimit)
         bls     Cutout_TurnFuelBackOn
         rts
 
