@@ -194,3 +194,7 @@ blinked by toggling bit 6, so bit 6 is the check-engine lamp. [inferred] Bit 4 i
 which only charging-system faults set (flag bit 5), so bit 4 is most likely the charge lamp.
 [inferred] `$00EE` is sent to the I/O companion chip in the register frame with header `$50`; see
 [ccd_and_link.md](ccd_and_link.md).
+
+## Related SBEC3 research (different controller)
+
+[1996/1997 SBEC3 SCI/PIT audit](https://github.com/DDex89/neon-sbec3-firmware/blob/e7c7329f2c03d9ffae708ece49685af59bead037/docs/en/sci-obd-128k.md) documents a conditional Scratch0 conflict in stock 68HC16 ROMs 04887050 and 05293013AC. It is not evidence of the same issue in 68HC11 FCC: different SCI/DRB implementation and memory map. No FCC code or labels changed on this basis.
